@@ -8,7 +8,7 @@ text \<open>Contexts are used in the typing judgments to specify the types of al
       variable is annotated with its type, the context ensures that all uses of a given variable 
       have the same type.\<close>
 
-type_synonym TypingContext = \<open>Var list\<close>
+type_synonym TypingContext = \<open>var list\<close>
 
 definition 
   dom\<^sub>\<Gamma> :: \<open>TypingContext \<Rightarrow> Id set\<close>

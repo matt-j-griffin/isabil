@@ -30,10 +30,9 @@ where
   \<open>roll_word w = Word ((raw_val w) mod 2 ^ (bits w)) (bits w)\<close>
 
 fun
-  eq_word :: \<open>word \<Rightarrow> word \<Rightarrow> bool\<close>
+  bool_word :: \<open>bool \<Rightarrow> word\<close>
 where
-  \<open>eq_word w\<^sub>1 w\<^sub>2 = (((raw_val w\<^sub>1) mod (bits w\<^sub>1)) = ((raw_val w\<^sub>2) mod (bits w\<^sub>2)))\<close>
-
+  \<open>bool_word b = (if b then true else false)\<close>
 
 fun 
   add :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>+\<^sub>b\<^sub>v\<close> 56)
@@ -43,32 +42,176 @@ where
     else undefined
   )\<close>
 
-consts minus :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>-\<^sub>b\<^sub>v\<close> 56)
-consts uminus :: \<open>word \<Rightarrow> word\<close>  (\<open>-\<^sub>b\<^sub>v _\<close> [81] 80)
-consts times :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>*\<^sub>b\<^sub>v\<close> 56)
-consts divide :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>div\<^sub>b\<^sub>v\<close> 56)
-consts sdivide :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>div\<^sub>s\<^sub>b\<^sub>v\<close> 56)
-consts mod\<^sub>b\<^sub>v :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>%\<^sub>b\<^sub>v\<close> 56)
-consts smod :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>%\<^sub>s\<^sub>b\<^sub>v\<close> 56)
-consts lsl :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><<\<^sub>b\<^sub>v\<close> 56)
-consts lsr :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>>>\<^sub>b\<^sub>v\<close> 56)
-consts asr :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>>>>\<^sub>b\<^sub>v\<close> 56)
-consts land :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>&\<^sub>b\<^sub>v\<close> 56)
-consts lor :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>|\<^sub>b\<^sub>v\<close> 56)
-consts xor :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>xor\<^sub>b\<^sub>v\<close> 56)
-abbreviation 
+fun
+  minus :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>-\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 -\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 - raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun
+  uminus :: \<open>word \<Rightarrow> word\<close>  (\<open>-\<^sub>b\<^sub>v _\<close> [81] 80)
+where
+  \<open>-\<^sub>b\<^sub>v w = (roll_word w)\<close> (*TODO*)
+
+fun 
+  times :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>*\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 *\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 * raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun 
+  divide :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>div\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 div\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 div raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun 
+  sdivide :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>div\<^sub>s\<^sub>b\<^sub>v\<close> 56) (* TODO*)
+where
+  \<open>w\<^sub>1 div\<^sub>s\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 div raw_val w\<^sub>2) (bits w\<^sub>1)) 
+    else undefined
+  )\<close>
+
+fun 
+  mod\<^sub>b\<^sub>v :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>%\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 %\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 mod raw_val w\<^sub>2) (bits w\<^sub>1)) 
+    else undefined
+  )\<close>
+
+fun 
+  smod :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>%\<^sub>s\<^sub>b\<^sub>v\<close> 56) (* TODO *)
+where
+  \<open>w\<^sub>1 %\<^sub>s\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 mod raw_val w\<^sub>2) (bits w\<^sub>1)) 
+    else undefined
+  )\<close>
+
+fun 
+  lsl :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><<\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 <<\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun
+  lsr :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>>>\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 >>\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun
+  asr :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>>>>\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 >>>\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun 
+  land :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>&\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 &\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun 
+  lor :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>|\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 |\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun 
+  xor :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>xor\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 xor\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1))
+    else undefined
+  )\<close>
+
+fun
   eq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>=\<^sub>b\<^sub>v\<close> 56) 
-where 
-  \<open>w\<^sub>1 =\<^sub>b\<^sub>v w\<^sub>2 \<equiv> (if (eq_word w\<^sub>1 w\<^sub>2) then true else false)\<close>
-abbreviation neq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<noteq>\<^sub>b\<^sub>v\<close> 56) where "w1 \<noteq>\<^sub>b\<^sub>v w2 \<equiv> (if w1 = w2 then false else true)"
-consts leq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
-consts sleq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<le>\<^sub>s\<^sub>b\<^sub>v\<close> 56)
-consts le :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><\<^sub>b\<^sub>v\<close> 55)
-consts sle :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
-consts negation :: \<open>word \<Rightarrow> word\<close> (\<open>~\<^sub>b\<^sub>v _\<close>)
-consts concat :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<cdot>\<close> 55)
-consts extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)   
-consts s_extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)
+where
+  \<open>w\<^sub>1 =\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 = raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun
+  neq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<noteq>\<^sub>b\<^sub>v\<close> 56) 
+where
+  \<open>w\<^sub>1 \<noteq>\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 \<noteq> raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun
+  leq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 \<le>\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 \<le> raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun
+  sleq :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<le>\<^sub>s\<^sub>b\<^sub>v\<close> 56)
+where
+  \<open>w\<^sub>1 \<le>\<^sub>s\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 \<le> raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun
+  le :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><\<^sub>b\<^sub>v\<close> 55)
+where
+  \<open>w\<^sub>1 <\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 = raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun
+  sle :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
+where
+  \<open>w\<^sub>1 <\<^sub>s\<^sub>b\<^sub>v w\<^sub>2 = (
+    if bits w\<^sub>1 = bits w\<^sub>2 then bool_word (raw_val w\<^sub>1 = raw_val w\<^sub>2)
+    else undefined
+  )\<close>
+
+fun 
+  negation :: \<open>word \<Rightarrow> word\<close> (\<open>~\<^sub>b\<^sub>v _\<close>)
+where
+  \<open>~\<^sub>b\<^sub>v w = w\<close>
+
+fun 
+  concat :: \<open>word \<Rightarrow> word \<Rightarrow> word\<close> (infixr \<open>\<cdot>\<close> 55)
+where
+  \<open>w\<^sub>1 \<cdot> w\<^sub>2 = roll_word (Word (raw_val w\<^sub>1 + raw_val w\<^sub>2) (bits w\<^sub>1 + bits w\<^sub>2))\<close>
+(* TODO it is not a w\<^sub>1 + w\<^sub>2 operation *)
+
+fun 
+  extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
+where
+  \<open>(ext w \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = Word (raw_val w) (Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w))\<close>
+
+fun 
+  s_extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)
+where
+  \<open>(exts w \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = Word (raw_val w) (Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w))\<close>
+(* TODO ^^*)
 
 (*
 fun
