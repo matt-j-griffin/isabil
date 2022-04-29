@@ -7,7 +7,6 @@ text \<open>\<Gamma> \<turnstile> bil is ok\<close>
 text \<open>\<Gamma> is ok\<close>
 text \<open>t is ok\<close>
            
-
 consts is_ok :: \<open>'a \<Rightarrow> bool\<close> (\<open>_ is ok\<close>)
 
 overloading
@@ -28,6 +27,36 @@ where
   \<open>is_ok_TypingContext (a # \<Gamma>) = (let (name, t) = a in (name \<notin> dom\<^sub>\<Gamma> \<Gamma> \<and> (t is ok) \<and> (\<Gamma> is ok)))\<close>
 
 end
+
+
+
+
+section \<open>t is ok\<close>
+
+
+lemma TWF_IMM:
+  assumes \<open>sz > 0\<close>
+    shows \<open>(Imm sz) is ok\<close>
+  using assms by auto
+
+lemma TWF_MEM:
+  assumes \<open>sz\<^sub>1 > 0\<close> and \<open>sz\<^sub>2 > 0\<close>
+    shows \<open>(Mem sz\<^sub>1 sz\<^sub>2) is ok\<close> 
+  using assms by auto
+
+
+section \<open>\<Gamma> is ok\<close>
+
+
+lemma TG_NIL: \<open>([]::TypingContext) is ok\<close>
+  by auto
+
+lemma TG_CONS:
+  assumes \<open>name \<notin> dom\<^sub>\<Gamma> \<Gamma>\<close>
+      and \<open>t is ok\<close>
+      and \<open>\<Gamma> is ok\<close>
+    shows \<open>((name, t) # \<Gamma>) is ok\<close>
+  using assms by auto
 
 lemma set_not_\<Gamma>_is_ok:
     fixes \<Gamma> :: TypingContext
@@ -53,7 +82,7 @@ fun
 where
   \<open>typing_expression_val \<Gamma> (Immediate (num \<Colon> sz')) (Imm sz) = (sz = sz' \<and> sz > 0 \<and> (\<Gamma> is ok))\<close> |
   \<open>typing_expression_val \<Gamma> (Unknown str t) t' = (t = t' \<and> (t is ok) \<and> (\<Gamma> is ok))\<close> |
-  \<open>typing_expression_val \<Gamma> (Storage v (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r') v' sz) (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz') = (sz = sz' \<and> sz > 0 \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0 \<and> 
+  \<open>typing_expression_val \<Gamma> (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r') \<leftarrow> v', sz]) (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz') = (sz = sz' \<and> sz > 0 \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0 \<and> 
        (\<Gamma> \<turnstile> v' :: (Imm sz)) \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r' = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<and> (\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz')))\<close> |
   \<open>typing_expression_val \<Gamma> v t = False\<close>
 fun 
@@ -72,7 +101,7 @@ where
   \<open>typing_expression_exp \<Gamma> (Cast Signed sz e) (Imm sz'') = (sz > 0 \<and> sz = sz'' \<and> (\<exists>sz'. sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: (Imm sz'))))\<close> |
   \<open>typing_expression_exp \<Gamma> (Cast High sz e) (Imm sz'') = (sz > 0 \<and> sz = sz'' \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: (Imm sz'))))\<close> |
   \<open>typing_expression_exp \<Gamma> (Cast Low sz e) (Imm sz'') = (sz > 0 \<and> sz = sz'' \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: (Imm sz'))))\<close> |
-  \<open>typing_expression_exp \<Gamma> (Let (name, t) e\<^sub>1 e\<^sub>2) t' = ((\<Gamma> \<turnstile> e\<^sub>1 :: t) \<and> (((name, t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'))\<close> |
+  \<open>typing_expression_exp \<Gamma> (Let (name, t) e\<^sub>1 e\<^sub>2) t' = (name \<notin> dom\<^sub>\<Gamma> \<Gamma> \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: t) \<and> (((name, t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'))\<close> |
   \<open>typing_expression_exp \<Gamma> (Val v) t = (\<Gamma> \<turnstile> v :: t)\<close> |
   \<open>typing_expression_exp \<Gamma> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) t = ((\<Gamma> \<turnstile> e\<^sub>1 :: (Imm 1)) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: t) \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: t))\<close> |
   \<open>typing_expression_exp \<Gamma> (Extract sz\<^sub>1 sz\<^sub>2 e) (Imm sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t) = (sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t = sz\<^sub>1 - sz\<^sub>2 + 1 \<and> sz\<^sub>1 \<ge> sz\<^sub>2 \<and>
@@ -82,15 +111,40 @@ where
 end
 
 lemma typing_val_storage:
-  assumes \<open>\<Gamma> \<turnstile> (Storage v w v' sz\<^sub>m\<^sub>e\<^sub>m) :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m')\<close>
+  assumes \<open>\<Gamma> \<turnstile> (v[w \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]) :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m')\<close>
     shows \<open>bits w = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<and> sz\<^sub>m\<^sub>e\<^sub>m = sz\<^sub>m\<^sub>e\<^sub>m' \<and> sz\<^sub>m\<^sub>e\<^sub>m > 0 \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0 \<and> 
        (\<Gamma> \<turnstile> v' :: (Imm sz\<^sub>m\<^sub>e\<^sub>m)) \<and> (\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))\<close>
   using assms by (metis Bitvector_Syntax.word.exhaust typing_expression_val.simps(3) word.sel(2))
+
+lemma typing_val_unknown_mem:
+  assumes \<open>\<Gamma> \<turnstile> (unknown[str]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)) :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>m\<^sub>e\<^sub>m')\<close>
+    shows \<open>sz\<^sub>m\<^sub>e\<^sub>m = sz\<^sub>m\<^sub>e\<^sub>m' \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<and> sz\<^sub>m\<^sub>e\<^sub>m > 0 \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0\<close>
+  using assms by auto
+
+lemma typing_val_mem:
+    fixes mem :: val
+  assumes \<open>\<Gamma> \<turnstile> mem :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
+    shows \<open>sz\<^sub>m\<^sub>e\<^sub>m > 0 \<and> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0\<close>
+  using assms apply (cases mem, auto)
+  using typing_val_storage by blast+
 
 lemma typing_val_immediate:
   assumes \<open>\<Gamma> \<turnstile> (Immediate w) :: (Imm sz)\<close>
     shows \<open>sz = bits w \<and> sz > 0 \<and> (\<Gamma> is ok)\<close>
   using assms by (metis Bitvector_Syntax.word.exhaust typing_expression_val.simps(1) word.sel(2))
+
+lemma typing_val_unknown_imm:
+  assumes \<open>\<Gamma> \<turnstile> (unknown[str]: (Imm sz)) :: (Imm sz')\<close>
+    shows \<open>sz = sz' \<and> sz > 0\<close>
+  using assms by auto
+
+lemma typing_val_imm:
+    fixes imm :: val
+  assumes \<open>\<Gamma> \<turnstile> imm :: (Imm sz)\<close>
+    shows \<open>sz > 0\<close>
+  using assms apply (cases imm, auto)
+  by (simp add: typing_val_immediate)
+
 
 text \<open>Better induction rule for val\<close>
 
@@ -124,6 +178,26 @@ lemma typing_expression_\<Gamma>_extend_implies_\<Gamma>:
   fixes v :: val
   assumes \<open>(name, t') # \<Gamma> \<turnstile> v :: t\<close> 
     shows \<open>\<Gamma> \<turnstile> v :: t\<close>
+  using assms by (induct rule: typing_expression_val_induct, auto)
+
+lemma typing_expression_\<Gamma>_implies_\<Gamma>_extend:
+  fixes v :: val
+  assumes \<open>\<Gamma> \<turnstile> v :: t\<close> 
+      and \<open>(name, t') # \<Gamma> is ok\<close>
+    shows \<open>(name, t') # \<Gamma> \<turnstile> v :: t\<close>
+  using assms by (induct rule: typing_expression_val_induct, auto)
+
+lemma typing_expression_empty_implies_\<Gamma>:
+  fixes v :: val
+  assumes \<open>[] \<turnstile> v :: t\<close>
+      and \<open>\<Gamma> is ok\<close>
+    shows \<open>\<Gamma> \<turnstile> v :: t\<close>
+  using assms by (induct rule: typing_expression_val_induct, auto)
+
+lemma typing_expression_\<Gamma>_implies_empty:
+  fixes v :: val
+  assumes \<open>\<Gamma> \<turnstile> v :: t\<close> 
+    shows \<open>[] \<turnstile> v :: t\<close>
   using assms by (induct rule: typing_expression_val_induct, auto)
 
 lemma typing_expression_exp_induct_Let_intermediate:
@@ -169,7 +243,7 @@ lemma typing_expression_exp_induct[consumes 1, case_names Val Var Load Store Bin
               \<Longrightarrow> P \<Gamma> (Cast High sz e) (Imm sz))\<close>
       and \<open>(\<And>\<Gamma> e sz sz' t. \<lbrakk>sz' \<ge> sz; \<Gamma> \<turnstile> e :: (Imm sz'); sz > 0; t = Imm sz; P \<Gamma> e (Imm sz')\<rbrakk>
               \<Longrightarrow> P \<Gamma> (Cast Low sz e) (Imm sz))\<close>
-      and \<open>(\<And>\<Gamma> name t' e\<^sub>1 e\<^sub>2 t. \<lbrakk>\<Gamma> \<turnstile> e\<^sub>1 :: t'; P \<Gamma> e\<^sub>1 t';
+      and \<open>(\<And>\<Gamma> name t' e\<^sub>1 e\<^sub>2 t. \<lbrakk>\<Gamma> \<turnstile> e\<^sub>1 :: t'; P \<Gamma> e\<^sub>1 t'; name \<notin> dom\<^sub>\<Gamma> \<Gamma>;
                 ((name, t') # \<Gamma>) \<turnstile> e\<^sub>2 :: t; P ((name, t') # \<Gamma>) e\<^sub>2 t\<rbrakk> 
               \<Longrightarrow> P \<Gamma> (Let (name, t') e\<^sub>1 e\<^sub>2) t)\<close>
       and \<open>(\<And>\<Gamma> e\<^sub>1 e\<^sub>2 e\<^sub>3 t. \<lbrakk>\<Gamma> \<turnstile> e\<^sub>1 :: (Imm 1); P \<Gamma> e\<^sub>1 (Imm 1);
@@ -187,6 +261,16 @@ lemma typing_expression_exp_induct[consumes 1, case_names Val Var Load Store Bin
   using assms apply (induct rule: typing_expression_exp.induct)
   apply auto
   by presburger
+
+lemma \<Gamma>_val_imm_not_storage:
+  assumes \<open>\<Gamma> \<turnstile> v :: Imm sz\<close>
+    shows \<open>\<forall>mem w v' sz\<^sub>m\<^sub>e\<^sub>m. v \<noteq> mem[w \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]\<close>
+  using assms by (induct v, auto)
+
+lemma \<Gamma>_val_mem_not_immediate:
+  assumes \<open>\<Gamma> \<turnstile> v :: Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
+    shows \<open>\<forall>w. v \<noteq> Immediate w\<close>
+  using assms by (induct v, auto)
 
 consts judgement_is_ok :: \<open>TypingContext \<Rightarrow> 'a \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ is ok\<close>)
 
@@ -292,19 +376,19 @@ lemma T_MEM:
   using assms by auto
 
 lemma T_LOAD:
-  assumes \<open>sz' mod sz = 0\<close> and \<open>sz' > 0\<close>
-      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: (Mem sz\<^sub>m\<^sub>e\<^sub>m sz)\<close>
-      and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: (Imm sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-    shows \<open>\<Gamma> \<turnstile> (Load e\<^sub>1 e\<^sub>2 ed sz') :: (Imm sz')\<close>
+  assumes \<open>sz mod sz\<^sub>v\<^sub>a\<^sub>l = 0\<close> and \<open>sz > 0\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l)\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: (Imm sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close>
+    shows \<open>\<Gamma> \<turnstile> (Load e\<^sub>1 e\<^sub>2 ed sz) :: (Imm sz)\<close>
   using assms apply auto
   by (meson assms(1))
   
 lemma T_STORE:
-  assumes \<open>sz' mod sz = 0\<close> and \<open>sz' > 0\<close>
-      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: (Mem sz\<^sub>m\<^sub>e\<^sub>m sz)\<close>
-      and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: (Imm sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-      and \<open>\<Gamma> \<turnstile> e\<^sub>3 :: (Imm sz')\<close>
-    shows \<open>\<Gamma> \<turnstile> (Store e\<^sub>1 e\<^sub>2 ed sz' e\<^sub>3) :: (Mem sz\<^sub>m\<^sub>e\<^sub>m sz)\<close>
+  assumes \<open>sz mod sz\<^sub>v\<^sub>a\<^sub>l = 0\<close> and \<open>sz > 0\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l)\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: (Imm sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>3 :: (Imm sz)\<close>
+    shows \<open>\<Gamma> \<turnstile> (Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l)\<close>
   using assms by auto
 
 lemma T_AOP:
@@ -328,18 +412,19 @@ lemma T_CAST_WIDEN:
   assumes \<open>sz > 0\<close> and \<open>sz \<ge> sz'\<close>
       and \<open>\<Gamma> \<turnstile> e :: (Imm sz')\<close>
       and \<open>widen = Signed \<or> widen = Unsigned\<close>
-    shows \<open>\<Gamma> \<turnstile> (Cast widen sz e) :: (Imm sz)\<close> (* TODO *)
+    shows \<open>\<Gamma> \<turnstile> (Cast widen sz e) :: (Imm sz)\<close>
   using assms by auto
 
 lemma T_CAST_NARROW:
   assumes \<open>sz > 0\<close> and \<open>sz' \<ge> sz\<close>
       and \<open>\<Gamma> \<turnstile> e :: (Imm sz')\<close>
       and \<open>narrow = High \<or> narrow = Low\<close>
-    shows \<open>\<Gamma> \<turnstile> (Cast narrow sz e) :: (Imm sz)\<close> (* TODO *)
+    shows \<open>\<Gamma> \<turnstile> (Cast narrow sz e) :: (Imm sz)\<close>
   using assms by auto
 
 lemma T_LET:
   assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: t\<close>
+      and \<open>name \<notin> dom\<^sub>\<Gamma> \<Gamma>\<close> (* TODO this is inferred *)
       and \<open>((name, t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'\<close>
     shows \<open>\<Gamma> \<turnstile> (Let (name, t) e\<^sub>1 e\<^sub>2) :: t'\<close>
   using assms by auto
@@ -367,35 +452,6 @@ lemma T_CONCAT:
   assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: (Imm sz\<^sub>1)\<close>
       and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: (Imm sz\<^sub>2)\<close>
     shows \<open>\<Gamma> \<turnstile> Concat e\<^sub>1 e\<^sub>2 :: (Imm (sz\<^sub>1 + sz\<^sub>2))\<close>
-  using assms by auto
-
-
-
-section \<open>t is ok\<close>
-
-
-lemma TWF_IMM:
-  assumes \<open>sz > 0\<close>
-    shows \<open>(Imm sz) is ok\<close>
-  using assms by auto
-
-lemma TWF_MEM:
-  assumes \<open>sz\<^sub>1 > 0\<close> and \<open>sz\<^sub>2 > 0\<close>
-    shows \<open>(Mem sz\<^sub>1 sz\<^sub>2) is ok\<close> 
-  using assms by auto
-
-
-section \<open>\<Gamma> is ok\<close>
-
-
-lemma TG_NIL: \<open>([]::TypingContext) is ok\<close>
-  by auto
-
-lemma TG_CONS:
-  assumes \<open>name \<notin> dom\<^sub>\<Gamma> \<Gamma>\<close>
-      and \<open>t is ok\<close>
-      and \<open>\<Gamma> is ok\<close>
-    shows \<open>((name, t) # \<Gamma>) is ok\<close>
   using assms by auto
 
 text \<open>Check the example from the specification\<close>

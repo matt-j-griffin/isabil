@@ -4,14 +4,18 @@ begin
 
 type_synonym program = \<open>(variables \<times> word \<times> var)\<close>
 
-consts decode :: \<open>program \<Rightarrow> insn\<close>
+locale bil =
+  fixes decode :: \<open>program \<Rightarrow> insn\<close>
 
-definition 
+context bil
+begin
+
+definition
   decode_pred :: \<open>program \<Rightarrow> insn \<Rightarrow> bool\<close> (\<open>_ \<mapsto>\<^sub>b\<^sub>i\<^sub>r\<^sub>i _\<close>)
 where
   \<open>(prog \<mapsto>\<^sub>b\<^sub>i\<^sub>r\<^sub>i instr) \<equiv> (instr = decode prog)\<close>
 
-fun 
+fun
   step :: \<open>program \<Rightarrow> program\<close>
 where
   \<open>step (\<Delta>, w, mem) = (
@@ -20,7 +24,7 @@ where
       (\<Delta>', w\<^sub>3, mem)
   )\<close>
 
-inductive
+inductive (in bil)
   step_pred :: \<open>program \<Rightarrow> program \<Rightarrow> bool\<close> (infixr \<open>\<leadsto>\<^sub>b\<^sub>i\<^sub>l\<close> 90)
 where
   \<open>\<lbrakk>
@@ -34,4 +38,5 @@ lemma STEP:
     shows \<open>(\<Delta>, w, prog) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>', w\<^sub>3, prog)\<close>
   using assms by (simp add: step_pred.intros)
 
+end 
 end

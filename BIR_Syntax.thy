@@ -167,42 +167,85 @@ consts ymm :: \<open>nat \<Rightarrow> Id\<close>
 definition
   YMM0 :: var
 where
-  \<open>YMM0 \<equiv> (ymm 0, Imm 128)\<close>
+  \<open>YMM0 \<equiv> (ymm 0, Imm 256)\<close>
 
 definition
   YMM1 :: var
 where
-  \<open>YMM1 \<equiv> (ymm 1, Imm 128)\<close>
+  \<open>YMM1 \<equiv> (ymm 1, Imm 256)\<close>
 
 definition
   YMM2 :: var
 where
-  \<open>YMM2 \<equiv> (ymm 2, Imm 128)\<close>
+  \<open>YMM2 \<equiv> (ymm 2, Imm 256)\<close>
 
 definition
   YMM3 :: var
 where
-  \<open>YMM3 \<equiv> (ymm 3, Imm 128)\<close>
+  \<open>YMM3 \<equiv> (ymm 3, Imm 256)\<close>
 
 definition
   YMM4 :: var
 where
-  \<open>YMM4 \<equiv> (ymm 4, Imm 128)\<close>
+  \<open>YMM4 \<equiv> (ymm 4, Imm 256)\<close>
 
 definition
   YMM5 :: var
 where
-  \<open>YMM5 \<equiv> (ymm 5, Imm 128)\<close>
+  \<open>YMM5 \<equiv> (ymm 5, Imm 256)\<close>
 
 definition
   YMM6 :: var
 where
-  \<open>YMM6 \<equiv> (ymm 6, Imm 128)\<close>
+  \<open>YMM6 \<equiv> (ymm 6, Imm 256)\<close>
 
 definition
   YMM7 :: var
 where
-  \<open>YMM7 \<equiv> (ymm 7, Imm 128)\<close>
+  \<open>YMM7 \<equiv> (ymm 7, Imm 256)\<close>
+
+text \<open>Same for the 512 bit registers\<close>
+
+consts zmm :: \<open>nat \<Rightarrow> Id\<close>
+definition
+  ZMM0 :: var
+where
+  \<open>ZMM0 \<equiv> (zmm 0, Imm 512)\<close>
+
+definition
+  ZMM1 :: var
+where
+  \<open>ZMM1 \<equiv> (zmm 1, Imm 512)\<close>
+
+definition
+  ZMM2 :: var
+where
+  \<open>ZMM2 \<equiv> (zmm 2, Imm 512)\<close>
+
+definition
+  ZMM3 :: var
+where
+  \<open>ZMM3 \<equiv> (zmm 3, Imm 512)\<close>
+
+definition
+  ZMM4 :: var
+where
+  \<open>ZMM4 \<equiv> (zmm 4, Imm 512)\<close>
+
+definition
+  ZMM5 :: var
+where
+  \<open>ZMM5 \<equiv> (zmm 5, Imm 512)\<close>
+
+definition
+  ZMM6 :: var
+where
+  \<open>ZMM6 \<equiv> (zmm 6, Imm 512)\<close>
+
+definition
+  ZMM7 :: var
+where
+  \<open>ZMM7 \<equiv> (zmm 7, Imm 512)\<close>
 
 text \<open>The eflags in BIR are represented as individual registers\<close>
 
@@ -274,7 +317,7 @@ datatype calltype =
     | Indirect exp
 
 datatype callreturn =
-      NoReturn
+      NoReturn (\<open>noreturn\<close>)
     | Return word
 
 datatype birinsn =
@@ -325,6 +368,8 @@ lemma dom_program_memory_finite:
   apply simp
   using assms apply auto[1]
   by (simp add: domI wf_program_addr_simps)
+
+(* Make this a constant and instantiate this later using a context*)
 
 definition
   find_label_set :: \<open>program_memory \<Rightarrow> Id \<Rightarrow> word set\<close> 
@@ -385,426 +430,212 @@ where
   \<open>wf\<Delta> \<Delta> \<equiv> (\<forall>var \<in> dom \<Delta>. snd var = type (the (\<Delta> var))) \<and>
             (\<forall>var \<in> dom \<Delta>. var \<noteq> mem \<longrightarrow> (\<exists>sz. snd var = Imm sz))\<close>
 
-lemma \<Gamma>_val_imm_not_storage:
-  assumes \<open>\<Gamma> \<turnstile> v :: Imm sz\<close>
-    shows \<open>v \<noteq> Storage x31 x32 x33 x34\<close>
-  using assms by (induct v, auto)
+(*
+thm load.induct
 
-lemma \<Gamma>_val_mem_not_immediate:
-  assumes \<open>\<Gamma> \<turnstile> v :: Mem sz1 sz2\<close>
-    shows \<open>v \<noteq> Immediate w\<close>
-  using assms by (induct v, auto)
+lemma XXX[consumes 2]:
+  assumes \<open>\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
+      and \<open>v' = load v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
+      and \<open>
+    shows \<open>P v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
+  using assms apply (induct v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en rule: load.induct)
+  defer
+  defer
+  apply simp
+  defer
+  sledgehammer
 
-lemma \<Gamma>_val_type_implies_type_t:
-  assumes \<open>\<Gamma> \<turnstile> v :: t\<close>
-    shows \<open>type v = t\<close>
-  using assms by (induct rule: typing_expression_val_induct, auto)
+
 
 lemma \<Gamma>_val_implies_load_val:
-  assumes \<open>\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-    shows \<open>\<Gamma> \<turnstile> load_val v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r :: (Imm sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-  using assms apply (induct v, auto)
-  apply (metis Bitvector_Syntax.word.exhaust typing_expression_val.simps(3))
-  by (metis Bitvector_Syntax.word.exhaust typing_expression_val.simps(3))
-
-lemma \<Gamma>_val_implies_load_val_en:
-  assumes \<open>\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-    shows \<open>\<Gamma> \<turnstile> load_val_en v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l ed :: (Imm sz\<^sub>v\<^sub>a\<^sub>l)\<close>
-  using assms
-  apply (induct ed, auto)
-  apply (induct "(sz\<^sub>v\<^sub>a\<^sub>l div sz\<^sub>m\<^sub>e\<^sub>m - Suc 0)")
-  apply auto
-  defer
-  oops
-
-(*
-thm load_val_be.induct
-lemma load_val_be_induct[consumes 1, case_names ReadSingleByte ReadManyBytes]:
-  assumes \<open>v' = load_val_be v w n\<close>
-      and \<open>\<lbrakk>v' = load_val v w\<rbrakk> \<Longrightarrow> P v w 0\<close>
-      and \<open>(\<And>n w v v' w\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t. \<lbrakk>Immediate w\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t = load_val_be v (succ w) n; v' = load_val v w\<rbrakk> \<Longrightarrow> P v w (Suc n))\<close>
-    shows \<open>P v w n\<close>
-  using assms apply (induct rule: load_val_be.induct)
-  apply auto[1]
-  apply (simp only: load_val_be.simps)
-
-thm load_val_en.induct
-lemma load_val_en_induct[consumes 1, case_names ReadSingleByte ReadByteBigEndian ReadByteLittleEndian]:
-  assumes \<open>v' = load_val_en v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-      and \<open>(\<And>a. \<lbrakk>sz\<^sub>v\<^sub>a\<^sub>l div sz\<^sub>m\<^sub>e\<^sub>m = 1; v' = load_val v w\<rbrakk> \<Longrightarrow> P v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-      and \<open>(\<And>a. \<lbrakk>sz\<^sub>v\<^sub>a\<^sub>l div sz\<^sub>m\<^sub>e\<^sub>m > 1; v' = load_val v w\<rbrakk> \<Longrightarrow> P v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l be)\<close>
-      and \<open>(\<And>a. \<lbrakk>sz\<^sub>v\<^sub>a\<^sub>l div sz\<^sub>m\<^sub>e\<^sub>m > 1; v' = load_val v w\<rbrakk> \<Longrightarrow> P v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l el)\<close>
-    shows \<open>P v sz\<^sub>m\<^sub>e\<^sub>m w sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-  using assms apply (cases en, auto)
-  apply (cases \<open>sz\<^sub>v\<^sub>a\<^sub>l div sz\<^sub>m\<^sub>e\<^sub>m = Suc 0\<close>, auto)
+  assumes \<open>\<Gamma> \<turnstile> v :: t\<close>
+      and \<open>t = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
+      and \<open>sz\<^sub>v\<^sub>a\<^sub>l \<ge> sz\<^sub>m\<^sub>e\<^sub>m\<close>
+      and \<open>v' = load v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
+    shows \<open>\<Gamma> \<turnstile> v' :: (Imm sz\<^sub>v\<^sub>a\<^sub>l)\<close>
+  apply (induct v')
+    defer defer
   sledgehammer
+  
+
+  using assms apply (induct rule: typing_expression_val_induct)
+  apply simp
+  defer
+  apply simp
+
+  sledgehammer
+
+
+  using assms apply (induct v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en rule: load.induct)
+  defer 
+  apply auto[1]
+  apply simp
+
+
+  apply (frule_tac typing_val_storage)
+  apply (auto simp del: load.simps)
+  apply (case_tac \<open>sz\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>m\<^sub>e\<^sub>m\<close>)
+  apply simp
+
+  apply (subgoal_tac \<open>\<Gamma> \<turnstile> load mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r)
+                 (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)
+                 en :: Imm (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)\<close>)
+  
+
+
 *)
-thm eval_exp.induct
+
+lemma \<Gamma>_is_ok_implies_t_is_ok:
+  fixes \<Gamma> :: TypingContext 
+  assumes \<open>(name, t) \<in> set \<Gamma>\<close>
+      and \<open>\<Gamma> is ok\<close>
+    shows \<open>t is ok\<close>
+  using assms by (induct \<Gamma>, auto)
+
+definition "wfnew (\<Gamma>::TypingContext) (\<Delta>::variables) \<equiv> (\<forall>(name, t) \<in> dom \<Delta>. (\<Gamma> \<turnstile> the (\<Delta> (name, t)) :: t))"
+
+lemma wf\<Delta>_extend:
+  assumes \<open>wfnew \<Gamma> \<Delta>\<close> 
+      and \<open>name \<notin> dom\<^sub>\<Gamma> \<Gamma>\<close>
+      and \<open>\<Gamma> \<turnstile> v :: t\<close>
+    shows \<open>wfnew ((name, t) # \<Gamma>) (\<Delta>((name, t) \<mapsto> v))\<close>
+  using assms apply (subgoal_tac \<open>((name, t) # \<Gamma>) is ok\<close>)
+  apply (auto simp add: wfnew_def typing_expression_\<Gamma>_implies_\<Gamma>_extend)[1]
+  apply (metis (mono_tags, lifting) TG_CONS case_prod_conv domI option.sel typing_expression_\<Gamma>_implies_\<Gamma>_extend)
+  apply (metis (mono_tags, lifting) TG_CONS case_prod_conv domI option.sel typing_expression_\<Gamma>_implies_\<Gamma>_extend)
+  by (auto simp add: typing_val_implies_valid_t typing_val_implies_valid_context)
+
 lemma typing_expression_exp_implies_eval_exp:
   assumes \<open>\<Gamma> \<turnstile> e :: t\<close>
+      and \<open>wfnew \<Gamma> \<Delta>\<close>
     shows \<open>\<Gamma> \<turnstile> (eval_exp \<Delta> e) :: t\<close>
-using assms proof (induct rule: typing_expression_exp_induct)
+using assms proof (induct arbitrary: \<Delta> rule: typing_expression_exp_induct)
   case (Val \<Gamma> v t)
   then show ?case by auto
 next
   case (Var \<Gamma> name t)
-  then show ?case apply auto sorry
+  then show ?case 
+    using \<Gamma>_is_ok_implies_t_is_ok wfnew_def by auto
 next
   case (Load \<Gamma> e\<^sub>1 e\<^sub>2 ed sz sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m t)
-  have el_valid: "\<And>v w. \<Gamma> \<turnstile> load_val_el v w (sz div sz\<^sub>m\<^sub>e\<^sub>m - Suc 0) :: Imm sz"
+  then show ?case 
     sorry
-  have be_valid: "\<And>v w v' w'. \<Gamma> \<turnstile> load_val_be v w' (sz div sz\<^sub>m\<^sub>e\<^sub>m - Suc 0) :: Imm sz"
-    sorry
-  show ?case
-    using Load apply (auto simp add: Let_def)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    apply (drule_tac typing_val_storage)
-    apply (drule_tac typing_val_immediate)
-    using el_valid be_valid by (cases ed, auto)
 next
   case (Store \<Gamma> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>v\<^sub>a\<^sub>l e\<^sub>1 e\<^sub>2 ed e\<^sub>3 t)
   then show ?case 
-    apply (auto simp add: Let_def)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>)
-    using \<Gamma>_val_type_implies_type_t apply auto
     sorry
 next
   case (BinAOp \<Gamma> e\<^sub>1 aop e\<^sub>2 sz t)
   then show ?case 
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    using typing_val_immediate by (case_tac aop, auto)
+    using \<Gamma>_val_imm_not_storage apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>)
+    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>)
+    using typing_val_immediate apply (case_tac aop, simp_all)
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply (metis typing_expression_val.simps(2))
+    apply blast
+    apply (metis typing_expression_val.simps(2))
+    by blast
 next
   case (BinLOp \<Gamma> e\<^sub>1 lop e\<^sub>2 sz t)
   then show ?case 
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    using typing_val_immediate by (case_tac lop, auto)
+    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>)
+    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>)
+    using typing_val_immediate apply (case_tac lop, simp_all)
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    apply metis
+    using typing_val_implies_valid_context \<Gamma>_val_imm_not_storage by blast+
 next
   case (UOp \<Gamma> uop e sz t)
   then show ?case 
-    apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
-    using typing_val_immediate by (case_tac uop, auto)
+    apply (cases \<open>eval_exp \<Delta> e\<close>)
+    using typing_val_immediate apply (case_tac uop, simp_all)
+    apply metis
+    apply metis
+    apply (metis typing_expression_val.simps(2))
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (UnsignedCast \<Gamma> e sz sz' t)
   then show ?case 
-    using typing_val_implies_valid_context by (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using typing_val_implies_valid_context apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (SignedCast \<Gamma> e sz sz' t)
   then show ?case 
-    using typing_val_implies_valid_context by (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using typing_val_implies_valid_context apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (HighCast \<Gamma> e sz sz' t)
   then show ?case 
     using typing_val_implies_valid_context apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
-    using Suc_diff_Suc diff_diff_cancel diff_less typing_val_immediate by presburger
+    apply (metis diff_Suc diff_diff_cancel gr0_implies_Suc old.nat.simps(5) typing_val_immediate)
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (LowCast \<Gamma> e sz sz' t)
   then show ?case 
-    using typing_val_implies_valid_context by (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using typing_val_implies_valid_context apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (Let \<Gamma> name t' e\<^sub>1 e\<^sub>2 t)
-  then show ?case
-    apply (subgoal_tac \<open>\<Gamma> \<turnstile> eval_exp \<Delta> e\<^sub>2 :: t\<close>) defer
-    using typing_expression_\<Gamma>_extend_implies_\<Gamma> apply blast
+  then show ?case 
     apply auto
-    apply (induct \<Delta> "[eval_exp \<Delta> e\<^sub>1\<sslash>(name, t')]e\<^sub>2" rule: eval_exp.induct)
-    apply auto
-    sledgehammer
-
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-
-    sorry
+    apply (subgoal_tac \<open>\<Gamma> \<turnstile> eval_exp \<Delta> e\<^sub>1 :: t'\<close>) defer
+    apply blast  
+    apply (drule_tac name=name and t=t' and v=\<open>eval_exp \<Delta> e\<^sub>1\<close> in wf\<Delta>_extend)
+    apply simp_all
+    using typing_expression_\<Gamma>_extend_implies_\<Gamma> by blast
 next
   case (Ite \<Gamma> e\<^sub>1 e\<^sub>2 e\<^sub>3 t)
   then show ?case 
     apply (auto simp add: Let_def)
     apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    by (simp_all add: \<Gamma>_val_type_implies_type_t typing_val_implies_valid_t)
+    using \<Gamma>_val_type_implies_type_t apply blast
+    apply (metis \<Gamma>_val_type_implies_type_t typing_val_implies_valid_t)
+    using typing_val_implies_valid_context apply blast
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (Extract \<Gamma> sz\<^sub>1 sz\<^sub>2 sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t sz e t)
   then show ?case 
-    using typing_val_implies_valid_context by (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using typing_val_implies_valid_context apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
+    using \<Gamma>_val_imm_not_storage by blast
 next
   case (Concat \<Gamma> e\<^sub>1 e\<^sub>2 sz\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t sz\<^sub>1 sz\<^sub>2 t)
   then show ?case 
     apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
     using typing_val_immediate apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    by (simp add: \<Gamma>_val_type_implies_type_t)
+    apply metis
+    apply metis
+    apply metis
+    apply (metis Type.simps(5) add_gr_0 is_ok_Type.simps(1) typing_expression_val.simps(2))
+    using \<Gamma>_val_imm_not_storage apply blast
+    apply (metis T_UNKNOWN Type.simps(5) \<Gamma>_val_type_implies_type_t add_gr_0 is_ok_Type.simps(1) type.simps(3) typing_val_implies_valid_context typing_val_implies_valid_t)
+    using \<Gamma>_val_imm_not_storage by blast
 qed
-(*
-lemma \<Gamma>_exp_mem_not_immediate:
-  assumes \<open>\<Gamma> \<turnstile> e :: t\<close>
-      and \<open>t = Mem sz1 sz2\<close>
-    shows \<open>eval_exp \<Delta> e \<noteq> Immediate w\<close>
-  using assms apply (induct rule: typing_expression_exp.induct)
-  apply (auto simp add: Let_def)
-  defer (* invariant *)
-
-  apply (case_tac \<open>type (eval_exp \<Delta> e\<^sub>1)\<close>, auto)
-  defer (* enforce type (eval_exp \<Delta> e\<^sub>1) must be mem *)
-  apply (case_tac \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-  sledgehammer
-
-
-  using assms apply (induct rule: eval_exp.induct)
-  apply auto
-     
-     
-     defer
-
-  
-
-  case (Val x)
-  then show ?case by auto
-next
-  case (Var x)
-  then show ?case by auto
-next
-  case (Load e1 e2 x3 x4)
-  then show ?case by auto
-next
-  case (Store e1 e2 x3 x4 e3)
-  then show ?case sorry
-next
-  case (BinOp e1 x2a e2)
-  then show ?case by auto
-next
-  case (UnOp x1a e)
-  then show ?case by auto
-next
-  case (Cast x1a x2a e)
-  then show ?case by auto
-next
-  case (Let x1a e1 e2)
-  then show ?case     
-    apply (induct \<open>x1a\<close>, auto)
-    sorry
-next
-  case (Ite e1 e2 e3)
-  then show ?case 
-    apply (auto simp add: Let_def)
-    apply (cases \<open>eval_exp \<Delta> e1\<close>)
-    apply auto
-    apply (smt (verit, ccfv_SIG) val.simps(10))
-    sorry
-
-next
-  case (Extract x1a x2a e)
-  then show ?case by auto
-next
-  case (Concat e1 e2)
-  then show ?case by auto
-qed
-  
-*)
-(*
-lemma ZZ:
-  assumes \<open>\<Gamma> \<turnstile> e :: t\<close>
-      and \<open>t = Imm sz\<close>
-    shows \<open>eval_exp \<Delta> e \<noteq> Storage x31 x32 x33 x34\<close>
-using assms proof (induct rule: typing_expression_exp_induct)
-  case (Val \<Gamma> v t)
-  then show ?case by auto
-next
-  case (Var \<Gamma> name t)
-  then show ?case sorry
-next
-  case (Load \<Gamma> e\<^sub>1 e\<^sub>2 ed sz sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m t)
-  then show ?case 
-    apply (auto simp add: Let_def) sorry
-next
-  case (Store \<Gamma> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>v\<^sub>a\<^sub>l e\<^sub>1 e\<^sub>2 ed e\<^sub>3 t)
-  then show ?case by auto
-next
-  case (BinAOp \<Gamma> e\<^sub>1 aop e\<^sub>2 sz t)
-  then show ?case sorry
-next
-  case (BinLOp \<Gamma> e\<^sub>1 lop e\<^sub>2 sz t)
-  then show ?case sorry
-next
-  case (UOp \<Gamma> uop e sz t)
-  then show ?case sorry
-next
-  case (UnsignedCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (SignedCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (HighCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (LowCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (Let \<Gamma> name t' e\<^sub>1 e\<^sub>2 t)
-  then show ?case sorry
-next
-  case (Ite \<Gamma> e\<^sub>1 e\<^sub>2 e\<^sub>3 t)
-  then show ?case sorry
-next
-  case (Extract \<Gamma> sz\<^sub>1 sz\<^sub>2 sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t sz e t)
-  then show ?case sorry
-next
-  case (Concat \<Gamma> e\<^sub>1 e\<^sub>2 sz\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t sz\<^sub>1 sz\<^sub>2 t)
-  then show ?case 
-    apply (auto simp add: Let_def)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    apply (cases
-    sledgehammer
-    sorry
-qed
-*)
 
 lemma \<Gamma>_exp_type_implies_type_t:
   assumes \<open>\<Gamma> \<turnstile> e :: t\<close>
-      and \<open>(\<forall>var \<in> dom \<Delta>. snd var = type (the (\<Delta> var)))\<close>
+      and \<open>wfnew \<Gamma> \<Delta>\<close>
     shows \<open>type (eval_exp \<Delta> e) = t\<close>
-using assms proof (induct rule: typing_expression_exp_induct)
-  case (Val \<Gamma> v t)
-  then show ?case 
-    using \<Gamma>_val_type_implies_type_t by force
-next
-  case (Var \<Gamma> name t)
-  then show ?case 
-    apply auto
-    by (metis domI option.sel snd_conv)
-next
-  case (Load \<Gamma> e\<^sub>1 e\<^sub>2 ed sz sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m t)
-  then show ?case 
-    apply (auto simp add: Let_def)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>, auto)
-    apply (subgoal_tac \<open>\<Gamma> \<turnstile> eval_exp \<Delta> e\<^sub>1 :: Mem (bits x32) sz\<^sub>m\<^sub>e\<^sub>m\<close>)
-    apply (subgoal_tac \<open>\<Gamma> \<turnstile> eval_exp \<Delta> e\<^sub>2 :: Imm (bits x32)\<close>)
-     apply auto
-    sledgehammer
+  using assms apply (drule_tac \<Delta>=\<Delta> in typing_expression_exp_implies_eval_exp, auto)
+  by (simp add: \<Gamma>_val_type_implies_type_t)
 
-    by (meson XX \<Gamma>_val_type_implies_type_t typing_expression_exp.simps(2))
-    sorry
-next
-  case (Store \<Gamma> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>v\<^sub>a\<^sub>l e\<^sub>1 e\<^sub>2 ed e\<^sub>3 t)
-  then show ?case sorry
-next
-  case (BinAOp \<Gamma> e\<^sub>1 aop e\<^sub>2 sz t)
-  then show ?case sorry
-next
-  case (BinLOp \<Gamma> e\<^sub>1 lop e\<^sub>2 sz t)
-  then show ?case sorry
-next
-  case (UOp \<Gamma> uop e sz t)
-  then show ?case sorry
-next
-  case (UnsignedCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (SignedCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (HighCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (LowCast \<Gamma> e sz sz' t)
-  then show ?case sorry
-next
-  case (Let \<Gamma> name t' e\<^sub>1 e\<^sub>2 t)
-  then show ?case sorry
-next
-  case (Ite \<Gamma> e\<^sub>1 e\<^sub>2 e\<^sub>3 t)
-  then show ?case sorry
-next
-  case (Extract \<Gamma> sz\<^sub>1 sz\<^sub>2 sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t sz e t)
-  then show ?case sorry
-next
-  case (Concat \<Gamma> e\<^sub>1 e\<^sub>2 sz\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t sz\<^sub>1 sz\<^sub>2 t)
-  then show ?case sorry
-qed
-  case (Val x)
-  then show ?case 
-    by (simp add: \<Gamma>_val_type_implies_type_t)
-next
-  case (Var x)
-  then show ?case
-    apply (cases x, auto)
-    by (metis domI option.sel snd_conv)
-next
-  case (Load e1 e2 x3 x4)
-  then show ?case 
-    sorry
-next
-  case (Store e1 e2 x3 x4 e3)
-  then show ?case sorry
-next
-  case (BinOp e1 x2a e2)
-  then show ?case
-    apply (cases t, auto)
-    apply (case_tac \<open>x2a\<close>, auto)
-    apply (case_tac \<open>eval_exp \<Delta> e1\<close>, auto)
-    apply (case_tac \<open>eval_exp \<Delta> e2\<close>, auto)
-    defer
-    apply (case_tac \<open>x1 = 1\<close>, auto)
-    defer
-    apply (metis old.nat.exhaust typing_expression_exp.simps(18) typing_expression_exp.simps(19))
-    defer
-    apply (case_tac \<open>eval_exp \<Delta> e1\<close>, auto)
-    apply (case_tac \<open>eval_exp \<Delta> e2\<close>, auto)
-
-    sorry
-next
-  case (UnOp x1a e)
-  then show ?case 
-    apply (cases t, auto)
-    apply (case_tac \<open>eval_exp \<Delta> e\<close>, auto)
-    sorry
-next
-  case (Cast x1a x2a e)
-  then show ?case 
-    apply (cases t, auto)
-    apply (case_tac x1a, auto)
-    apply (case_tac \<open>eval_exp \<Delta> e\<close>, auto)
-    defer
-    sledgehammer
-
-    sorry
-next
-  case (Let x1a e1 e2)
-  then show ?case sorry
-next
-  case (Ite e1 e2 e3)
-  then show ?case sorry
-next
-  case (Extract x1a x2a e)
-  then show ?case sorry
-next
-  case (Concat e1 e2)
-  then show ?case sorry
-qed
-
-
-  defer defer
-
-
-
-
-
-  apply auto[1]
-
-
-          
-          apply (induct t, simp_all)
-  apply (auto simp add: Let_def)
-  apply (case_tac \<open>type (eval_exp \<Delta> e1)\<close>)
-  defer
-  apply auto
-  apply (case_tac \<open>eval_exp \<Delta> e2\<close>)
-  apply auto
-  oops
-*)
-
-lemma wf\<Delta>_birstep:
+(*lemma wf\<Delta>_birstep:
     fixes stmt :: stmt 
   assumes \<open>wf\<Delta> \<Delta>\<close>
       and \<open>\<Gamma> \<turnstile> stmt is ok\<close>
@@ -817,8 +648,36 @@ lemma wf\<Delta>_birstep:
   apply auto
   defer
     apply (auto simp add: wf\<Delta>_def)[1]
+*)
+
+lemma wf\<Delta>_birstep:
+    fixes stmt :: stmt 
+  assumes \<open>wfnew \<Gamma> \<Delta>\<close>
+      and \<open>\<Gamma> \<turnstile> stmt is ok\<close>
+      and \<open>(\<Delta>',w') = eval_stmt \<Delta> w stmt\<close>
+      and \<open>stmt_finite stmt\<close>
+    shows \<open>wfnew \<Gamma> \<Delta>'\<close>
+  using assms apply (induct stmt, auto)
+  using typing_expression_exp_implies_eval_exp wfnew_def apply auto[1]
+  apply (case_tac \<open>eval_exp \<Delta> x\<close>)
+  apply auto 
+  defer
+  using \<Gamma>_val_imm_not_storage typing_expression_exp_implies_eval_exp apply blast
+  apply (case_tac \<open>eval_exp \<Delta> x61\<close>)
+  apply auto
+
+    apply (auto simp add: wf\<Delta>_def)
+     defer
+  apply (case_tac \<open>eval_exp \<Delta> x2\<close>)
+  apply auto
+  defer
+    apply (auto simp add: wf\<Delta>_def)[1]
+
+  oops 
 
 
+
+  
 
 
 end

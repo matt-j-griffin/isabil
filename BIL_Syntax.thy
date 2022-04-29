@@ -106,8 +106,9 @@ text \<open>Values are syntactic subset of expressions. They are used to represe
 
 datatype val = 
     Immediate word
-  | Unknown string Type
-  | Storage val word val nat
+  | Unknown string Type (\<open>unknown[_]: _\<close>)
+  | Storage val word val nat (\<open>_[_ \<leftarrow> _, _]\<close>)
+
 
 datatype exp =
     Val val                      (* A variable *)
@@ -194,10 +195,10 @@ lemma let_substitute_val_size_eq:
   by (induct e, auto)
 
 datatype stmt =
-    Move var exp
-  | Jmp exp
-  | CpuExn int
-  | Special string
+    Move var exp (\<open>_ := _\<close>)
+  | Jmp exp (\<open>jmp _\<close>)
+  | CpuExn int (\<open>cpuexn _\<close>)
+  | Special string (\<open>special[_]\<close>)
   | While exp bil
   | If exp bil bil
 and bil = 

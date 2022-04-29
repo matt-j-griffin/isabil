@@ -289,8 +289,6 @@ where
   )\<close> |
   \<open>eval_bil \<Delta> w Empty = (\<Delta>,w)\<close>
 
-(* TODO prove this with an equivalence - this is pretty much it but how on earth do I use this*)
-
 lemma eval_inf_impiles_eval_no_while:
   "eval_inf_stmt \<Delta> w stmt \<Delta>' w' \<Longrightarrow> stmt_finite stmt \<Longrightarrow> (\<Delta>',w') = eval_stmt \<Delta> w stmt"
   "eval_inf_bil \<Delta> w bil \<Delta>' w' \<Longrightarrow> bil_finite bil \<Longrightarrow> (\<Delta>',w') = eval_bil \<Delta> w bil"
