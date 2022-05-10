@@ -1,307 +1,132 @@
 theory BIR_Syntax
-  imports BIL
+  imports BIL HOL.String
 begin
 
-consts addr_size :: nat
-
-subsection \<open>Program Memory\<close>
-
-typedecl hex (*TODO*)
-consts convert_hex :: \<open>hex \<Rightarrow> nat\<close>
 abbreviation
-  const_prog_addr :: \<open>hex \<Rightarrow> word\<close> (\<open>%_\<close>)
+  reg :: \<open>nat \<Rightarrow> var \<Rightarrow> bool\<close>
 where
-  \<open>%n \<equiv> Word (convert_hex n)  addr_size\<close>
+  \<open>reg n r \<equiv> snd r = Imm n\<close>
 
-
-subsection \<open>Data Memory\<close>
-
-consts main_mem :: Id
 abbreviation
-  mem :: var
+  flag :: \<open>var \<Rightarrow> bool\<close>
 where
-  \<open>mem \<equiv> (main_mem, Mem addr_size 8)\<close>
+  \<open>flag r \<equiv> reg 1 r\<close>
 
-subsection \<open>Registers\<close>
-
-text \<open>General-Purpose Registers (GPR)\<close>
-
-consts rax :: Id
-definition
-  RAX :: var
+abbreviation
+  reg64 :: \<open>var \<Rightarrow> bool\<close>
 where
-  \<open>RAX \<equiv> (rax, Imm 64)\<close>
+  \<open>reg64 r \<equiv> reg 64 r\<close>
 
-consts rbx :: Id
-definition
-  RBX :: var
+abbreviation
+  reg128 :: \<open>var \<Rightarrow> bool\<close>
 where
-  \<open>RBX \<equiv> (rbx, Imm 64)\<close>
+  \<open>reg128 r \<equiv> reg 128 r\<close>
 
-consts rcx :: Id
-definition
-  RCX :: var
+abbreviation
+  reg256 :: \<open>var \<Rightarrow> bool\<close>
 where
-  \<open>RCX \<equiv> (rcx, Imm 64)\<close>
+  \<open>reg256 r \<equiv> reg 256 r\<close>
 
-consts rdx :: Id
-definition
-  RDX :: var
+abbreviation
+  reg512 :: \<open>var \<Rightarrow> bool\<close>
 where
-  \<open>RDX \<equiv> (rdx, Imm 64)\<close>
+  \<open>reg512 r \<equiv> reg 512 r\<close>
 
-consts rsp :: Id
-definition
-  RSP :: var
+text \<open>Call statements either return to a specific address or revert to the call stack\<close> 
+
+datatype ret =
+      NoReturn (\<open>noreturn\<close>)
+    | Return word (\<open>return _\<close>)
+
+fun
+  stack_ret_to_bil :: \<open>var \<Rightarrow> ret \<Rightarrow> bil\<close>
 where
-  \<open>RSP \<equiv> (rsp, Imm 64)\<close>
+  \<open>stack_ret_to_bil RSP (return ret) = Stmt (stmt.Move RSP (Val (Immediate ret))) Empty\<close> | 
+  \<open>stack_ret_to_bil _ _ = Empty\<close>
 
-consts rbp :: Id
-definition
-  RBP :: var
+
+lemma stack_ret_to_bil_finite: \<open>bil_finite (stack_ret_to_bil RSP ret)\<close>
+  by (cases ret, auto)
+
+text \<open>Instructions in BIR\<close> 
+
+datatype birinsn =
+      NoOp (\<open>noop\<close>)
+    | Move var exp (\<open>_ := _\<close>)
+    | Call exp ret (\<open>call _ with _\<close>)
+    | ConditionalGoto exp word (\<open>when _ goto _\<close>)
+    | Goto word (\<open>goto _\<close>)
+    | Sub Id (\<open>sub _\<close>)
+    | Special string 
+
+fun
+  stack_bir_to_bil :: \<open>var \<Rightarrow> birinsn \<Rightarrow> bil\<close>
 where
-  \<open>RBP \<equiv> (rbp, Imm 64)\<close>
+  \<open>stack_bir_to_bil _ noop = Empty\<close> |
+  \<open>stack_bir_to_bil _ (var := exp) = Stmt (stmt.Move var exp) Empty\<close> |
+  \<open>stack_bir_to_bil RSP (call exp with ret) = Stmt (Jmp exp) (stack_ret_to_bil RSP ret)\<close> |
+  \<open>stack_bir_to_bil _ (when exp goto word) = Stmt (IfThen exp (Stmt (Jmp (Val (Immediate word))) Empty)) Empty\<close> |
+  \<open>stack_bir_to_bil _ (goto word) = Stmt (Jmp (Val (Immediate word))) Empty\<close> |
+  \<open>stack_bir_to_bil _ (sub _) = Empty\<close> |
+  \<open>stack_bir_to_bil _ (Special string) = Stmt (stmt.Special string) Empty\<close>
 
-consts rdi :: Id
-definition
-  RDI :: var
-where
-  \<open>RDI \<equiv> (rdi, Imm 64)\<close>
-
-consts rsi :: Id
-definition
-  RSI :: var
-where
-  \<open>RSI \<equiv> (rsi, Imm 64)\<close>
-
-text \<open>Additional 64bit general purpose registers R8-15\<close>
-
-consts reg_id :: \<open>nat \<Rightarrow> Id\<close>
-definition
-  R8 :: var
-where
-  \<open>R8 \<equiv> (reg_id 8, Imm 64)\<close>
-
-definition
-  R9 :: var
-where
-  \<open>R9 \<equiv> (reg_id 9, Imm 64)\<close>
-
-definition
-  R10 :: var
-where
-  \<open>R10 \<equiv> (reg_id 10, Imm 64)\<close>
-
-definition
-  R11 :: var
-where
-  \<open>R11 \<equiv> (reg_id 11, Imm 64)\<close>
-
-definition
-  R12 :: var
-where
-  \<open>R12 \<equiv> (reg_id 12, Imm 64)\<close>
-
-definition
-  R13 :: var
-where
-  \<open>R13 \<equiv> (reg_id 13, Imm 64)\<close>
-
-definition
-  R14 :: var
-where
-  \<open>R14 \<equiv> (reg_id 14, Imm 64)\<close>
-
-definition
-  R15 :: var
-where
-  \<open>R15 \<equiv> (reg_id 15, Imm 64)\<close>
+lemma stack_bir_to_bil_finite: \<open>bil_finite (stack_bir_to_bil RSP birinsn)\<close>
+  using stack_ret_to_bil_finite by (cases birinsn, auto)
 
 
-text \<open>We define the eight 128 bit registers as constants\<close>
 
-consts xmm :: \<open>nat \<Rightarrow> Id\<close>
-definition
-  XMM0 :: var
-where
-  \<open>XMM0 \<equiv> (xmm 0, Imm 128)\<close>
+locale bir = finite_bil
++
+  fixes decode_bir :: \<open>program \<Rightarrow> birinsn\<close>
+    and addr_size :: nat
+    and label_exp :: \<open>Id \<Rightarrow> exp\<close> (\<open>@_\<close>)
+    and mem 
+        RAX RBX RCX RSP RBP RDI RSI
+        R8 R9 R10 R11 R12 R13 R14 R15
+        XMM0 XMM1 XMM2 XMM3 XMM4 XMM5 XMM6 XMM7
+        YMM0 YMM1 YMM2 YMM3 YMM4 YMM5 YMM6 YMM7
+        ZMM0 ZMM1 ZMM2 ZMM3 ZMM4 ZMM5 ZMM6 ZMM7
+        CF OF AF PF SF ZF
+        :: var
+    and virtual_reg :: \<open>nat \<Rightarrow> var\<close> (\<open>#_\<close>)
 
-definition
-  XMM1 :: var
-where
-  \<open>XMM1 \<equiv> (xmm 1, Imm 128)\<close>
+assumes \<open>snd mem = Mem addr_size 8\<close>
 
-definition
-  XMM2 :: var
-where
-  \<open>XMM2 \<equiv> (xmm 2, Imm 128)\<close>
+    and \<open>reg64 RAX\<close> and \<open>reg64 RBX\<close> and \<open>reg64 RCX\<close> and \<open>reg64 RDX\<close>
+    and \<open>reg64 RSP\<close> and \<open>reg64 RBP\<close> and \<open>reg64 RDI\<close> and \<open>reg64 RSI\<close>
 
-definition
-  XMM3 :: var
-where
-  \<open>XMM3 \<equiv> (xmm 3, Imm 128)\<close>
+    and \<open>reg64 R8\<close>  and \<open>reg64 R9\<close>  and \<open>reg64 R10\<close> and \<open>reg64 R11\<close>
+    and \<open>reg64 R12\<close> and \<open>reg64 R13\<close> and \<open>reg64 R14\<close> and \<open>reg64 R15\<close>
 
-definition
-  XMM4 :: var
-where
-  \<open>XMM4 \<equiv> (xmm 4, Imm 128)\<close>
+    and \<open>reg128 XMM0\<close> and \<open>reg128 XMM1\<close> and \<open>reg128 XMM2\<close> and \<open>reg128 XMM3\<close>
+    and \<open>reg128 XMM4\<close> and \<open>reg128 XMM5\<close> and \<open>reg128 XMM6\<close> and \<open>reg128 XMM7\<close>
 
-definition
-  XMM5 :: var
-where
-  \<open>XMM5 \<equiv> (xmm 5, Imm 128)\<close>
+    and \<open>reg256 YMM0\<close> and \<open>reg256 YMM1\<close> and \<open>reg256 YMM2\<close> and \<open>reg256 YMM3\<close>
+    and \<open>reg256 YMM4\<close> and \<open>reg256 YMM5\<close> and \<open>reg256 YMM6\<close> and \<open>reg256 YMM7\<close>
 
-definition
-  XMM6 :: var
-where
-  \<open>XMM6 \<equiv> (xmm 6, Imm 128)\<close>
+    and \<open>reg512 ZMM0\<close> and \<open>reg512 ZMM1\<close> and \<open>reg512 ZMM2\<close> and \<open>reg512 ZMM3\<close>
+    and \<open>reg512 ZMM4\<close> and \<open>reg512 ZMM5\<close> and \<open>reg512 ZMM6\<close> and \<open>reg512 ZMM7\<close>
 
-definition
-  XMM7 :: var
-where
-  \<open>XMM7 \<equiv> (xmm 7, Imm 128)\<close>
+    and \<open>flag CF\<close> and \<open>flag OF\<close> and \<open>flag AF\<close> and \<open>flag PF\<close> and \<open>flag SF\<close> and \<open>flag ZF\<close>
 
-text \<open>Same for the 256 bit registers\<close>
+    and \<open>\<forall>n. reg64 (#n)\<close>
 
-consts ymm :: \<open>nat \<Rightarrow> Id\<close>
-definition
-  YMM0 :: var
-where
-  \<open>YMM0 \<equiv> (ymm 0, Imm 256)\<close>
-
-definition
-  YMM1 :: var
-where
-  \<open>YMM1 \<equiv> (ymm 1, Imm 256)\<close>
-
-definition
-  YMM2 :: var
-where
-  \<open>YMM2 \<equiv> (ymm 2, Imm 256)\<close>
-
-definition
-  YMM3 :: var
-where
-  \<open>YMM3 \<equiv> (ymm 3, Imm 256)\<close>
-
-definition
-  YMM4 :: var
-where
-  \<open>YMM4 \<equiv> (ymm 4, Imm 256)\<close>
-
-definition
-  YMM5 :: var
-where
-  \<open>YMM5 \<equiv> (ymm 5, Imm 256)\<close>
-
-definition
-  YMM6 :: var
-where
-  \<open>YMM6 \<equiv> (ymm 6, Imm 256)\<close>
-
-definition
-  YMM7 :: var
-where
-  \<open>YMM7 \<equiv> (ymm 7, Imm 256)\<close>
-
-text \<open>Same for the 512 bit registers\<close>
-
-consts zmm :: \<open>nat \<Rightarrow> Id\<close>
-definition
-  ZMM0 :: var
-where
-  \<open>ZMM0 \<equiv> (zmm 0, Imm 512)\<close>
-
-definition
-  ZMM1 :: var
-where
-  \<open>ZMM1 \<equiv> (zmm 1, Imm 512)\<close>
-
-definition
-  ZMM2 :: var
-where
-  \<open>ZMM2 \<equiv> (zmm 2, Imm 512)\<close>
-
-definition
-  ZMM3 :: var
-where
-  \<open>ZMM3 \<equiv> (zmm 3, Imm 512)\<close>
-
-definition
-  ZMM4 :: var
-where
-  \<open>ZMM4 \<equiv> (zmm 4, Imm 512)\<close>
-
-definition
-  ZMM5 :: var
-where
-  \<open>ZMM5 \<equiv> (zmm 5, Imm 512)\<close>
-
-definition
-  ZMM6 :: var
-where
-  \<open>ZMM6 \<equiv> (zmm 6, Imm 512)\<close>
-
-definition
-  ZMM7 :: var
-where
-  \<open>ZMM7 \<equiv> (zmm 7, Imm 512)\<close>
-
-text \<open>The eflags in BIR are represented as individual registers\<close>
-
-consts cf :: Id
-definition
-  CF :: var
-where
-  \<open>CF \<equiv> (cf, Imm 1)\<close>
-
-consts of_reg :: Id
-definition
-  OF :: var
-where
-  \<open>OF \<equiv> (of_reg, Imm 1)\<close>
-
-consts af :: Id
-definition
-  AF :: var
-where
-  \<open>AF \<equiv> (of_reg, Imm 1)\<close>
-
-consts pf :: Id
-definition
-  PF :: var
-where
-  \<open>PF \<equiv> (pf, Imm 1)\<close>
-
-consts sf :: Id
-definition
-  SF :: var
-where
-  \<open>SF \<equiv> (sf, Imm 1)\<close>
-
-consts zf :: Id
-definition
-  ZF :: var
-where
-  \<open>ZF \<equiv> (zf, Imm 1)\<close>
-
-
-text \<open>We define virtual registers (or variables) as a function over a natural number, which uniquely 
-      identifies the variable\<close>
-
-consts virtual :: \<open>nat \<Rightarrow> Id\<close>
+    and \<open>code (decode s) = stack_bir_to_bil RSP (decode_bir s)\<close>
+begin
 
 definition 
-  virtual_reg :: \<open>nat \<Rightarrow> var\<close> (\<open>#_\<close>)
+  bir_to_bil :: \<open>birinsn \<Rightarrow> bil\<close>
 where
-  \<open>#x \<equiv> (virtual x, Imm 64)\<close>
+  \<open>bir_to_bil = stack_bir_to_bil RSP\<close>
 
-abbreviation 
-  virual_old :: \<open>nat \<Rightarrow> var\<close> (\<open>V_\<close>)
+lemma bir_to_bil_finite: \<open>bil_finite (bir_to_bil birinsn)\<close>
+  using stack_bir_to_bil_finite bir_to_bil_def by simp
+
+
+abbreviation
+  address_word :: \<open>nat \<Rightarrow> word\<close> (\<open>%_\<close>)
 where
-  \<open>V(x::nat) \<equiv> #x\<close>
-
-text \<open>BIR will only commit stores and loads to the main memory (mem)\<close>
+  \<open>address_word n \<equiv> Word n addr_size\<close>
 
 fun 
   wfe :: \<open>exp \<Rightarrow> bool\<close>
@@ -310,26 +135,10 @@ where
   \<open>wfe (Store e\<^sub>1 e\<^sub>2 en sz e\<^sub>3) = (e\<^sub>1 = Var mem \<and> BIL_Syntax.wfe (Store e\<^sub>1 e\<^sub>2 en sz e\<^sub>3))\<close> |
   \<open>wfe e = BIL_Syntax.wfe e\<close>
 
-section \<open>\<close>
-
-datatype calltype =
-      Direct Id
-    | Indirect exp
-
-datatype callreturn =
-      NoReturn (\<open>noreturn\<close>)
-    | Return word
-
-datatype birinsn =
-      NoOp
-    | Move var exp
-    | Call calltype callreturn
-    | ConditionalGoto exp word
-    | Goto word
-    | Sub Id
-    | Special string
-
-type_synonym program_memory = \<open>word \<rightharpoonup> birinsn\<close>
+abbreviation 
+  virual_old :: \<open>nat \<Rightarrow> var\<close> (\<open>V_\<close>)
+where
+  \<open>V(x::nat) \<equiv> #x\<close>
 
 definition
   wf_program_addr :: \<open>word \<Rightarrow> bool\<close>
@@ -348,149 +157,37 @@ lemma wf_program_addr_inj_on:
     shows \<open>w\<^sub>1 = w\<^sub>2\<close>
   using assms by (auto simp add: wf_program_addr_def word.expand)
 
-fun
-  wf_program_memory :: \<open>program_memory \<Rightarrow> bool\<close>
-where
-  \<open>wf_program_memory \<Pi> = (\<forall>x \<in> dom \<Pi>. wf_program_addr x)\<close>
-
-lemma dom_program_memory_finite:
-    fixes \<Pi> :: program_memory
-  assumes \<open>wf_program_memory \<Pi>\<close>
-    shows \<open>finite (dom \<Pi>)\<close>
-  apply (subgoal_tac \<open>inj_on raw_val (dom \<Pi>)\<close>)
-  apply (subgoal_tac \<open>finite (raw_val ` dom \<Pi>)\<close>)
-  apply (simp add: finite_image_iff)
-  defer
-  using wf_program_addr_inj_on apply (meson assms inj_onI wf_program_memory.elims(2))
-  apply (subgoal_tac \<open>(\<forall>x \<in> dom \<Pi>. raw_val x < (2 ^ addr_size))\<close>)
-  apply (subgoal_tac \<open>(\<forall>x \<in> (raw_val ` dom \<Pi>). x < (2 ^ addr_size))\<close>)
-  using finite_nat_set_iff_bounded apply auto[1]
-  apply simp
-  using assms apply auto[1]
-  by (simp add: domI wf_program_addr_simps)
-
-(* Make this a constant and instantiate this later using a context*)
-
-definition
-  find_label_set :: \<open>program_memory \<Rightarrow> Id \<Rightarrow> word set\<close> 
-where 
-  \<open>find_label_set \<Pi> name = {Addr\<^sub>\<Pi>. \<Pi> Addr\<^sub>\<Pi> = Some (Sub name)}\<close>
-
-definition
-  find_label :: \<open>program_memory \<Rightarrow> Id \<Rightarrow> word\<close> 
-where 
-  \<open>find_label \<Pi> name = Word (Min (raw_val ` find_label_set \<Pi> name)) addr_size\<close>
-
-fun
-  calltype_to_bil :: \<open>program_memory \<Rightarrow> calltype \<Rightarrow> stmt\<close>
-where
-  \<open>calltype_to_bil \<Pi> (Direct name) = Jmp (Val (Immediate (find_label \<Pi> name)))\<close> | 
-  \<open>calltype_to_bil \<Pi> (Indirect exp) = Jmp exp\<close>
-
-fun
-  callreturn_to_bil :: \<open>callreturn \<Rightarrow> bil\<close>
-where
-  \<open>callreturn_to_bil (Return ret) = Stmt (stmt.Move RSP (Val (Immediate ret))) Empty\<close> | 
-  \<open>callreturn_to_bil _ = Empty\<close>
-
-fun
-  bir_to_bil :: \<open>program_memory \<Rightarrow> birinsn \<Rightarrow> bil\<close>
-where
-  \<open>bir_to_bil _ NoOp = Empty\<close> |
-  \<open>bir_to_bil _ (Move var exp) = Stmt (stmt.Move var exp) Empty\<close> |
-  \<open>bir_to_bil \<Pi> (Call calltype callreturn) = Stmt (calltype_to_bil \<Pi> calltype) (callreturn_to_bil callreturn)\<close> |
-  \<open>bir_to_bil _ (ConditionalGoto exp word) = Stmt (IfThen exp (Stmt (Jmp (Val (Immediate word))) Empty)) Empty\<close> |
-  \<open>bir_to_bil _ (Goto word) = Stmt (Jmp (Val (Immediate word))) Empty\<close> |
-  \<open>bir_to_bil _ (Sub _) = Empty\<close> |
-  \<open>bir_to_bil _ (Special string) = Stmt (stmt.Special string) Empty\<close>
-
-text \<open>A BIR step is always finite\<close>
-
-lemma bir_step_finite: \<open>bil_finite (bir_to_bil \<Pi> birinsn)\<close>
-  apply (cases birinsn, auto)
-  apply (metis calltype_to_bil.elims stmt_finite.simps(4))
-  by (metis bil_finite.simps(1) bil_finite.simps(2) callreturn_to_bil.elims stmt_finite.simps(3))
-
-
-fun
-  decode_bir :: \<open>program_memory \<Rightarrow> program \<Rightarrow> insn\<close>
-where
-  \<open>decode_bir \<Pi> (_, w, _) = (
-    case \<Pi> w of
-      Some i \<Rightarrow> \<lparr> addr = w, size = (1 \<Colon> addr_size), code = bir_to_bil \<Pi> i \<rparr>      
-      | _ \<Rightarrow> no_insn
-  )\<close>
-
-text \<open>BIR only allows for one memory in the variable set, ensure the variable type is a memory and 
-      all other variables are registers (immediates)\<close>
-
+(*
 definition 
   wf\<Delta> :: \<open>variables \<Rightarrow> bool\<close>
 where
   \<open>wf\<Delta> \<Delta> \<equiv> (\<forall>var \<in> dom \<Delta>. snd var = type (the (\<Delta> var))) \<and>
             (\<forall>var \<in> dom \<Delta>. var \<noteq> mem \<longrightarrow> (\<exists>sz. snd var = Imm sz))\<close>
-
-(*
-thm load.induct
-
-lemma XXX[consumes 2]:
-  assumes \<open>\<Gamma> \<turnstile> v :: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-      and \<open>v' = load v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-      and \<open>
-    shows \<open>P v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-  using assms apply (induct v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en rule: load.induct)
-  defer
-  defer
-  apply simp
-  defer
-  sledgehammer
-
-
-
-lemma \<Gamma>_val_implies_load_val:
-  assumes \<open>\<Gamma> \<turnstile> v :: t\<close>
-      and \<open>t = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
-      and \<open>sz\<^sub>v\<^sub>a\<^sub>l \<ge> sz\<^sub>m\<^sub>e\<^sub>m\<close>
-      and \<open>v' = load v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-    shows \<open>\<Gamma> \<turnstile> v' :: (Imm sz\<^sub>v\<^sub>a\<^sub>l)\<close>
-  apply (induct v')
-    defer defer
-  sledgehammer
-  
-
-  using assms apply (induct rule: typing_expression_val_induct)
-  apply simp
-  defer
-  apply simp
-
-  sledgehammer
-
-
-  using assms apply (induct v w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en rule: load.induct)
-  defer 
-  apply auto[1]
-  apply simp
-
-
-  apply (frule_tac typing_val_storage)
-  apply (auto simp del: load.simps)
-  apply (case_tac \<open>sz\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>m\<^sub>e\<^sub>m\<close>)
-  apply simp
-
-  apply (subgoal_tac \<open>\<Gamma> \<turnstile> load mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r)
-                 (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)
-                 en :: Imm (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)\<close>)
-  
-
-
 *)
 
-lemma \<Gamma>_is_ok_implies_t_is_ok:
-  fixes \<Gamma> :: TypingContext 
-  assumes \<open>(name, t) \<in> set \<Gamma>\<close>
-      and \<open>\<Gamma> is ok\<close>
-    shows \<open>t is ok\<close>
-  using assms by (induct \<Gamma>, auto)
+
+end
+
+
+
+text \<open>BIR will only commit stores and loads to the main memory (mem)\<close>
+
+
+
+section \<open>\<close>
+
+
+
+
+
+
+
+
+text \<open>BIR only allows for one memory in the variable set, ensure the variable type is a memory and 
+      all other variables are registers (immediates)\<close>
+
+
+
 
 definition "wfnew (\<Gamma>::TypingContext) (\<Delta>::variables) \<equiv> (\<forall>(name, t) \<in> dom \<Delta>. (\<Gamma> \<turnstile> the (\<Delta> (name, t)) :: t))"
 
@@ -518,7 +215,16 @@ next
     using \<Gamma>_is_ok_implies_t_is_ok wfnew_def by auto
 next
   case (Load \<Gamma> e\<^sub>1 e\<^sub>2 ed sz sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m t)
-  then show ?case 
+  then show ?case
+    using \<Gamma>_val_mem_not_immediate \<Gamma>_val_imm_not_storage apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
+    apply blast
+    using typing_val_implies_valid_context apply blast
+    apply (cases \<open>eval_exp \<Delta> e\<^sub>2\<close>)
+    defer defer
+    apply blast
+    defer
+    apply fastforce
+    apply (simp_all del: load.simps)
     sorry
 next
   case (Store \<Gamma> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>v\<^sub>a\<^sub>l e\<^sub>1 e\<^sub>2 ed e\<^sub>3 t)
@@ -605,10 +311,10 @@ next
   then show ?case 
     apply (auto simp add: Let_def)
     apply (cases \<open>eval_exp \<Delta> e\<^sub>1\<close>, auto)
-    using \<Gamma>_val_type_implies_type_t apply blast
-    apply (metis \<Gamma>_val_type_implies_type_t typing_val_implies_valid_t)
+    using \<Gamma>_val_type apply blast
+    apply (metis \<Gamma>_val_type typing_val_implies_valid_t)
     using typing_val_implies_valid_context apply blast
-    using \<Gamma>_val_imm_not_storage by blast
+    by (metis typing_expression_val.simps(4))
 next
   case (Extract \<Gamma> sz\<^sub>1 sz\<^sub>2 sz\<^sub>e\<^sub>x\<^sub>t\<^sub>r\<^sub>a\<^sub>c\<^sub>t sz e t)
   then show ?case 
@@ -624,7 +330,7 @@ next
     apply metis
     apply (metis Type.simps(5) add_gr_0 is_ok_Type.simps(1) typing_expression_val.simps(2))
     using \<Gamma>_val_imm_not_storage apply blast
-    apply (metis T_UNKNOWN Type.simps(5) \<Gamma>_val_type_implies_type_t add_gr_0 is_ok_Type.simps(1) type.simps(3) typing_val_implies_valid_context typing_val_implies_valid_t)
+    apply (metis TWF_IMM Type.simps(5) \<Gamma>_val_type add_is_0 not_gr_zero typing_expression_val.simps(2))
     using \<Gamma>_val_imm_not_storage by blast
 qed
 
@@ -633,7 +339,13 @@ lemma \<Gamma>_exp_type_implies_type_t:
       and \<open>wfnew \<Gamma> \<Delta>\<close>
     shows \<open>type (eval_exp \<Delta> e) = t\<close>
   using assms apply (drule_tac \<Delta>=\<Delta> in typing_expression_exp_implies_eval_exp, auto)
-  by (simp add: \<Gamma>_val_type_implies_type_t)
+  by (simp add: \<Gamma>_val_type)
+
+
+
+
+
+
 
 (*lemma wf\<Delta>_birstep:
     fixes stmt :: stmt 
@@ -649,32 +361,33 @@ lemma \<Gamma>_exp_type_implies_type_t:
   defer
     apply (auto simp add: wf\<Delta>_def)[1]
 *)
-
+thm eval_stmt_eval_bil.induct
 lemma wf\<Delta>_birstep:
-    fixes stmt :: stmt 
-  assumes \<open>wfnew \<Gamma> \<Delta>\<close>
+  assumes \<open>(\<Delta>',w') = eval_stmt \<Delta> w stmt\<close>
       and \<open>\<Gamma> \<turnstile> stmt is ok\<close>
-      and \<open>(\<Delta>',w') = eval_stmt \<Delta> w stmt\<close>
       and \<open>stmt_finite stmt\<close>
+      and \<open>\<forall>e stmt1 stmt2 . stmt \<noteq> stmt.If e stmt1 stmt2\<close>
+      and \<open>wfnew \<Gamma> \<Delta>\<close>
     shows \<open>wfnew \<Gamma> \<Delta>'\<close>
-  using assms apply (induct stmt, auto)
-  using typing_expression_exp_implies_eval_exp wfnew_def apply auto[1]
-  apply (case_tac \<open>eval_exp \<Delta> x\<close>)
-  apply auto 
-  defer
+  using assms apply (induct rule: eval_stmt_eval_bil.induct(1))
+  apply auto
+  using wfnew_def typing_expression_exp_implies_eval_exp apply auto[1]
+
+  apply (case_tac \<open>eval_exp \<Delta> e\<close>)
+  apply simp
+  defer (* jmp = unknown[x21]: x22 non-deterministic *)
   using \<Gamma>_val_imm_not_storage typing_expression_exp_implies_eval_exp apply blast
-  apply (case_tac \<open>eval_exp \<Delta> x61\<close>)
-  apply auto
+  apply auto[1]
 
-    apply (auto simp add: wf\<Delta>_def)
-     defer
-  apply (case_tac \<open>eval_exp \<Delta> x2\<close>)
-  apply auto
-  defer
-    apply (auto simp add: wf\<Delta>_def)[1]
+  oops
 
-  oops 
 
+(*  assumes \<open>\<close>
+      and \<open>\<Gamma> \<turnstile> stmt is ok\<close>
+      and \<open>stmt_finite stmt\<close>
+      and \<open>wfnew \<Gamma> \<Delta>\<close>
+    shows \<open>wfnew \<Gamma> \<Delta>'\<close>
+*)
 
 
   

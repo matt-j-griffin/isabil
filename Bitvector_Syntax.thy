@@ -4,6 +4,45 @@ begin
 
 datatype word = Word (raw_val: nat) (bits: nat) (\<open>(_ \<Colon> _)\<close>)
 
+fun 
+  roll_word :: \<open>word \<Rightarrow> word\<close>
+where
+  \<open>roll_word w = Word ((raw_val w) mod 2 ^ (bits w)) (bits w)\<close>
+
+text \<open>Print words in hex.\<close>
+
+(* mostly clagged from Num.thy 
+typed_print_translation  \<open>
+let
+  fun dest_num (Const (@{const_syntax Num.Bit0}, _) $ n) = 2 * dest_num n
+    | dest_num (Const (@{const_syntax Num.Bit1}, _) $ n) = 2 * dest_num n + 1
+    | dest_num (Const (@{const_syntax Num.One}, _)) = 1;
+
+  fun dest_bin_hex_str tm =
+  let
+    val num = dest_num tm;
+    val pre = if num < 10 then "" else "0x"
+  in
+    pre ^ (Int.fmt StringCvt.HEX num)
+  end;
+
+  fun num_tr' sign ctxt T [n] =
+    let
+      val k = dest_bin_hex_str n;
+      val t' = Syntax.const @{syntax_const "_Numeral"} $
+        Syntax.free (sign ^ k);
+    in
+      case T of
+        Type (@{type_name fun}, [_, T' as Type("Word.word",_)]) =>
+          if not (Config.get ctxt show_types) andalso can Term.dest_Type T'
+          then t'
+          else Syntax.const @{syntax_const "_constrain"} $ t' $
+                            Syntax_Phases.term_of_typ ctxt T'
+      | T' => if T' = dummyT then t' else raise Match
+    end;
+in [(@{const_syntax numeral}, num_tr' "")] end
+\<close>*)
+
 fun
   wf_word :: \<open>word \<Rightarrow> bool\<close>
 where
@@ -23,11 +62,6 @@ abbreviation
   false :: word
 where 
   \<open>false \<equiv> (0 \<Colon> 1)\<close>
-
-fun 
-  roll_word :: \<open>word \<Rightarrow> word\<close>
-where
-  \<open>roll_word w = Word ((raw_val w) mod 2 ^ (bits w)) (bits w)\<close>
 
 fun
   bool_word :: \<open>bool \<Rightarrow> word\<close>
@@ -206,6 +240,10 @@ fun
   extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
 where
   \<open>(ext w \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = Word (raw_val w) (Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w))\<close>
+
+lemma "bits (ext (v \<Colon> 32) \<sim> hi : 32 - 16 - 1 \<sim> lo : 0) = 16"
+  by auto
+
 
 fun 
   s_extract_word :: \<open>word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> word\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)

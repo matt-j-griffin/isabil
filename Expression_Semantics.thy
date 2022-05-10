@@ -195,7 +195,7 @@ where
       else if sz\<^sub>m\<^sub>e\<^sub>m = 0 then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m then
-        store' ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate ((ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r ) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
+        store' ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate ((ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r ) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
       else ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate w\<^sub>v\<^sub>a\<^sub>l), sz\<^sub>m\<^sub>e\<^sub>m])
   )\<close> |
   \<open>store' (unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l be = (
@@ -204,7 +204,7 @@ where
       else if sz\<^sub>m\<^sub>e\<^sub>m = 0 then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m then
-        store' ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) \<sim> lo : 0)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be        
+        store' ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be        
       else ((unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m))[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate w\<^sub>v\<^sub>a\<^sub>l), sz\<^sub>m\<^sub>e\<^sub>m])
   )\<close> |
   \<open>store' (unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Unknown str (Imm sz)) sz\<^sub>v\<^sub>a\<^sub>l en = (
@@ -222,7 +222,7 @@ where
       else if sz\<^sub>m\<^sub>e\<^sub>m = 0 then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m then
-        store' ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) \<sim> lo : 0)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
+        store' ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m))), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
       else ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate w\<^sub>v\<^sub>a\<^sub>l), sz\<^sub>m\<^sub>e\<^sub>m])
   )\<close> |
   \<open>store' (memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l el = (
@@ -231,7 +231,7 @@ where
       else if sz\<^sub>m\<^sub>e\<^sub>m = 0 then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m then undefined
       else if sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m then
-        store' ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0)), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
+        store' ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m  - 1) \<sim> lo : 0)), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
       else ((memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m])[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (Immediate w\<^sub>v\<^sub>a\<^sub>l), sz\<^sub>m\<^sub>e\<^sub>m])
   )\<close> |
   \<open>store' (memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Unknown str (Imm sz)) sz\<^sub>v\<^sub>a\<^sub>l en = (
@@ -302,11 +302,11 @@ lemma store'_inducts[consumes 1]:
   assumes \<open>v' = store' mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
       and \<open>(\<And>vstr sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Longrightarrow>
-             P ((unknown[vstr]: Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
+             P ((unknown[vstr]: Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el
             \<Longrightarrow> P (unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l el)\<close>
       and \<open>(\<And>vstr sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Longrightarrow>
-             P (unknown[vstr]: Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
+             P (unknown[vstr]: Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) - sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
             \<Longrightarrow> P (unknown[vstr]: (Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l be)\<close>
       and \<open>(\<And>vstr sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r str sz sz\<^sub>v\<^sub>a\<^sub>l en. sz = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Longrightarrow>
@@ -315,11 +315,11 @@ lemma store'_inducts[consumes 1]:
 
       and \<open>(\<And>memR wR vR sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = bits wR \<Longrightarrow> 
-             P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m][w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate( ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
+             P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m][w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate( ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be
             \<Longrightarrow> P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m] w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l be)\<close>
       and \<open>(\<And>memR wR vR sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = bits wR \<Longrightarrow> (
-            P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m][w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el) 
+            P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m][w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el) 
             \<Longrightarrow> P memR[wR \<leftarrow> vR, sz\<^sub>m\<^sub>e\<^sub>m] w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l el) \<close>
       and \<open>(\<And>memR wR vR sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r str sz sz\<^sub>v\<^sub>a\<^sub>l en. sz = sz\<^sub>v\<^sub>a\<^sub>l \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0 \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l 
              \<Longrightarrow> bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = bits wR \<Longrightarrow>
@@ -359,11 +359,13 @@ lemma store'_inducts[consumes 1]:
       and \<open>(\<And>uu uv v vf vg vd ux uy. P uu uv (unknown[vd]: (Mem vf vg)) ux uy)\<close>
     shows \<open>P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
   using assms(1) gr0I apply (induct rule: store'.induct)
-  using assms(8-23) apply (auto simp del: store'.simps extract_word.simps)
-  using assms(2) store'.simps(1) apply (metis not_less_iff_gr_or_eq)
-  using assms(3) store'.simps(2) apply (metis not_less_iff_gr_or_eq)
+  using assms(8-23) apply (auto simp del: store'.simps extract_word.simps One_nat_def)
+  using assms(2) store'.simps(1) apply (metis (no_types, lifting) not_less_iff_gr_or_eq)
+  using assms(3) store'.simps(2) 
+  apply (smt (verit) diff_diff_eq diff_right_commute gr_zeroI linorder_neqE_nat neq0_conv)
   using assms(4) store'.simps(3) apply (metis not_less_iff_gr_or_eq)
-  using assms(5) store'.simps(4) apply (metis (no_types, lifting) not_less_iff_gr_or_eq)
+  using assms(5) store'.simps(4)
+    apply (smt (verit) diff_diff_eq diff_right_commute gr_zeroI linorder_neqE_nat neq0_conv)  
   using assms(6) store'.simps(5) apply (metis (no_types, lifting) not_less_iff_gr_or_eq)
   using assms(7) store'.simps(6) by (metis not_less_iff_gr_or_eq)
 
@@ -372,12 +374,12 @@ lemma store''_inducts[consumes 1]:
   assumes \<open>v' = store' mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
       and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
              bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be\<rbrakk>
+             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be\<rbrakk>
             \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l be)\<close>
 
       and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
              bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el\<rbrakk>
+             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0, sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el\<rbrakk>
             \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l el) \<close>
 
       and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r str sz sz\<^sub>v\<^sub>a\<^sub>l en. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; sz = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
@@ -402,40 +404,6 @@ lemma store''_inducts[consumes 1]:
     shows \<open>P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
   using assms type.simps apply (erule_tac store'_inducts)
   by metis+
-
-lemma store'''_inducts[consumes 1]:
-  assumes \<open>v' = store' mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
-             bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) \<sim> lo : 0)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) be\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l be)\<close>
-
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r w\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
-             bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> Immediate (ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (Immediate ext w\<^sub>v\<^sub>a\<^sub>l \<sim> hi : sz\<^sub>v\<^sub>a\<^sub>l \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) el\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (Immediate w\<^sub>v\<^sub>a\<^sub>l) sz\<^sub>v\<^sub>a\<^sub>l el) \<close>
-
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r str sz sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; sz = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>m\<^sub>e\<^sub>m < sz\<^sub>v\<^sub>a\<^sub>l;
-             bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-             P mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (unknown[str]: Imm sz\<^sub>m\<^sub>e\<^sub>m), sz\<^sub>m\<^sub>e\<^sub>m] (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (unknown[str]: Imm (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m)) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) en\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (unknown[str]: (Imm sz)) sz\<^sub>v\<^sub>a\<^sub>l en) \<close>
-
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; type v\<^sub>v\<^sub>a\<^sub>l = Imm sz; sz = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>m\<^sub>e\<^sub>m; sz\<^sub>m\<^sub>e\<^sub>m > 0; bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-
-      (* Invalid cases *)
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<noteq> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; sz\<^sub>m\<^sub>e\<^sub>m = 0\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-      and \<open>(\<And>mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz sz\<^sub>v\<^sub>a\<^sub>l. \<lbrakk>type v\<^sub>v\<^sub>a\<^sub>l = Imm sz; sz \<noteq> sz\<^sub>v\<^sub>a\<^sub>l\<rbrakk>
-            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
-      and \<open>(\<And>mem sz uv uw ux. type mem = Imm sz \<Longrightarrow> P mem uv uw ux en)\<close>
-      and \<open>(\<And>uu uv v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m ux. type v\<^sub>v\<^sub>a\<^sub>l = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m \<Longrightarrow> P uu uv v\<^sub>v\<^sub>a\<^sub>l ux en)\<close>
-    shows \<open>P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
-  using assms type.simps apply (erule_tac store''_inducts)
 
 
 lemma store'_wf_inducts[consumes 4]:
@@ -462,14 +430,51 @@ lemma store'_wf_inducts[consumes 4]:
       and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; type v\<^sub>v\<^sub>a\<^sub>l = Imm sz; sz = sz\<^sub>v\<^sub>a\<^sub>l; sz\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>m\<^sub>e\<^sub>m; sz\<^sub>m\<^sub>e\<^sub>m > 0; bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk>
             \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
 
+      and \<open>(\<And>mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en. \<lbrakk>type mem = Mem sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m; bits w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<noteq> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk>
+            \<Longrightarrow> P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en)\<close>
     shows \<open>P mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en\<close>
   using assms(2) apply (drule_tac \<Gamma>_val_type)
+  using assms(3) apply (drule_tac \<Gamma>_val_type)
   using assms(2) apply (drule_tac typing_val_mem)
   using assms(3) apply (drule_tac typing_val_imm)
+  apply (elim conjE)
+
+  using assms(1, 4, 5) apply (induct mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en rule: store''_inducts)
+  apply (drule_tac w\<^sub>v\<^sub>a\<^sub>l=w\<^sub>v\<^sub>a\<^sub>l and sz\<^sub>v\<^sub>a\<^sub>l=sz\<^sub>v\<^sub>a\<^sub>l in assms(6))
+  apply blast+
+  apply (auto simp del: extract_word.simps)[1]
+  apply (simp only: extract_word.simps)
+  oops 
+(*
+            apply auto[1]
+
+  
+            
+            apply (auto simp del: extract_word.simps)
+
+
+  using assms(6)
+
+
+
+
+
+  apply blast
+
+           
+           apply (simp add: assms(11) assms(7))
+
+      defer defer
+  using assms(8) apply blast
+  apply (simp add: assms(9))
+  apply (simp add: assms(10))
+
 
   using assms(1,5-9) apply (induct mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l sz\<^sub>v\<^sub>a\<^sub>l en rule: store''_inducts)
   apply (auto simp del: extract_word.simps)
-  oops
+  apply (metis assms(11) type.simps(2))
+  apply (metis assms(11) type.simps(2))
+  by (meson assms(10))*)
 
 
 

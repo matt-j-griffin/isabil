@@ -123,6 +123,23 @@ datatype exp =
   | Extract nat nat exp          (* extract portion of word *)
   | Concat exp exp               (* concatenate two words *)
 
+instantiation exp :: minus
+begin
+
+fun 
+  minus_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close>
+where
+  \<open>minus_exp e1 e2 = (BinOp e1 (AOp Minus) e2)\<close>
+
+
+instance
+  by standard
+end
+
+lemma "(e1::exp) - e2 = (BinOp e1 (AOp Minus) e2)"
+  by simp
+
+
 text \<open>Expressions are well formed if they recursively contain loads that target memory widths 
       greater than zero (in bytes). Well formed expressions can be evaluated ahead of time.\<close>
 

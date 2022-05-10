@@ -130,6 +130,11 @@ where
         eval_inf_bil \<Delta> w seq \<Delta>'' w''
   )\<close>
 
+lemma step_pred_bil_empty_equiv: \<open>(\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>',w',Empty) \<longleftrightarrow> eval_inf_bil \<Delta> w seq \<Delta>' w'\<close>
+  apply (auto simp add: step_pred_bil_def)  
+  apply (simp add: eval_inf_stmt_eval_inf_bil.intros(10))
+  using eval_inf_bil_cases by blast
+
 definition
   eval_pred_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_\<close>)
 where
@@ -241,30 +246,12 @@ fun
   bil_finite :: \<open>bil \<Rightarrow> bool\<close>
 where
   \<open>stmt_finite (While _ _) = False\<close> |
-  \<open>stmt_finite (If _ seq\<^sub>1 seq\<^sub>2) = (bil_finite seq\<^sub>1 \<and> bil_finite seq\<^sub>2)\<close> |
+  \<open>stmt_finite (If e seq\<^sub>1 seq\<^sub>2) = (bil_finite seq\<^sub>1 \<and> bil_finite seq\<^sub>2)\<close> |
   \<open>stmt_finite _ = True\<close> |
   \<open>bil_finite (Stmt s\<^sub>1 seq) = (stmt_finite s\<^sub>1 \<and> bil_finite seq)\<close> |
   \<open>bil_finite Empty = True\<close>
 
 fun
-  conformant_stmt :: \<open>variables \<Rightarrow> stmt \<Rightarrow> bool\<close>
-where
-  \<open>conformant_stmt \<Delta> (While e seq) = (
-    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> (w' = true \<or> w' = false)
-      | _ \<Rightarrow> False
-  )\<close> |
-  \<open>conformant_stmt \<Delta> (If e seq\<^sub>1 seq\<^sub>2) = (
-    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> (w' = true \<or> w' = false)
-      | _ \<Rightarrow> False
-  )\<close> |
-  \<open>conformant_stmt \<Delta> (Jmp e) = (
-    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> True
-      | _ \<Rightarrow> False
-  )\<close> |
-  \<open>conformant_stmt _ _ = True\<close>
-
-
-primrec
   eval_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> (variables \<times> word)\<close> and
   eval_bil :: \<open>variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> (variables \<times> word)\<close>
 where
@@ -289,14 +276,67 @@ where
   )\<close> |
   \<open>eval_bil \<Delta> w Empty = (\<Delta>,w)\<close>
 
-lemma eval_inf_impiles_eval_no_while:
-  "eval_inf_stmt \<Delta> w stmt \<Delta>' w' \<Longrightarrow> stmt_finite stmt \<Longrightarrow> (\<Delta>',w') = eval_stmt \<Delta> w stmt"
-  "eval_inf_bil \<Delta> w bil \<Delta>' w' \<Longrightarrow> bil_finite bil \<Longrightarrow> (\<Delta>',w') = eval_bil \<Delta> w bil"
+lemma finite_eval_inf_impiles_eval:
+  \<open>eval_inf_stmt \<Delta> w stmt \<Delta>' w' \<Longrightarrow> stmt_finite stmt \<Longrightarrow> (\<Delta>',w') = eval_stmt \<Delta> w stmt\<close>
+  \<open>eval_inf_bil \<Delta> w bil \<Delta>' w' \<Longrightarrow> bil_finite bil \<Longrightarrow> (\<Delta>',w') = eval_bil \<Delta> w bil\<close>
   apply (induct rule: eval_inf_stmt_eval_inf_bil.inducts)
   apply auto
   apply (smt (verit, ccfv_SIG) One_nat_def val.simps(10))
-  apply (smt (verit, ccfv_threshold) Bitvector_Syntax.word.inject val.simps(10) zero_neq_one)
-  apply (smt (verit) Bitvector_Syntax.word.inject val.simps(10))  
+  apply (smt (verit, ccfv_SIG) Bitvector_Syntax.word.inject One_nat_def val.simps(10) zero_neq_one)
+  apply (metis val.simps(10))
   by (metis case_prod_conv)
+
+lemma step_pred_bil_finite_empty: 
+  assumes \<open>\<Delta>,w \<turnstile> bil \<leadsto> \<Delta>',w',Empty\<close>
+      and \<open>bil_finite bil\<close>
+    shows \<open>(\<Delta>',w') = eval_bil \<Delta> w bil\<close>
+  using assms finite_eval_inf_impiles_eval(2) step_pred_bil_empty_equiv by auto
+
+
+(*
+fun
+  conformant_stmt :: \<open>variables \<Rightarrow> stmt \<Rightarrow> bool\<close> and 
+  conformant_bil :: \<open>variables \<Rightarrow> bil \<Rightarrow> bool\<close>
+where
+  \<open>conformant_stmt \<Delta> (While e seq) = (
+    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> (w' = true \<or> w' = false)
+      | _ \<Rightarrow> False
+  )\<close> |
+  \<open>conformant_stmt \<Delta> (If e seq\<^sub>1 seq\<^sub>2) = (
+    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> ((w' = true \<or> w' = false) \<and> conformant_bil \<Delta> seq\<^sub>1 \<and> conformant_bil \<Delta> seq\<^sub>2)
+      | _ \<Rightarrow> False
+  )\<close> |
+  \<open>conformant_stmt \<Delta> (Jmp e) = (
+    case eval_exp \<Delta> e of Immediate w' \<Rightarrow> True
+      | _ \<Rightarrow> False
+  )\<close> |
+  \<open>conformant_stmt _ _ = True\<close> |
+  \<open>conformant_bil \<Delta> (Stmt s\<^sub>1 seq) = (conformant_stmt \<Delta> s\<^sub>1 \<and> conformant_bil \<Delta> seq)\<close> |
+  \<open>conformant_bil _ Empty = True\<close>
+
+lemma finite_eval_inf_impiles_eval:
+  \<open>conformant_stmt \<Delta> stmt \<Longrightarrow> stmt_finite stmt \<Longrightarrow> (\<Delta>',w') = eval_stmt \<Delta> w stmt \<Longrightarrow> eval_inf_stmt \<Delta> w stmt \<Delta>' w'\<close>
+  \<open>conformant_bil \<Delta> bil \<Longrightarrow> bil_finite bil \<Longrightarrow> (\<Delta>',w') = eval_bil \<Delta> w bil \<Longrightarrow> eval_inf_bil \<Delta> w bil \<Delta>' w'\<close>
+  apply (induct rule: eval_stmt_eval_bil.induct)
+  apply auto
+  apply (simp_all add: eval_inf_stmt_eval_inf_bil.intros)
+    defer
+  apply (case_tac \<open>eval_exp \<Delta> e\<close>, auto)
+  apply (simp add: eval_inf_stmt_eval_inf_bil.intros(5))
+  sledgehammer
+  apply simp
+
+     defer (*unknown*)
+  apply simp
+
+    apply (simp add: eval_inf_stmt_eval_inf_bil.intros(8))
+
+       apply (smt (verit, ccfv_SIG) One_nat_def val.simps(10))
+  apply (smt (verit, ccfv_SIG) Bitvector_Syntax.word.inject One_nat_def val.simps(10) zero_neq_one)
+  apply (metis val.simps(10))
+  by (metis case_prod_conv)
+
+
+*)
 
 end

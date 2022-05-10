@@ -28,6 +28,13 @@ where
 
 end
 
+lemma \<Gamma>_is_ok_implies_t_is_ok:
+    fixes \<Gamma> :: TypingContext 
+  assumes \<open>(name, t) \<in> set \<Gamma>\<close>
+      and \<open>\<Gamma> is ok\<close>
+    shows \<open>t is ok\<close>
+  using assms by (induct \<Gamma>, auto)
+
 
 
 
