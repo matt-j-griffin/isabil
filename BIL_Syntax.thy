@@ -1,29 +1,23 @@
 theory BIL_Syntax
-  imports Main Bitvector_Syntax
-begin
-
-
-typedecl Id
-axiomatization where
-unique: "\<exists>x::Id. \<forall>y. x \<noteq> y"
-
+  imports Bitvector_Syntax 
+          HOL.String
+begin            
 
 text \<open>The type system of BIL consists of two type families - immediate values, indexed by a bitwidth,
 and storagies (aka memories), indexed with address bitwidth and values bitwidth.\<close>
 
 datatype Type =
-    Imm nat      (* immediate of size sz *)
-  | Mem nat nat  (* memory with address size sz1 and element size sz2 *)
+    Imm nat (\<open>imm\<langle>_\<rangle>\<close>)
+  | Mem nat nat (\<open>mem\<langle>_, _\<rangle>\<close>)
 
-
-text \<open>BIL program is reperesented as a sequence of statements. Each statement performs some 
+text \<open>BIL program is represented as a sequence of statements. Each statement performs some 
       side-effectful computation.\<close>
 
 datatype Cast =
-    Unsigned  (* 0-padding widening cast. *)
-  | Signed    (* Sign-extending widening cast. *)
-  | High      (* Narrowing cast. Keeps the high bits. *)
-  | Low       (* Narrowing cast. Keeps the low bits. *)
+    Unsigned (\<open>pad\<close>)  (* 0-padding widening cast. *)
+  | Signed   (\<open>extend\<close>)  (* Sign-extending widening cast. *)
+  | High     (\<open>high\<close>)  (* Narrowing cast. Keeps the high bits. *)
+  | Low      (\<open>low\<close>)  (* Narrowing cast. Keeps the low bits. *)
 
 datatype Endian = 
     LittleEndian (\<open>el\<close>)
@@ -33,12 +27,6 @@ datatype UnOp =
     Neg  (* Negate. (2's complement) *)
   | Not  (* Bitwise not.(1's complement) *)
 
-primrec 
-  operator_unop :: \<open>UnOp \<Rightarrow> (word \<Rightarrow> word)\<close>
-where
-  \<open>operator_unop Not = negation\<close> |
-  \<open>operator_unop Neg = uminus\<close>
-
 datatype LOp = 
     Eq      (* Equals. (commutative) (associative on booleans) *)
   | Neq     (* Not equals. (commutative) (associative on booleans) *)
@@ -46,16 +34,6 @@ datatype LOp =
   | Le      (* Unsigned less than or equal to. *)
   | Slt     (* Signed less than. *)
   | Sle     (* Signed less than or equal to. *)
-
-primrec
-  operator_lop :: \<open>LOp \<Rightarrow> (word \<Rightarrow> word \<Rightarrow> word)\<close>
-where
-  \<open>operator_lop Eq = (=\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Neq = (\<noteq>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Lt = (<\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Le = (\<le>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Slt = (<\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Sle = (\<le>\<^sub>s\<^sub>b\<^sub>v)\<close>
 
 datatype AOp =
     Plus    (* Integer addition. (commutative, associative) *)
@@ -72,29 +50,50 @@ datatype AOp =
   | RShift  (* Right shift, zero padding. *)
   | ARShift (* Right shift, sign extend. *)
 
-primrec
-  operator_aop :: \<open>AOp \<Rightarrow> (word \<Rightarrow> word \<Rightarrow> word)\<close>
-where
-  \<open>operator_aop Plus = (+\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Minus = (-\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Times = (*\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Divide = (div\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop SDivide = (div\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Mod = (%\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop SMod = (%\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop And = (&\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Or = (|\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Xor = (xor\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop LShift = (<<\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop RShift = (>>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop ARShift = (>>>\<^sub>b\<^sub>v)\<close>
-
 
 datatype BinOp =
     AOp AOp
   | LOp LOp
 
-type_synonym var = \<open>(Id \<times> Type)\<close>
+no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
+
+class var_syntax =
+    fixes var_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (\<open>(_/ :\<^sub>t _)\<close> [151, 101] 100)
+  assumes var_eq[simp]: \<open>\<And>id t id' t'. (id :\<^sub>t t) = (id' :\<^sub>t t') \<longleftrightarrow> id = id' \<and> t = t'\<close>
+begin
+
+lemma var_syntax_exhaust:
+  obtains 
+    (Var) id t where \<open>var = (id :\<^sub>t t)\<close>
+  | (NotVar) \<open>\<forall>id t. var \<noteq> (id :\<^sub>t t)\<close>
+  by auto
+
+end
+
+
+class var = var_syntax +
+  assumes var_exhaust: \<open>\<And>P var. (\<And>id t. var = (id :\<^sub>t t) \<Longrightarrow> P) \<Longrightarrow> P\<close>
+
+
+datatype var = Var (name: string) (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
+
+instantiation var :: var
+begin
+
+definition 
+  var_constructor_var :: \<open>string \<Rightarrow> Type \<Rightarrow> BIL_Syntax.var\<close>
+where
+  \<open>(id' :\<^sub>t t) \<equiv> Var id' t\<close>
+
+instance
+  apply standard
+  unfolding var_constructor_var_def 
+  subgoal by simp
+  subgoal by (rule var.exhaust)
+  .
+
+end
+
 
 section \<open>Value syntax\<close>
 
@@ -106,40 +105,177 @@ text \<open>Values are syntactic subset of expressions. They are used to represe
 
 datatype val = 
     Immediate word
-  | Unknown string Type (\<open>unknown[_]: _\<close>)
-  | Storage val word val nat (\<open>_[_ \<leftarrow> _, _]\<close>)
+  | Unknown string Type
+  | Storage val word val nat
 
+class unknown_constructor = 
+    fixes unknown_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (\<open>unknown[_]: _\<close>)
+  assumes unknown_eq[simp]: 
+            \<open>\<And>str str' t t'. (unknown[str]: t) = (unknown[str']: t') \<longleftrightarrow> str = str' \<and> t = t'\<close>
 
-datatype exp =
-    Val val                      (* A variable *)
-  | Var var
-  | Load exp exp Endian nat	     (* load from memory (should be Exp not memory) *)
-  | Store exp exp Endian nat exp (* store to memory *)
-  | BinOp exp BinOp exp          (* binary operation *)
-  | UnOp UnOp exp                (* unary operation *)
-  | Cast Cast nat exp            (* casting *)
-  | Let var exp exp	             (* let-binding *)
-  | Ite exp exp exp              (* if-then-else expression *)
-  | Extract nat nat exp          (* extract portion of word *)
-  | Concat exp exp               (* concatenate two words *)
+class storage_constructor = size + word_constructor +
+    fixes storage_constructor :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>_[_ \<leftarrow> _, _]\<close>)
+  assumes storage_eq[simp]: \<open>\<And>mem w v sz mem' w' v' sz'. (mem[w \<leftarrow> v, sz]) = (mem'[w' \<leftarrow> v', sz']) \<longleftrightarrow>
+                                        mem = mem' \<and> w = w' \<and> v = v' \<and> sz = sz'\<close>
 
-instantiation exp :: minus
+class val_syntax = word_constructor + unknown_constructor + storage_constructor +
+  assumes storage_word_neq[simp]: \<open>\<And>v w v' sz num sz'. v[w \<leftarrow> v', sz] \<noteq> (num \<Colon> sz')\<close>
+      and storage_unknown_neq[simp]: \<open>\<And>v w v' sz str t. v[w \<leftarrow> v', sz] \<noteq> unknown[str]: t\<close>
+      and word_unknown_neq[simp]: \<open>\<And>str t num sz. (num \<Colon> sz) \<noteq> unknown[str]: t\<close>
+      and unknown_not_true[simp]: \<open>\<And>str t. (unknown[str]: t) \<noteq> true\<close>
+      and unknown_not_false[simp]: \<open>\<And>str t. (unknown[str]: t) \<noteq> false\<close>
+      and storage_not_true[simp]: \<open>\<And>v w v' sz. (v[w \<leftarrow> v', sz]) \<noteq> true\<close>
+      and storage_not_false[simp]: \<open>\<And>v w v' sz. (v[w \<leftarrow> v', sz]) \<noteq> false\<close>
 begin
 
-fun 
-  minus_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close>
-where
-  \<open>minus_exp e1 e2 = (BinOp e1 (AOp Minus) e2)\<close>
+lemma word_storage_neq[simp]: \<open>(num \<Colon> sz') \<noteq> (v[w \<leftarrow> v', sz])\<close>
+  by (metis storage_word_neq)
+
+lemma unknown_storage_neq[simp]: \<open>(unknown[str]: t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
+  by (metis storage_unknown_neq)
+
+lemma unknown_word_neq[simp]: \<open>(unknown[str]: t) \<noteq> (num \<Colon> sz)\<close>
+  by (metis word_unknown_neq)
 
 
-instance
-  by standard
+lemma val_syntax_induct: (* TODO get rid? *)
+  assumes \<open>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q (num \<Colon> sz)\<close>
+      and \<open>\<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q (unknown[str]: t)\<close>
+      and \<open>\<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q (mem[w \<leftarrow> v', sz])\<close>
+      and \<open>\<lbrakk>\<forall>num sz. v \<noteq> (num \<Colon> sz); \<forall>mem w v' sz. v \<noteq> (mem[w \<leftarrow> v', sz]); 
+              \<forall>str t. v \<noteq> (unknown[str]: t)\<rbrakk> \<Longrightarrow> Q v\<close>
+    shows \<open>Q v\<close>
+  using assms by blast
+
+lemma val_syntax_exhaust:
+  obtains 
+    (Word) num sz where \<open>v = (num \<Colon> sz)\<close>
+  | (Unknown) str t where \<open>v = (unknown[str]: t)\<close>
+  | (Storage) mem w v' sz where \<open>v = (mem[w \<leftarrow> v', sz])\<close>
+  | (NotVal) \<open>\<forall>num sz. v \<noteq> (num \<Colon> sz)\<close> \<open>\<forall>mem w v' sz. v \<noteq> (mem[w \<leftarrow> v', sz])\<close>
+              \<open>\<forall>str t. v \<noteq> (unknown[str]: t)\<close>
+  by blast
+
 end
 
-lemma "(e1::exp) - e2 = (BinOp e1 (AOp Minus) e2)"
-  by simp
+class val = val_syntax +
+  assumes val_induct: \<open>\<And>Q v. \<lbrakk>\<And>num sz. Q (num \<Colon> sz); \<And>str t. Q (unknown[str]: t); 
+                        \<And>mem w v' sz. Q (mem[w \<leftarrow> v', sz])\<rbrakk> \<Longrightarrow> Q v\<close>
+      and val_exhaust: \<open>\<And>Q v. \<lbrakk>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q; \<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q; 
+                        \<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
+
+no_notation List.append  (infixr \<open>@\<close> 65)
+
+class append =
+  fixes append :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>@\<close> 65)
+
+instantiation list :: (type) append
+begin
+
+fun
+  append_list :: \<open>'a list \<Rightarrow> 'a list \<Rightarrow> 'a list\<close> 
+where
+  \<open>append_list xs ys = List.append xs ys\<close>
+
+instance ..
+
+end
+
+class not_syntax = 
+  fixes not :: \<open>'a \<Rightarrow> 'a\<close> (\<open>~ _\<close> [40] 40)
+
+instantiation bool :: not_syntax
+begin
+
+definition
+  not_bool :: \<open>bool \<Rightarrow> bool\<close>
+where
+  \<open>not_bool = HOL.Not\<close>
+
+instance ..
+
+end
+
+datatype exp =
+    Val val
+  | Var var
+  | Load exp exp Endian nat	 (\<open>_[_, _]:u_\<close>)
+  | Store exp exp Endian nat exp (\<open>_ with [_, _]:u_ \<leftarrow> _\<close>)
+  | BinOp exp BinOp exp
+  | UnOp UnOp exp
+  | Cast Cast nat exp  (\<open>_:_[_]\<close>)
+  | Let var exp exp
+  | Ite exp exp exp (\<open>ite _ _ _\<close>)
+  | Extract nat nat exp (\<open>extract:_:_[_]\<close>)
+  | Concat exp exp
+
+instantiation exp :: append
+begin          
+
+definition 
+  append_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> 
+where
+  \<open>append_exp \<equiv> Concat\<close>
+
+instance ..
+
+end
+
+instantiation exp :: not_syntax
+begin          
+
+fun
+  not_exp :: \<open>exp \<Rightarrow> exp\<close>
+where
+  \<open>not_exp exp = (UnOp Not exp)\<close>
+
+instance ..
+
+end
+
+lemma append_inject[simp]:
+  fixes e\<^sub>1 :: exp
+  shows \<open>e\<^sub>1 @ e\<^sub>2 = e\<^sub>1' @ e\<^sub>2' \<longleftrightarrow> (e\<^sub>1 = e\<^sub>1' \<and> e\<^sub>2 = e\<^sub>2')\<close>
+  unfolding append_exp_def by auto
 
 
+
+
+
+class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
+  assumes var_not_word_neq[simp]: \<open>\<And>id t num sz'. (id :\<^sub>t t) \<noteq> (num \<Colon> sz')\<close>
+      and var_not_unknown_neq[simp]: \<open>\<And>id t str t'. (id :\<^sub>t t) \<noteq> unknown[str]: t'\<close>
+      and var_not_storage_neq[simp]: \<open>\<And>id t v w v' sz. (id :\<^sub>t t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
+      and var_not_true[simp]: \<open>\<And>id t. (id :\<^sub>t t) \<noteq> true\<close>
+      and var_not_false[simp]: \<open>\<And>id t. (id :\<^sub>t t) \<noteq> false\<close>
+      and var_not_concat[simp]: \<open>\<And>id t e\<^sub>1 e\<^sub>2. (id :\<^sub>t t) \<noteq> e\<^sub>1 @ e\<^sub>2\<close>
+      and concat_not_word_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 num sz'. e\<^sub>1 @ e\<^sub>2 \<noteq> (num \<Colon> sz')\<close>
+      and concat_not_unknown_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 str t'. e\<^sub>1 @ e\<^sub>2 \<noteq> unknown[str]: t'\<close>
+      and concat_not_storage_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 v w v' sz. e\<^sub>1 @ e\<^sub>2 \<noteq> (v[w \<leftarrow> v', sz])\<close>
+      and concat_not_true[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> true\<close>
+      and concat_not_false[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> false\<close>
+begin
+
+lemma exp_syntax_exhaust:
+  obtains 
+    (Word) num sz where \<open>e = (num \<Colon> sz)\<close>
+  | (Unknown) str t where \<open>e = (unknown[str]: t)\<close>
+  | (Storage) mem w v' sz where \<open>e = (mem[w \<leftarrow> v', sz])\<close>
+  | (Var) id t where \<open>e = (id :\<^sub>t t)\<close>
+  | (NotExp) \<open>\<forall>num sz. e \<noteq> (num \<Colon> sz)\<close> \<open>\<forall>mem w v' sz. e \<noteq> (mem[w \<leftarrow> v', sz])\<close> 
+    \<open>\<forall>str t. e \<noteq> unknown[str]: t\<close> \<open>\<forall>id t. e \<noteq> (id :\<^sub>t t)\<close>
+  apply (rule val_syntax_exhaust[of e])
+  apply blast
+  apply blast
+  apply blast
+  apply (rule var_syntax_exhaust[of e])
+  apply blast
+  apply blast
+  done
+
+end
+
+(*
 text \<open>Expressions are well formed if they recursively contain loads that target memory widths 
       greater than zero (in bytes). Well formed expressions can be evaluated ahead of time.\<close>
 
@@ -158,9 +294,9 @@ where
   \<open>wfe _ = True\<close>
 
 class capture_avoiding_sub =
-  fixes let_substitute :: \<open>'a \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close>)
+  fixes let_substitute :: \<open>word \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close>)
 
-instantiation exp :: capture_avoiding_sub
+instantiation exp and val :: capture_avoiding_sub
 begin
 
 primrec 
@@ -177,12 +313,6 @@ where
   \<open>let_substitute_exp e var (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2) (let_substitute_exp e var e\<^sub>3)\<close> |
   \<open>let_substitute_exp e var (Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 (let_substitute_exp e var e')\<close> |
   \<open>let_substitute_exp e var (Concat e\<^sub>1 e\<^sub>2) = Concat (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2)\<close>
-
-instance ..
-end 
-
-instantiation val :: capture_avoiding_sub
-begin
 
 primrec 
   let_substitute_val :: \<open>val \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close>
@@ -210,17 +340,35 @@ lemma let_substitute_val_size_eq:
     fixes v :: val
     shows \<open>size_class.size e = size_class.size ([v\<sslash>var]e)\<close>
   by (induct e, auto)
-
+*)
 datatype stmt =
-    Move var exp (\<open>_ := _\<close>)
+    Move var exp
   | Jmp exp (\<open>jmp _\<close>)
   | CpuExn int (\<open>cpuexn _\<close>)
   | Special string (\<open>special[_]\<close>)
-  | While exp bil
-  | If exp bil bil
+  | While exp bil (\<open>while(_) _\<close>)
+  | If exp bil bil (\<open>if(_) _ else _\<close>)
 and bil = 
     Stmt stmt bil
   | Empty
+
+
+
+class move_syntax =
+    fixes move_syntax :: \<open>var \<Rightarrow> exp \<Rightarrow> 'a\<close> (infixl \<open>:=\<close> 55)
+  assumes move_eq[simp]: \<open>\<And>a b c d. (a := b) = (c := d) \<longleftrightarrow> a = c \<and> b = d\<close>
+
+instantiation stmt :: move_syntax
+begin
+
+fun 
+  move_syntax_stmt :: \<open>var \<Rightarrow> exp \<Rightarrow> stmt\<close>
+where
+  \<open>move_syntax_stmt var exp = Move var exp\<close>
+
+instance by (standard, simp)
+
+end
 
 abbreviation \<open>IfThen e bil \<equiv> If e bil Empty\<close> 
 

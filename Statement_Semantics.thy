@@ -1,21 +1,21 @@
 theory Statement_Semantics
-  imports Expression_Semantics Typing
+  imports Expression_Semantics "Typing/Typing"
 begin
 
 type_synonym reduction_state = \<open>(variables \<times> word)\<close>
 
 text \<open>If we include a while loop we must use an inductive predicate as the bil/stmt may not 
-      terminate\<close> 
+      terminate ie: while true {}.\<close> 
 
 inductive
   eval_inf_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close> and
   eval_inf_bil :: \<open>variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close>
 where
-  \<open>\<lbrakk>Immediate true = eval_exp \<Delta>\<^sub>1 e; eval_inf_bil \<Delta>\<^sub>1 w\<^sub>1 seq \<Delta>\<^sub>2 w\<^sub>2; eval_inf_stmt \<Delta>\<^sub>2 w\<^sub>2 (While e seq) \<Delta>\<^sub>3 w\<^sub>3\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta>\<^sub>1 w\<^sub>1 (While e seq) \<Delta>\<^sub>3 w\<^sub>3\<close> |
+  \<open>\<lbrakk>true = eval_exp \<Delta>\<^sub>1 e; eval_inf_bil \<Delta>\<^sub>1 w\<^sub>1 seq \<Delta>\<^sub>2 w\<^sub>2; eval_inf_stmt \<Delta>\<^sub>2 w\<^sub>2 (While e seq) \<Delta>\<^sub>3 w\<^sub>3\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta>\<^sub>1 w\<^sub>1 (While e seq) \<Delta>\<^sub>3 w\<^sub>3\<close> |
 
-  \<open>\<lbrakk>Immediate false = eval_exp \<Delta> e\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (While e seq) \<Delta> w\<close> |
-  \<open>\<lbrakk>Immediate true = eval_exp \<Delta> e;  eval_inf_bil \<Delta> w seq\<^sub>1 \<Delta>' w'\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (If e seq\<^sub>1 seq\<^sub>2) \<Delta>' w'\<close> |
-  \<open>\<lbrakk>Immediate false = eval_exp \<Delta> e; eval_inf_bil \<Delta> w seq\<^sub>2 \<Delta>' w'\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (If e seq\<^sub>1 seq\<^sub>2) \<Delta>' w'\<close> |
+  \<open>\<lbrakk>false = eval_exp \<Delta> e\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (While e seq) \<Delta> w\<close> |
+  \<open>\<lbrakk>true = eval_exp \<Delta> e;  eval_inf_bil \<Delta> w seq\<^sub>1 \<Delta>' w'\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (If e seq\<^sub>1 seq\<^sub>2) \<Delta>' w'\<close> |
+  \<open>\<lbrakk>false = eval_exp \<Delta> e; eval_inf_bil \<Delta> w seq\<^sub>2 \<Delta>' w'\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (If e seq\<^sub>1 seq\<^sub>2) \<Delta>' w'\<close> |
   \<open>\<lbrakk>Immediate w' = eval_exp \<Delta> e\<rbrakk> \<Longrightarrow> eval_inf_stmt \<Delta> w (Jmp e) \<Delta> w'\<close> |
   \<open>eval_inf_stmt \<Delta> w (Move var e) (\<Delta>(var \<mapsto> eval_exp \<Delta> e)) w\<close> |
   \<open>eval_inf_stmt \<Delta> w (CpuExn num) \<Delta> w\<close> |
@@ -38,20 +38,20 @@ lemma eval_inf_stmt_simps:
      \<Delta>' = \<Delta> \<and> w' = w' \<and> Immediate w' = eval_exp \<Delta> e) \<or>
  (\<exists>e seq\<^sub>1 seq\<^sub>2.
      s = stmt.If e seq\<^sub>1 seq\<^sub>2 \<and>
-     Immediate true = eval_exp \<Delta> e \<and> 
+     true = eval_exp \<Delta> e \<and> 
      eval_inf_bil \<Delta> w seq\<^sub>1 \<Delta>' w') \<or>
  (\<exists>e seq\<^sub>2 seq\<^sub>1.
      s = stmt.If e seq\<^sub>1 seq\<^sub>2 \<and>
-     Immediate false = eval_exp \<Delta> e \<and>
+     false = eval_exp \<Delta> e \<and>
      eval_inf_bil \<Delta> w seq\<^sub>2 \<Delta>' w') \<or>
  (\<exists>e seq \<Delta>\<^sub>2 w\<^sub>2.
      s = While e seq \<and>
-     Immediate true = eval_exp \<Delta> e \<and>
+     true = eval_exp \<Delta> e \<and>
      eval_inf_bil \<Delta> w seq \<Delta>\<^sub>2 w\<^sub>2 \<and>
      eval_inf_stmt \<Delta>\<^sub>2 w\<^sub>2 (While e seq) \<Delta>' w') \<or>
  (\<exists>e seq.
      s = While e seq \<and>
-     \<Delta>' = \<Delta> \<and> w' = w \<and> Immediate false = eval_exp \<Delta> e))"
+     \<Delta>' = \<Delta> \<and> w' = w \<and> false = eval_exp \<Delta> e))"
   using assms apply (simp add: eval_inf_stmt.simps[where ?a1.0=\<Delta> and ?a2.0=w and ?a3.0=s and ?a4.0=\<Delta>' and ?a5.0=w'])
   apply (elim exE disjE conjE)
   apply simp_all
@@ -79,21 +79,21 @@ lemma eval_inf_stmt_cases[consumes 1]:
   | (IfTrue) e seq\<^sub>1 seq\<^sub>2 where
       "s\<^sub>1 = If e seq\<^sub>1 seq\<^sub>2"
       "eval_inf_bil \<Delta> w seq\<^sub>1 \<Delta>' w'"
-      "Immediate true = eval_exp \<Delta> e"
+      "true = eval_exp \<Delta> e"
   | (IfFalse) e seq\<^sub>1 seq\<^sub>2 where
       "s\<^sub>1 = If e seq\<^sub>1 seq\<^sub>2"
       "eval_inf_bil \<Delta> w seq\<^sub>2 \<Delta>' w'"
-      "Immediate false = eval_exp \<Delta> e"
+      "false = eval_exp \<Delta> e"
   | (WhileTrue) e seq \<Delta>\<^sub>2 w\<^sub>2 where
       "s\<^sub>1 = While e seq"
       "eval_inf_bil \<Delta> w seq \<Delta>\<^sub>2 w\<^sub>2"
       "eval_inf_stmt \<Delta>\<^sub>2 w\<^sub>2 (While e seq) \<Delta>' w'"
-      "Immediate true = eval_exp \<Delta> e"
+      "true = eval_exp \<Delta> e"
   | (WhileFalse) e seq where
       "s\<^sub>1 = While e seq"
       "\<Delta>' = \<Delta>"
       "w' = w"
-      "Immediate false = eval_exp \<Delta> e"
+      "false = eval_exp \<Delta> e"
   using assms apply (drule_tac eval_inf_stmt_simps) 
   by auto
 
@@ -137,7 +137,7 @@ lemma step_pred_bil_empty_equiv: \<open>(\<Delta>,w \<turnstile> seq \<leadsto> 
 
 definition
   eval_pred_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_\<close>)
-where
+where                           
   \<open>\<Delta>,w \<turnstile> s\<^sub>1 \<leadsto> \<Delta>',w' = (eval_inf_stmt \<Delta> w s\<^sub>1 \<Delta>' w')\<close>
 
 lemma SEQ_REC:
@@ -170,9 +170,24 @@ lemma SEQ_TOTAL_REC:
   apply (simp add: eval_inf_stmt_eval_inf_bil.intros(10))
   by (metis bil.distinct(1) eval_inf_bil.simps)
 
+lemma SEQ_NEXT:
+  assumes \<open>\<Delta>,w \<turnstile> s\<^sub>1 \<leadsto> \<Delta>',w'\<close> and \<open>\<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>'',w'',Empty\<close>
+    shows \<open>\<Delta>,w \<turnstile> Stmt s\<^sub>1 seq \<leadsto> \<Delta>'',w'',Empty\<close>
+  using assms eval_inf_stmt_eval_inf_bil.intros(9) eval_pred_stmt_def step_pred_bil_empty_equiv by blast
+
+
+
+lemma SEQ_NEXT_REV:
+  assumes \<open>\<Delta>,w \<turnstile> Stmt s\<^sub>1 seq \<leadsto> \<Delta>'',w'',Empty\<close>
+    shows \<open>\<exists>\<Delta>' w'. \<Delta>,w \<turnstile> s\<^sub>1 \<leadsto> \<Delta>',w' \<and> \<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>'',w'',Empty\<close>
+  using assms apply (auto simp add: SEQ_TOTAL_REC eval_pred_stmt_def)
+  apply (cases rule: eval_inf_bil_cases)
+  by auto
+
+
 lemma MOVE:
   assumes \<open>\<Delta> \<turnstile> e \<leadsto>* v\<close>
-    shows \<open>\<Delta>,w \<turnstile> (Move var e) \<leadsto> (\<Delta>(var \<mapsto> v)),w\<close> 
+    shows \<open>\<Delta>,w \<turnstile> (var := e) \<leadsto> (\<Delta>(var \<mapsto> v)),w\<close> 
   using assms apply auto 
   by (simp add: eval_inf_stmt_eval_inf_bil.intros(6) eval_pred_stmt_def)
 
@@ -189,55 +204,44 @@ lemma SPECIAL:\<open>\<Delta>,w \<turnstile> (Special str) \<leadsto> \<Delta>,w
   by (simp add: eval_inf_stmt_eval_inf_bil.intros(8) eval_pred_stmt_def)
 
 lemma IF_TRUE:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (Immediate true)\<close>
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* true\<close>
       and \<open>\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty\<close>
     shows \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
-  using assms apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
-  by (simp add: SEQ_TOTAL_REC eval_inf_stmt_eval_inf_bil.intros(3) eval_pred_stmt_def)
+  unfolding eval_pred_stmt_def apply (rule eval_inf_stmt_eval_inf_bil.intros(3))
+  using assms(1) apply auto[1] (* TODO this is poor *)
+  using assms(2) step_pred_bil_empty_equiv by auto
 
 lemma IF_FALSE:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (Immediate false)\<close>
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
       and \<open>\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w',Empty\<close>
     shows \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
-  using assms apply (cases \<open>eval_exp \<Delta> e\<close>, auto)
-  by (simp add: SEQ_TOTAL_REC eval_inf_stmt_eval_inf_bil.intros(4) eval_pred_stmt_def)
-
+  unfolding eval_pred_stmt_def apply (rule eval_inf_stmt_eval_inf_bil.intros(4))
+  using assms(1) apply auto[1] (* TODO this is poor *)
+  using assms(2) step_pred_bil_empty_equiv by auto
 
 lemma IFTHEN_TRUE:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (Immediate true)\<close>
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* true\<close>
       and \<open>\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>',w',Empty\<close>
     shows \<open>\<Delta>,w \<turnstile> (IfThen e seq) \<leadsto> \<Delta>',w'\<close>
-  using assms IF_TRUE by blast
+  using assms by (rule IF_TRUE)
 
 lemma IFTHEN_FALSE:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (Immediate false)\<close>
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
     shows \<open>\<Delta>,w \<turnstile> (IfThen e seq) \<leadsto> \<Delta>,w\<close>
   using assms IF_FALSE SEQ_NIL by simp
 
 lemma WHILE:
-  assumes \<open>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* (Immediate true)\<close>
+  assumes \<open>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* true\<close>
       and \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> seq \<leadsto> \<Delta>\<^sub>2,w\<^sub>2,Empty\<close>
       and \<open>\<Delta>\<^sub>2,w\<^sub>2 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<close>
     shows \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<close>
-  using SEQ_TOTAL_REC assms(1) assms(2) assms(3) eval_inf_stmt_eval_inf_bil.intros(1) eval_pred_stmt_def by force
+  using assms SEQ_TOTAL_REC eval_inf_stmt_eval_inf_bil.intros(1) eval_pred_stmt_def true_val_def by force
 
 lemma WHILE_FALSE:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (Immediate false)\<close>
-    shows \<open>\<Delta>,w \<turnstile> (While e seq) \<leadsto> \<Delta>,w\<close> 
-  by (meson assms eval_exps_pred.elims(2) eval_inf_stmt_eval_inf_bil.intros(2) eval_pred_stmt_def)
-
-(**)
-
-
-
-
-
-
-
-
-
-
-
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
+    shows \<open>\<Delta>,w \<turnstile> (While e seq) \<leadsto> \<Delta>,w\<close>
+  unfolding eval_pred_stmt_def apply (rule eval_inf_stmt_eval_inf_bil.intros(2))
+  using assms(1) by simp
 
 text \<open>Without a while loop the evaluation becomes a total recursive function\<close>
 
@@ -250,43 +254,44 @@ where
   \<open>stmt_finite _ = True\<close> |
   \<open>bil_finite (Stmt s\<^sub>1 seq) = (stmt_finite s\<^sub>1 \<and> bil_finite seq)\<close> |
   \<open>bil_finite Empty = True\<close>
-
+  
+  
 fun
   eval_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> (variables \<times> word)\<close> and
   eval_bil :: \<open>variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> (variables \<times> word)\<close>
 where
-  \<open>eval_stmt \<Delta> w (CpuExn num) = (\<Delta>,w)\<close> |
-  \<open>eval_stmt \<Delta> w (Special str) = (\<Delta>,w)\<close> |
-  \<open>eval_stmt \<Delta> w (While e seq) = undefined\<close> |
+  \<open>eval_stmt \<Delta> w (cpuexn _) = (\<Delta>,w)\<close> |
+  \<open>eval_stmt \<Delta> w (special[_]) = (\<Delta>,w)\<close> |
+  \<open>eval_stmt _ _ (While _ _) = undefined\<close> |
   \<open>eval_stmt \<Delta> w (If e seq\<^sub>1 seq\<^sub>2) = (
     let v = eval_exp \<Delta> e in
-      case v of Immediate w' \<Rightarrow>
+      case v of Immediate w' \<Rightarrow> (
         if w' = true then eval_bil \<Delta> w seq\<^sub>1          
-        else eval_bil \<Delta> w seq\<^sub>2
+        else eval_bil \<Delta> w seq\<^sub>2)
+      | Unknown str t \<Rightarrow> (\<Delta>, (undefined \<Colon> (bits w)))
   )\<close> |
-  \<open>eval_stmt \<Delta> w (Move var e) = (
-    let v = (eval_exp \<Delta> e) in \<Delta>(var \<mapsto> v),w
-  )\<close> |
+  \<open>eval_stmt \<Delta> w (Move var e) = (\<Delta>(var \<mapsto> eval_exp \<Delta> e), w)\<close> |
   \<open>eval_stmt \<Delta> _ (Jmp e) = (
-    let v = eval_exp \<Delta> e in 
-      case v of Immediate w' \<Rightarrow> (\<Delta>,w')
+    case (eval_exp \<Delta> e) of Immediate w' \<Rightarrow> (\<Delta>, w')
+      | Unknown str imm\<langle>sz\<rangle> \<Rightarrow> (\<Delta>, (undefined \<Colon> sz))
   )\<close> |
   \<open>eval_bil \<Delta> w (Stmt s\<^sub>1 seq) = (
     let (\<Delta>',w') = eval_stmt \<Delta> w s\<^sub>1 in eval_bil \<Delta>' w' seq
   )\<close> |
   \<open>eval_bil \<Delta> w Empty = (\<Delta>,w)\<close>
 
+
 lemma finite_eval_inf_impiles_eval:
   \<open>eval_inf_stmt \<Delta> w stmt \<Delta>' w' \<Longrightarrow> stmt_finite stmt \<Longrightarrow> (\<Delta>',w') = eval_stmt \<Delta> w stmt\<close>
   \<open>eval_inf_bil \<Delta> w bil \<Delta>' w' \<Longrightarrow> bil_finite bil \<Longrightarrow> (\<Delta>',w') = eval_bil \<Delta> w bil\<close>
   apply (induct rule: eval_inf_stmt_eval_inf_bil.inducts)
-  apply auto
-  apply (smt (verit, ccfv_SIG) One_nat_def val.simps(10))
-  apply (smt (verit, ccfv_SIG) Bitvector_Syntax.word.inject One_nat_def val.simps(10) zero_neq_one)
+  apply (auto simp add: true_val_def false_val_def)
+  apply (smt (verit, ccfv_SIG) val.simps(10))
+  apply (smt (verit, best) not_true_eq_false val.simps(10))
   apply (metis val.simps(10))
   by (metis case_prod_conv)
 
-lemma step_pred_bil_finite_empty: 
+lemma step_pred_bil_finite_empty:
   assumes \<open>\<Delta>,w \<turnstile> bil \<leadsto> \<Delta>',w',Empty\<close>
       and \<open>bil_finite bil\<close>
     shows \<open>(\<Delta>',w') = eval_bil \<Delta> w bil\<close>

@@ -1,5 +1,5 @@
 theory BIR_64
-  imports BIR Word_Lib.Word_64
+  imports BIR
 begin
 
 definition 
