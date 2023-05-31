@@ -181,6 +181,8 @@ instance ..
 
 end
 
+no_notation HOL.Not (\<open>~ _\<close> [40] 40)
+
 class not_syntax = 
   fixes not :: \<open>'a \<Rightarrow> 'a\<close> (\<open>~ _\<close> [40] 40)
 
@@ -342,7 +344,7 @@ lemma let_substitute_val_size_eq:
   by (induct e, auto)
 *)
 datatype stmt =
-    Move var exp
+    Move var exp (infixl \<open>:=\<close> 55)
   | Jmp exp (\<open>jmp _\<close>)
   | CpuExn int (\<open>cpuexn _\<close>)
   | Special string (\<open>special[_]\<close>)
@@ -353,7 +355,7 @@ and bil =
   | Empty
 
 
-
+(*
 class move_syntax =
     fixes move_syntax :: \<open>var \<Rightarrow> exp \<Rightarrow> 'a\<close> (infixl \<open>:=\<close> 55)
   assumes move_eq[simp]: \<open>\<And>a b c d. (a := b) = (c := d) \<longleftrightarrow> a = c \<and> b = d\<close>
@@ -369,7 +371,7 @@ where
 instance by (standard, simp)
 
 end
-
+*)
 abbreviation \<open>IfThen e bil \<equiv> If e bil Empty\<close> 
 
 end

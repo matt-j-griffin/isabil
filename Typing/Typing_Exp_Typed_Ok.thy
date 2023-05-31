@@ -332,7 +332,7 @@ lemma storage_add_is_ok':
   using typing_val_immediate typing_val_mem by blast+
 *)
 end
-
+(*
 method solve_T_EXP = (
   match conclusion in
     \<open>_ \<turnstile> _[_, _]:u_ :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_LOAD, linarith, linarith, solve_T_EXP, solve_T_EXP\<close>
@@ -348,6 +348,57 @@ method solve_T_EXP = (
   \<bar> \<open>_ \<turnstile> (BinOp _ (AOp _) _) :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_AOP, solve_T_EXP, solve_T_EXP\<close>
   \<bar> \<open>_ \<turnstile> (BinOp _ (LOp _) _) :: imm\<langle>1\<rangle>\<close> \<Rightarrow> \<open>rule T_LOP, solve_T_EXP, solve_T_EXP\<close>
   \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) :: _\<close> \<Rightarrow> \<open>rule T_VAR, linarith, solve_TG, solve_TWF\<close>
+)
+*)
+
+lemma T_WIDE_LOAD: 
+  assumes \<open>0 < sz'\<close> and \<open>sz' \<le> sz\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m dvd sz'\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+      and \<open>cast = extend \<or> cast = pad\<close>
+    shows \<open>\<Gamma> \<turnstile> cast:sz[e\<^sub>1[e\<^sub>2, el]:usz'] :: imm\<langle>sz\<rangle>\<close>
+  apply (rule T_CAST_WIDEN[of _ sz'])
+  using assms(1,2) apply linarith+
+  subgoal
+    apply (rule T_LOAD[of sz\<^sub>m\<^sub>e\<^sub>m _ _ _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r])
+    using assms(1,3-) by blast+
+  using assms(6) by assumption
+
+method solve_T_EXP = (
+  match conclusion in
+  \<comment> \<open>solve_T_EXP cannot prove expressions requiring a fixed variable not in the conclusion to 
+      be specified. However, we can identify the value of the fixed variables in certain static 
+      expression patterns\<close>
+  
+  \<comment> \<open>Cast-Load - we know the non-conclusive cast variable must be equal to the output of the load\<close>
+    \<open>_ \<turnstile> extend:_[_[_, el]:usz] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_WIDE_LOAD[of _ _ 8 _ _ 64], linarith, linarith, fastforce, solve_T_EXP, solve_T_EXP, blast\<close>
+  \<bar> \<open>_ \<turnstile> pad:_[_[_, el]:usz] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_WIDE_LOAD[of _ _ 8 _ _ 64], linarith, linarith, fastforce, solve_T_EXP, solve_T_EXP, blast\<close>
+
+  \<comment> \<open>Cast-Cast - we know the non-conclusive cast variable must be equal to the output of the nested 
+      cast\<close>
+  \<bar>  \<open>_ \<turnstile> pad:_[_:sz[_]] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_WIDEN[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> extend:_[_:sz[_]] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_WIDEN[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> pad:_[_:sz[_]] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_NARROW[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> extend:_[_:sz[_]] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_NARROW[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+
+  \<comment> \<open>Cast-Var - we know the non-conclusive cast variable must be equal to an immediate variables 
+      size\<close>
+  \<bar>  \<open>_ \<turnstile> extend:_[(_ :\<^sub>t imm\<langle>sz\<rangle>)] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_WIDEN[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> pad:_[(_ :\<^sub>t imm\<langle>sz\<rangle>)] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_WIDEN[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> low:_[(_ :\<^sub>t imm\<langle>sz\<rangle>)] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_NARROW[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar>  \<open>_ \<turnstile> high:_[(_ :\<^sub>t imm\<langle>sz\<rangle>)] :: imm\<langle>_\<rangle>\<close> for sz \<Rightarrow> \<open>rule T_CAST_NARROW[of _ sz], linarith, linarith, solve_T_EXP, blast\<close>
+
+  \<comment> \<open>Ignore unprovable cases\<close>
+  \<bar> \<open>_ \<turnstile> _:_[_] :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>succeed\<close>
+
+  \<comment> \<open>Provable cases\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) :: _\<close> \<Rightarrow> \<open>solve_T_VAR\<close>
+  \<bar> \<open>_ \<turnstile> UnOp _ _ :: _\<close> \<Rightarrow> \<open>rule T_UOP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> BinOp _ (AOp _) _ :: _\<close> \<Rightarrow> \<open>rule T_AOP; solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> BinOp _ (LOp _) _ :: _\<close> \<Rightarrow> \<open>rule T_LOP; solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> _[_, _]:u_ :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_LOAD[of 8 _ _ _ 64], presburger, linarith, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> _ with [_, el]:u_ \<leftarrow> _ :: mem\<langle>_, _\<rangle>\<close> \<Rightarrow> \<open>rule T_STORE, fastforce, linarith; solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> _ \<Colon> _ :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>solve_T_WORD\<close>
+  \<bar> _ \<Rightarrow> \<open>succeed\<close>
 )
 
 end

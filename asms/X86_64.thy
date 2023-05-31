@@ -1,5 +1,5 @@
-theory BIR_x86
-  imports BIR_Variables
+theory X86_64
+  imports "../BIL_Syntax"
 begin
 
 text \<open>BIR variables are passed down from LLVM IR see here: https://dse.in.tum.de/wp-content/uploads/2022/01/translating_x86_binaries_into_llvm_intermediate_representation.pdf\<close>
@@ -12,7 +12,7 @@ begin
 abbreviation
   mem :: 'a
 where
-  \<open>mem \<equiv> (''mem'' :\<^sub>t mem\<langle>addr_size, 8\<rangle>)\<close>
+  \<open>mem \<equiv> (''mem'' :\<^sub>t mem\<langle>64, 8\<rangle>)\<close>
 
 text \<open>Definition of named (purpose) registers\<close>
 

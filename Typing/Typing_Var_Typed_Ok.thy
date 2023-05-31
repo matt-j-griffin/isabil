@@ -12,6 +12,10 @@ begin
 
 lemmas T_VAR = var_typed_okI
 
+method solve_T_VAR = (
+  rule T_VAR, simp, solve_TG, solve_TWF (* TODO wayward simp*)
+)
+
 end
 
 end

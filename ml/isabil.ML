@@ -4,6 +4,9 @@
 Locale expressions and user interface layer of locales.
 *)
 
+
+(** TODO HOLogic.mk_number HOLogic.natT hi = HOLogic.mk_nat**)
+
 datatype typ = Imm of int 
              | Mem of int * int  
 

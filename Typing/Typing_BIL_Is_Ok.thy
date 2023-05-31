@@ -154,4 +154,15 @@ lemmas T_WHILE = while_stmt_typing_is_okI
 lemmas T_IF = if_stmt_typing_is_okI
 lemmas T_IFTHEN = ifthen_stmt_typing_is_okI
 
+method solve_T_BIL = (
+  match conclusion in
+    \<open>_ \<turnstile> bil.Empty is ok\<close> \<Rightarrow> \<open>rule T_SEQ_EMPTY, solve_TG\<close>
+  \<bar> \<open>_ \<turnstile> Stmt _ bil.Empty is ok\<close> \<Rightarrow> \<open>rule T_SEQ_ONE, solve_T_BIL\<close>
+  \<bar> \<open>_ \<turnstile> Stmt _ _ is ok\<close> \<Rightarrow> \<open>rule T_SEQ_REC, solve_T_BIL\<close>
+  \<bar> \<open>_ \<turnstile> jmp (_ \<Colon> sz) is ok\<close> for sz \<Rightarrow> \<open>rule T_JMP[of _ _ sz], solve_T_WORD\<close>
+  \<bar> \<open>_ \<turnstile> (_ := _) is ok\<close> \<Rightarrow> \<open>rule T_MOVE, solve_T_VAR, solve_T_EXP\<close> 
+  \<bar> \<open>_ \<turnstile> IfThen _ _ is ok\<close> \<Rightarrow> \<open>rule T_IFTHEN, solve_T_EXP, solve_T_BIL\<close>
+  \<bar> _ \<Rightarrow> \<open>succeed\<close>
+)
+
 end

@@ -1,5 +1,5 @@
 theory Syntax
-  imports Main
+  imports Prelims
 begin
 
 class bool_syntax =
@@ -19,7 +19,7 @@ end
 lemma not_true_eq_false[simp]: \<open>\<not> false = true\<close>
   using true_neq_false by metis
 
-class bil_ops = plus + minus + modulo + times + uminus + bool_syntax +
+class bil_ops = plus + minus + modulo + times + divide + uminus + bool_syntax +
     fixes lsr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open>>>\<close> 65)
       and lsl :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open><<\<close> 65)
       and asr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open>>>>\<close> 64)
@@ -53,9 +53,6 @@ abbreviation (input)
 abbreviation (input)
   mod_percent (infix \<open>%\<close> 50)
   where \<open>x % y \<equiv> x mod y\<close>
-
-
-class sized_word = bil_ops + ord
 
 
 end

@@ -1,5 +1,5 @@
 theory Context_Syntax
-  imports Main BIL_Syntax
+  imports BIL_Syntax
 begin
 
 section \<open>Context syntax\<close>

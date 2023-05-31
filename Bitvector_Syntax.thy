@@ -3,7 +3,7 @@ theory Bitvector_Syntax
 begin
 
 class word_constructor = bool_syntax + (*plus +*)
-    fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>(_ \<Colon> _)\<close>)
+    fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
   assumes word_eq[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<longleftrightarrow> nat = nat' \<and> sz = sz'\<close>
       and true_word: \<open>true = (1 \<Colon> 1)\<close>
       and false_word: \<open>false = (0 \<Colon> 1)\<close>
@@ -62,6 +62,8 @@ where
   apply (rule bv_eq_sz_pattern_complete, blast+)
   by auto
 termination by (standard, auto)
+
+declare bv_plus.simps[simp del]
 
 function
   bv_inc :: \<open>'a \<Rightarrow> 'a\<close>  (\<open>++\<^sub>b\<^sub>v _\<close> [81] 80)
@@ -205,17 +207,20 @@ where
 
 termination by (standard, auto)
 
+find_theorems concat_bit
+
 function 
   bv_concat :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<cdot>\<close> 55)
 where
-  \<open>(nat\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (nat\<^sub>2 \<Colon> sz\<^sub>2) = ((((nat\<^sub>1 * (2 ^ sz\<^sub>2))  + nat\<^sub>2) mod 2 ^ (sz\<^sub>1 + sz\<^sub>2)) \<Colon> (sz\<^sub>1 + sz\<^sub>2))\<close> |
+  \<open>(nat\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (nat\<^sub>2 \<Colon> sz\<^sub>2) = (nat (concat_bit sz\<^sub>2 (of_nat nat\<^sub>2) (of_nat nat\<^sub>1)) \<Colon> (sz\<^sub>1 + sz\<^sub>2))\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w\<^sub>1 \<noteq> (nat \<Colon> sz)) \<or> (\<forall>nat sz. w\<^sub>2 \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> w\<^sub>1 \<cdot> w\<^sub>2 = undefined\<close>
   apply (rule bv2_pattern_complete, blast)
   by auto
 
 termination by (standard, auto)
 
-
+lemma bv_concat_0: \<open>(0 \<Colon> sz\<^sub>1) \<cdot> (0 \<Colon> sz\<^sub>2) = (0 \<Colon> sz\<^sub>1 + sz\<^sub>2)\<close>
+  unfolding bv_concat.simps by auto
 
 function
   bv_uminus :: \<open>'a \<Rightarrow> 'a\<close>  (\<open>-\<^sub>b\<^sub>v _\<close> [81] 80)
@@ -268,7 +273,7 @@ termination by (standard, auto)
 function
   xtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
 where
-  \<open>(ext (nat\<^sub>1 \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (((and (and (mask sz) (mask sz\<^sub>h\<^sub>i)) nat\<^sub>1) div (2 ^ sz\<^sub>l\<^sub>o\<^sub>w)) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
+  \<open>(ext (nat\<^sub>1 \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> (ext w \<sim> hi : _ \<sim> lo : _) = undefined\<close>
   subgoal for P x
     apply (cases x)
@@ -283,10 +288,44 @@ where
 
 termination by (standard, auto)
 
-function
+declare xtract.simps[simp del]
+
+lemma extract_0: \<open>(ext 0 \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = 0 \<Colon> Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
+  unfolding xtract.simps by auto
+
+lemma extract_concat32:
+  assumes \<open>x < 2 ^ 32\<close>
+    shows \<open>((((ext x \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24) \<cdot> ext x \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
+               ext x \<Colon> 32 \<sim> hi : 15 \<sim> lo :  8) \<cdot> ext x \<Colon> 32 \<sim> hi :  7 \<sim> lo :  0) = x \<Colon> 32\<close>
+  unfolding xtract.simps bv_concat.simps apply simp
+  unfolding of_nat_take_bit of_nat_drop_bit
+  unfolding concat_bit_take_bit_eq
+  apply (unfold concat_bit_drop_bit, simp)+
+  by (metis add_One_commute assms concat_take_drop_bit_nat_eq_self numeral_plus_numeral semiring_norm(2) semiring_norm(4) semiring_norm(6))
+
+lemma extract_concat64:
+  assumes \<open>x < 2 ^ 64\<close>
+    shows \<open>((((((ext x \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56  \<cdot> ext x \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48) \<cdot>
+                 ext x \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40) \<cdot> ext x \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32) \<cdot>
+                 ext x \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24) \<cdot> ext x \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
+                 ext x \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8) \<cdot> ext x \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0 = x \<Colon> 64\<close>
+  unfolding xtract.simps bv_concat.simps apply simp
+  unfolding of_nat_take_bit of_nat_drop_bit
+  unfolding concat_bit_take_bit_eq
+  apply (unfold concat_bit_drop_bit, simp)+
+  by (metis add_One_commute assms concat_take_drop_bit_nat_eq_self numeral_plus_numeral semiring_norm(2) semiring_norm(4) semiring_norm(6))
+
+lemma extract_low: 
+  assumes \<open>val < 2 ^ 32\<close>
+    shows \<open>ext val \<Colon> sz \<sim> hi : 32 - 1 \<sim> lo : 0 = val \<Colon> 32\<close>
+  unfolding xtract.simps apply simp
+  apply (rule take_bit_nat_eq_self)
+  using assms by assumption
+
+function (* TODO maintain sign*)
   sxtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)
 where
-  \<open>(exts (nat\<^sub>1 \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (((and (and (2 ^ sz) (2 ^ sz\<^sub>h\<^sub>i)) nat\<^sub>1) div (2 ^ sz\<^sub>l\<^sub>o\<^sub>w)) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w))\<close> |
+  \<open>(exts (nat\<^sub>1 \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> (exts w \<sim> hi : _ \<sim> lo : _) = undefined\<close>
   subgoal for P x
     apply (cases x)
@@ -301,6 +340,16 @@ where
   by auto
 
 termination by (standard, auto)
+
+lemma extracts_0: \<open>(exts 0 \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = 0 \<Colon> Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
+  unfolding xtract.simps by auto
+
+lemma sxtract_lt_extend: 
+  assumes \<open>val < 2 ^ 32\<close>
+    shows \<open>exts val \<Colon> sz \<sim> hi : 63 \<sim> lo : 0 = val \<Colon> 64\<close>
+  unfolding sxtract.simps apply (simp (no_asm))
+  apply (rule take_bit_nat_eq_self)
+  using assms by simp
 
 definition 
   bv_eq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>=\<^sub>b\<^sub>v\<close> 56)

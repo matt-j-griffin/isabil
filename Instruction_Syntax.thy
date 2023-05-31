@@ -8,9 +8,14 @@ record insn =
   code :: bil
 
 
-abbreviation
-  no_insn :: insn
+function
+  no_insn :: \<open>word \<Rightarrow> insn\<close>
 where
-  \<open>no_insn \<equiv> \<lparr> addr = (0 \<Colon> 0), size = (0 \<Colon> 0), code = [] \<rparr>\<close>
+  \<open>no_insn (val \<Colon> sz) = \<lparr> addr = (val \<Colon> sz), size = (0 \<Colon> sz), code = Empty \<rparr>\<close>
+  using wordI apply auto[1]
+  by auto
+termination by (standard, auto)
+
+type_synonym program = \<open>(variables \<times> word \<times> var)\<close>
 
 end

@@ -48,6 +48,17 @@ lemma bool_word_is_ok_exhaust:
     by blast+
   by simp
 
+lemma concat_word_typed_okI:
+  assumes \<open>\<Gamma> \<turnstile> num\<^sub>1 \<Colon> sz\<^sub>1 :: imm\<langle>sz\<^sub>1\<rangle>\<close> and \<open>\<Gamma> \<turnstile> num\<^sub>2 \<Colon> sz\<^sub>2 :: imm\<langle>sz\<^sub>2\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2) :: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
+  apply (insert assms) 
+  apply (drule word_typed_okE)+
+  apply (elim conjE)
+  unfolding bv_concat.simps apply (rule word_typed_okI)
+  subgoal by blast
+  subgoal
+    unfolding bv_concat.simps[symmetric] by (rule concat_word_is_okI)
+  .
 
 lemmas T_INT = word_typed_okI
 end
@@ -74,7 +85,7 @@ where
   subgoal for P w t
     apply (rule Type.exhaust[of t], simp)
     subgoal for sz'
-      apply (rule word_exhaust[of w])
+      apply (cases w rule: word_exhaust)
       by auto
     by auto
   .
@@ -85,6 +96,11 @@ instance
   subgoal
     by (metis is_ok_Type.simps(1) is_ok_word.simps typed_ok_word.elims(2))
   using typed_ok_word.simps(2) by blast
+
+
+method solve_T_WORD = (
+  rule T_INT, solve_TG, rule TWF_WORD, linarith, fastforce
+)
 
 end
 

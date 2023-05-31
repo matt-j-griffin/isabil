@@ -1,6 +1,7 @@
 theory Typing_Word
   imports "../Bitvector_Instance" 
-          Typing_Syntax
+          Typing_Syntax 
+          "HOL-Eisbach.Eisbach"
 begin         
 
 subsection \<open>(num \<Colon> sz) is ok\<close>
@@ -61,9 +62,30 @@ lemma bv_divide_ok:
   using assms(2) div_le_dividend le_trans verit_comp_simplify1(3)
   by (meson)
 
+lemma concat_word_is_okI:
+  assumes \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) is ok\<close> and \<open>(num\<^sub>2 \<Colon> sz\<^sub>2) is ok\<close>
+    shows \<open>((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) is ok\<close>
+  apply (insert assms) 
+  apply (drule word_is_okE)+
+  apply (elim conjE)
+  unfolding bv_concat.simps apply (rule word_is_okI)
+  subgoal by blast
+  subgoal
+    unfolding concat_bit_def nat_less_numeral_power_cancel_iff apply (rule OR_upper)
+    subgoal by (rule take_bit_nonnegative)
+    subgoal
+      using add.commute le_add1 nat_int nat_less_iff take_bit_int_less_self_iff take_bit_nat_eq_self take_bit_nonnegative take_bit_of_nat take_bit_tightened_less_eq_nat verit_comp_simplify1(3)
+      by metis
+    subgoal
+      using add.commute push_bit_take_bit take_bit_int_eq_self_iff take_bit_of_nat take_bit_nat_eq_self
+      by metis
+    .
+  .
+
 \<comment> \<open>BIL formalisation lemma\<close>
 
 lemmas TWF_WORD = word_is_okI
+
 
 end
 

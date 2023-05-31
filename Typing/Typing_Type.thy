@@ -33,5 +33,4 @@ method solve_TWF = (
   \<bar> \<open>mem\<langle>_, _\<rangle> is ok\<close> \<Rightarrow> \<open>rule TWF_MEM, linarith, linarith\<close>
 )
 
-
 end
