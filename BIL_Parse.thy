@@ -28,6 +28,6 @@ val _ =
 
 text \<open>Lemmas which tidy the mess left by the parser\<close>
 
-lemmas syntax_simps = plus_exp.simps[symmetric] var_simps
+lemmas syntax_simps = plus_exp.simps[symmetric] minus_exp.simps[symmetric] var_simps
 
 end

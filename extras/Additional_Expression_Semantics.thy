@@ -1313,6 +1313,10 @@ method solve_exps = (
   \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t) + (num \<Colon> sz) \<leadsto>* _\<close> for \<Delta> var t num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>Val (the (\<Delta> (var :\<^sub>t t))) + (num \<Colon> sz)\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
   \<bar> \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, unfold bv_plus.simps\<close>
 
+    \<comment> \<open>Reducible Minus\<close>
+  \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t) - (num \<Colon> sz) \<leadsto>* _\<close> for \<Delta> var t num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>Val (the (\<Delta> (var :\<^sub>t t))) - (num \<Colon> sz)\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
+  \<bar> \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, unfold bv_minus.simps\<close>
+
     \<comment> \<open>Reducible Eq\<close>
   \<bar> \<open>_ \<turnstile> BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, (unfold bv_eq_def, simp (no_asm))[1]\<close>
 

@@ -455,6 +455,11 @@ lemmas PLUS_RHS = plus.rhsI
 lemmas PLUS_RHS_WORD = plus.rhs_wordI
 lemmas PLUS_LHS = plus.lhsI
 
+lemmas MINUS_RHS = minus.rhsI
+lemmas MINUS_RHS_WORD = minus.rhs_wordI
+lemmas MINUS_LHS = minus.lhsI
+
+
 lemma PLUS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
   unfolding plus_exp.simps by (auto simp add: bv_plus.simps eval_exp.simps)
 
@@ -689,6 +694,9 @@ method solve_exp = (
   \<bar> \<open>_ \<turnstile> (_ \<Colon> _) + (_ \<Colon> _) \<leadsto> ((_ \<Colon> _) +\<^sub>b\<^sub>v (_ \<Colon> _))\<close> \<Rightarrow> \<open>rule PLUS\<close>
   \<bar> \<open>_ \<turnstile> (_ \<Colon> _) + _ \<leadsto> ((_ \<Colon> _) + _)\<close> \<Rightarrow> \<open>rule PLUS_RHS_WORD, solve_exp\<close>
   \<bar> \<open>_ \<turnstile> _ + _ \<leadsto> (_ + _)\<close> \<Rightarrow> \<open>rule PLUS_LHS, solve_exp\<close>
+  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) - (_ \<Colon> _) \<leadsto> ((_ \<Colon> _) -\<^sub>b\<^sub>v (_ \<Colon> _))\<close> \<Rightarrow> \<open>rule MINUS\<close>
+  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) - _ \<leadsto> ((_ \<Colon> _) - _)\<close> \<Rightarrow> \<open>rule MINUS_RHS_WORD, solve_exp\<close>
+  \<bar> \<open>_ \<turnstile> _ - _ \<leadsto> (_ - _)\<close> \<Rightarrow> \<open>rule MINUS_LHS, solve_exp\<close>
   \<bar> \<open>_ \<turnstile> BinOp (_ \<Colon> _) (LOp Eq) (_ \<Colon> _) \<leadsto> (_ \<Colon> _) =\<^sub>b\<^sub>v (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule step_exp_eqI\<close>
   \<bar> \<open>_ \<turnstile> BinOp (_ \<Colon> _) _ _ \<leadsto> BinOp (_ \<Colon> _) _ _\<close> \<Rightarrow> \<open>rule BOP_RHS_WORD, solve_exp\<close>
   \<bar> \<open>_ \<turnstile> BinOp (Val _) _ _ \<leadsto> BinOp (Val _) _ _\<close> \<Rightarrow> \<open>rule BOP_RHS, solve_exp\<close>
