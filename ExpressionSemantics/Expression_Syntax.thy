@@ -9,7 +9,10 @@ begin
 text \<open>Some evaluation rules depend on the type of a value. Since there are two canonical forms for
 each type, we avoid duplicating each rule by defining the following metafunction:\<close>
 
-function (* TODO val_constructor/syntax*)
+context val_syntax
+begin
+
+function
   type :: \<open>val \<Rightarrow> Type\<close>
 where
   type_storageI: \<open>type (_[(_ \<Colon> nat') \<leftarrow> _, sz]) = mem\<langle>nat',sz\<rangle>\<close> | 
@@ -33,18 +36,7 @@ lemma type_word_not_mem[simp]: \<open>type (num \<Colon> sz) \<noteq> mem\<langl
   apply (erule type.elims)
   by simp_all
 
-(*
-lemma type_unknownE:
-  assumes \<open>type (unknown[str]: t') = t\<close>
-    shows \<open>t = t'\<close>
-  using assms unfolding type.simps by clarify
-
-lemma type_unknown_not_mem[simp]: \<open>type (num \<Colon> sz) \<noteq> mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
-  apply (rule notI)
-  apply (erule type.elims)
-  by simp_all
-*)
-
+end
 
 context word_constructor
 begin
@@ -208,6 +200,7 @@ instance
   done
 
 end
+
 (* TODO add to simpset *)
 lemma Val_simp_word: \<open>Val (a \<Colon> b) = (a \<Colon> b)\<close>
   by (simp add: word_constructor_exp_def)
@@ -810,23 +803,25 @@ termination
   apply (rule mlex_less, force)+
   done
 
+declare eval_exp.simps[simp del]
+
 lemma eval_exp_true[simp]: \<open>eval_exp \<Delta> true = true\<close>
-  by (simp add: true_exp_def)
+  by (simp add: true_exp_def eval_exp.simps)
 
 lemma eval_exp_false[simp]: \<open>eval_exp \<Delta> false = false\<close>
-  by (simp add: false_exp_def)
+  by (simp add: false_exp_def eval_exp.simps)
 
 lemma eval_exp_word[simp]: \<open>eval_exp \<Delta> (num \<Colon> sz) = (num \<Colon> sz)\<close>
-  by (simp add: word_constructor_exp_def)
+  by (simp add: word_constructor_exp_def eval_exp.simps)
 
 lemma eval_exp_unknown[simp]: \<open>eval_exp \<Delta> (unknown[str]: t) = (unknown[str]: t)\<close>
-  by (simp add: unknown_constructor_exp_def)
+  by (simp add: unknown_constructor_exp_def eval_exp.simps)
 
 lemma eval_exp_storage[simp]: \<open>eval_exp \<Delta> (v[w \<leftarrow> v', sz]) = (v[w \<leftarrow> v', sz])\<close>
-  by (simp add: storage_constructor_exp_def)
+  by (simp add: storage_constructor_exp_def eval_exp.simps)
 
 lemma eval_exp_val: \<open>v' = eval_exp \<Delta> (Val v) \<Longrightarrow> v = v'\<close>
-  by simp
+  unfolding eval_exp.simps by simp
 
 function
   step_pred_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> exp \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<leadsto> _\<close> 401)
@@ -846,5 +841,12 @@ where
 termination by (standard, auto)
 
 lemmas var_simps = Immediate_simp Val_simp_word Val_simp_storage Val_simp_unknown
+
+
+fun
+  eval_exps_pred_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<leadsto>* _\<close>)
+where
+  \<open>(\<Delta> \<turnstile> e \<leadsto>* v) = (v = eval_exp \<Delta> e)\<close>
+
 
 end

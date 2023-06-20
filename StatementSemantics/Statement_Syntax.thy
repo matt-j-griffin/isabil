@@ -118,7 +118,7 @@ lemma eval_inf_bil_cases[consumes 1]:
       "w' = w"
   using assms apply (drule_tac eval_inf_bil_simps) 
   by auto
-
+(*
 definition
   step_pred_bil :: \<open>variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_,_\<close>)
 where
@@ -136,6 +136,23 @@ definition
   eval_pred_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_\<close>)
 where                           
   \<open>\<Delta>,w \<turnstile> s\<^sub>1 \<leadsto> \<Delta>',w' = (eval_inf_stmt \<Delta> w s\<^sub>1 \<Delta>' w')\<close>
+*)
+
+
+inductive
+  step_pred_stmt :: \<open>variables \<Rightarrow> word \<Rightarrow> stmt \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_\<close>) and
+  step_pred_bil :: \<open>variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> variables \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> bool\<close> (\<open>_,_ \<turnstile> _ \<leadsto> _,_,_\<close>)
+where
+  WhileTrue: \<open>\<lbrakk>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* true; \<Delta>\<^sub>1,w\<^sub>1 \<turnstile> seq \<leadsto> \<Delta>\<^sub>2, w\<^sub>2, Empty; \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3, w\<^sub>3\<rbrakk> \<Longrightarrow> \<Delta>\<^sub>1,w\<^sub>1 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3, w\<^sub>3\<close> |
+  WhileFalse: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* false\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> (While e seq) \<leadsto> \<Delta>,w\<close> |
+  IfTrue: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* true; \<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>', w'\<close> |
+  IfFalse: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* false; \<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w',Empty\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>', w'\<close> |
+  Jmp: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* (num \<Colon> sz)\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> (Jmp e) \<leadsto> \<Delta>,(num \<Colon> sz)\<close> |
+  Move: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* v\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> (Move var e) \<leadsto> \<Delta>(var \<mapsto> v),w\<close> |
+  CpuExn: \<open>\<Delta>,w \<turnstile> (CpuExn code) \<leadsto> \<Delta>,w\<close> |
+  Special: \<open>\<Delta>,w \<turnstile> (Special str) \<leadsto> \<Delta>,w\<close> |
+  Next: \<open>\<lbrakk>\<Delta>,w \<turnstile> s\<^sub>1 \<leadsto> \<Delta>'',w''; \<Delta>'',w'' \<turnstile> seq \<leadsto> \<Delta>',w',seq'; seq' \<noteq> Stmt s\<^sub>1 seq\<rbrakk> \<Longrightarrow> \<Delta>,w \<turnstile> Stmt s\<^sub>1 seq \<leadsto> \<Delta>',w',seq'\<close> |
+  Eq: \<open>\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>,w,seq\<close>
 
 
 end

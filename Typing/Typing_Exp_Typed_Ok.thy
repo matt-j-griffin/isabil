@@ -1,7 +1,7 @@
 theory Typing_Exp_Typed_Ok
   imports Typing_Value_Typed_Ok
           Typing_Var_Typed_Ok
-          "../Exp_Instance"
+          "../ExpressionSemantics/Expression_Syntax"
 begin
 
 no_notation List.append (infixr "@" 65)

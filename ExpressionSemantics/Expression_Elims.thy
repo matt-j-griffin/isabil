@@ -3,8 +3,96 @@ section \<open>Introduction rules\<close>
 
 theory Expression_Elims
   imports Expression_Syntax 
-          "../Typing/Typing" (* TODO *)
+          (*"../Typing/Typing"  TODO *)
 begin
+
+
+
+
+
+
+
+
+
+lemma step_exp_var_inE:
+  assumes \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> e\<close>
+      and \<open>((id' :\<^sub>t t), v) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>e = (Val v)\<close>
+  using assms apply (auto simp add: val_var_in_vars.simps)
+
+lemma step_exp_var_in_wordE:
+  assumes \<open>((id' :\<^sub>t t), (num \<Colon> sz)) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> (num \<Colon> sz)\<close>
+  using assms by (auto simp add: val_var_in_vars.simps)
+
+lemma step_exp_var_in_trueE:
+  assumes \<open>(id' :\<^sub>t t, true) \<in>\<^sub>\<Delta> \<Delta>\<close> 
+    shows \<open>\<Delta> \<turnstile> id' :\<^sub>t t \<leadsto> true\<close>
+  unfolding true_exp_def using assms by (rule step_exp_var_inE)
+
+lemma step_exp_var_in_falseE:
+  assumes \<open>(id' :\<^sub>t t, false) \<in>\<^sub>\<Delta> \<Delta>\<close> 
+    shows \<open>\<Delta> \<turnstile> id' :\<^sub>t t \<leadsto> false\<close>
+  unfolding false_exp_def using assms by (rule step_exp_var_inE)
+
+lemma step_exp_var_in_storageE:
+  assumes \<open>((id' :\<^sub>t t), v[w \<leftarrow> v', sz]) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> (v[w \<leftarrow> v', sz])\<close>
+  using assms by (auto simp add: val_var_in_vars.simps)
+
+lemma step_exp_var_in_unknownE:
+  assumes \<open>((id' :\<^sub>t t), (unknown[str]: t)) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> unknown[str]: t\<close>
+  using assms by (auto simp add: val_var_in_vars.simps)
+
+lemma step_exp_var_unknownE:
+  assumes \<open>(id' :\<^sub>t t) \<notin> dom \<Delta>\<close>
+    shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> unknown['''']: t\<close>
+  using assms by auto
+
+lemma exp_step_deterministic:
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto> e\<^sub>1\<close> and \<open>\<Delta> \<turnstile> e \<leadsto> e\<^sub>2\<close>
+    shows \<open>e\<^sub>1 = e\<^sub>2\<close>
+using assms proof (induct e)
+  case (Var x)
+  then show ?case
+    apply (cases x rule: var_exhaust) 
+    apply clarify
+    unfolding var_constructor_exp_def[symmetric]
+    using step_pred_exp.simps
+     apply simp
+    apply simp
+    sledgehammer
+    sorry
+next
+  case (Load e1 e2 x3 x4)
+  then show ?case sorry
+next
+  case (Store e1 e2 x3 x4 e3)
+  then show ?case sorry
+next
+  case (BinOp e1 x2a e2)
+  then show ?case sorry
+next
+  case (UnOp x1a e)
+  then show ?case sorry
+next
+  case (Cast x1a x2a e)
+  then show ?case sorry
+next
+  case (Let x1a e1 e2)
+  then show ?case sorry
+next
+  case (Ite e1 e2 e3)
+  then show ?case sorry
+next
+  case (Extract x1a x2a e)
+  then show ?case sorry
+next
+  case (Concat e1 e2)
+  then show ?case sorry
+qed simp
+
 
 lemma typed_ok_type:
   assumes \<open>\<Gamma> \<turnstile> v :: t\<close>

@@ -2,16 +2,17 @@ theory Bitvector_Syntax
   imports Syntax
 begin
 
-class word_constructor = bool_syntax + (*plus +*)
+class word_constructor = bool_syntax +
     fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
   assumes word_eq[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<longleftrightarrow> nat = nat' \<and> sz = sz'\<close>
       and true_word: \<open>true = (1 \<Colon> 1)\<close>
       and false_word: \<open>false = (0 \<Colon> 1)\<close>
 begin
 
-(* TODO delete if can *)
-lemma word_eq_P: \<open>\<lbrakk>(a \<Colon> b) = (a' \<Colon> b'); a = a' \<and> b = b' \<Longrightarrow> P\<rbrakk> \<Longrightarrow> P\<close>
-  using local.word_eq by blast
+lemma word_not_sz_neqI:
+  assumes \<open>num \<noteq> num'\<close>
+    shows \<open>(num \<Colon> sz) \<noteq> (num' \<Colon> sz)\<close>
+  using assms by simp
 
 lemma word_synax_induct: 
   assumes \<open>\<And>nat sz. Q (nat \<Colon> sz)\<close>
@@ -133,6 +134,16 @@ where
 
 termination by (standard, auto)
 
+lemma land_false[simp]: 
+    \<open>true &\<^sub>b\<^sub>v false = false\<close> 
+    \<open>false &\<^sub>b\<^sub>v true = false\<close> 
+    \<open>false &\<^sub>b\<^sub>v false = false\<close>
+  unfolding true_word false_word bv_land.simps and_zero_eq zero_and_eq by safe
+
+lemma land_true[simp]:
+    \<open>true &\<^sub>b\<^sub>v true = true\<close>
+  unfolding true_word bv_land.simps and.idem by clarify
+
 function
   bv_lor :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>|\<^sub>b\<^sub>v\<close> 56)
 where
@@ -206,8 +217,6 @@ where
   by auto
 
 termination by (standard, auto)
-
-find_theorems concat_bit
 
 function 
   bv_concat :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<cdot>\<close> 55)
@@ -305,10 +314,10 @@ lemma extract_concat32:
 
 lemma extract_concat64:
   assumes \<open>x < 2 ^ 64\<close>
-    shows \<open>((((((ext x \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56  \<cdot> ext x \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48) \<cdot>
-                 ext x \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40) \<cdot> ext x \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32) \<cdot>
-                 ext x \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24) \<cdot> ext x \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
-                 ext x \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8) \<cdot> ext x \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0 = x \<Colon> 64\<close>
+    shows \<open>((((((((ext x \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56) \<cdot> ext x \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48) \<cdot>
+                   ext x \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40) \<cdot> ext x \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32) \<cdot>
+                   ext x \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24) \<cdot> ext x \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
+                   ext x \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8) \<cdot> ext x \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0) = (x \<Colon> 64)\<close>
   unfolding xtract.simps bv_concat.simps apply simp
   unfolding of_nat_take_bit of_nat_drop_bit
   unfolding concat_bit_take_bit_eq
@@ -317,7 +326,7 @@ lemma extract_concat64:
 
 lemma extract_low: 
   assumes \<open>val < 2 ^ 32\<close>
-    shows \<open>ext val \<Colon> sz \<sim> hi : 32 - 1 \<sim> lo : 0 = val \<Colon> 32\<close>
+    shows \<open>(ext val \<Colon> sz \<sim> hi : 32 - 1 \<sim> lo : 0) = (val \<Colon> 32)\<close>
   unfolding xtract.simps apply simp
   apply (rule take_bit_nat_eq_self)
   using assms by assumption
@@ -341,12 +350,14 @@ where
 
 termination by (standard, auto)
 
+declare sxtract.simps[simp del]
+
 lemma extracts_0: \<open>(exts 0 \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = 0 \<Colon> Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
-  unfolding xtract.simps by auto
+  unfolding sxtract.simps by auto
 
 lemma sxtract_lt_extend: 
   assumes \<open>val < 2 ^ 32\<close>
-    shows \<open>exts val \<Colon> sz \<sim> hi : 63 \<sim> lo : 0 = val \<Colon> 64\<close>
+    shows \<open>(exts val \<Colon> sz \<sim> hi : 63 \<sim> lo : 0) = (val \<Colon> 64)\<close>
   unfolding sxtract.simps apply (simp (no_asm))
   apply (rule take_bit_nat_eq_self)
   using assms by simp

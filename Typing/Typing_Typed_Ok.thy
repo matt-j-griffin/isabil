@@ -1,5 +1,5 @@
 theory Typing_Typed_Ok
-  imports Typing_Type
+  imports Typing_Type Typing_Context
 begin
 
 class typed_ok = 

@@ -1,6 +1,6 @@
 theory Typing_BIL_Is_Ok
   imports Typing_Exp_Typed_Ok
-begin
+begin            
 
 class typing_is_ok =
   fixes typing_is_ok :: \<open>TypingContext \<Rightarrow> 'a \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ is ok\<close> [260, 235] 201)

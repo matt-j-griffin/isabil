@@ -36,12 +36,12 @@ lemma STEP_NEXT:
 lemma VAR_IN:
   assumes \<open>((id' :\<^sub>t t), v) \<in>\<^sub>\<Delta> \<Delta>\<close>
     shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> (Val v)\<close>
-  using assms by (auto simp add: val_var_in_vars.simps)
+  using assms by (auto simp add: val_var_in_vars.simps eval_exp.simps)
 
 lemma VAR_IN_WORD:
   assumes \<open>((id' :\<^sub>t t), (num \<Colon> sz)) \<in>\<^sub>\<Delta> \<Delta>\<close>
     shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> (num \<Colon> sz)\<close>
-  using assms by (auto simp add: val_var_in_vars.simps)
+  unfolding word_constructor_exp_def using assms by (rule VAR_IN)
 
 lemma VAR_IN_TRUE:
   assumes \<open>(id' :\<^sub>t t, true) \<in>\<^sub>\<Delta> \<Delta>\<close> 
@@ -56,38 +56,38 @@ lemma VAR_IN_FALSE:
 lemma VAR_IN_STORAGE:
   assumes \<open>((id' :\<^sub>t t), v[w \<leftarrow> v', sz]) \<in>\<^sub>\<Delta> \<Delta>\<close>
     shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> (v[w \<leftarrow> v', sz])\<close>
-  using assms by (auto simp add: val_var_in_vars.simps)
+  unfolding storage_constructor_exp_def using assms by (rule VAR_IN)
 
 lemma VAR_IN_UNKNOWN:
   assumes \<open>((id' :\<^sub>t t), (unknown[str]: t)) \<in>\<^sub>\<Delta> \<Delta>\<close>
     shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> unknown[str]: t\<close>
-  using assms by (auto simp add: val_var_in_vars.simps)
+  unfolding unknown_constructor_exp_def using assms by (rule VAR_IN)
 
 lemma VAR_UNKNOWN:
   assumes \<open>(id' :\<^sub>t t) \<notin> dom \<Delta>\<close>
     shows \<open>\<Delta> \<turnstile> (id' :\<^sub>t t) \<leadsto> unknown['''']: t\<close>
-  using assms by auto
+  using assms by (auto simp add: eval_exp.simps)
 
 lemma LOAD_STEP_ADDR:
   assumes \<open>(\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2')\<close>
     shows \<open>\<Delta> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz \<leadsto> (e\<^sub>1[e\<^sub>2', ed]:usz)\<close>  
-  using assms by (cases e\<^sub>2, auto)
+  using assms by (cases e\<^sub>2, auto simp add: eval_exp.simps)
 
 lemma LOAD_STEP_MEM:
   assumes \<open>(\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1')\<close>
     shows \<open>\<Delta> \<turnstile> e\<^sub>1[Val v\<^sub>2, ed]:usz \<leadsto> (e\<^sub>1'[Val v\<^sub>2, ed]:usz)\<close>
-  using assms by (cases e\<^sub>1, auto)
+  using assms by (cases e\<^sub>1, auto simp add: eval_exp.simps)
 
 lemma LOAD_STEP_MEM_WORD:
   assumes \<open>(\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1')\<close>
     shows \<open>\<Delta> \<turnstile> e\<^sub>1[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz \<leadsto> (e\<^sub>1'[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz)\<close>
-  using assms by (cases e\<^sub>1, auto)
+  unfolding word_constructor_exp_def using assms by (rule LOAD_STEP_MEM)
 
 lemma LOAD_BYTE:  \<open>\<Delta> \<turnstile> v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz \<leadsto> (Val v')\<close>
-  by auto
+  by (auto simp add: eval_exp.simps) 
 
 lemma LOAD_BYTE_WORD:  \<open>\<Delta> \<turnstile> v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> (num\<^sub>v \<Colon> sz), sz][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz \<leadsto> (num\<^sub>v \<Colon> sz)\<close>
-  by auto
+  unfolding word_constructor_exp_def[of num\<^sub>v] by (rule LOAD_BYTE)
 
 lemma LOAD_BYTE_FROM_NEXT:
   assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> and \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<rangle>\<close>
@@ -97,25 +97,26 @@ lemma LOAD_BYTE_FROM_NEXT:
     unfolding storage_constructor_exp_def storage_constructor_val_def by auto
   subgoal
     apply (rule val_exhaust[of v])
-    apply simp_all
-    by (metis Type.inject(2) load.simps(1) type.simps(1) word_exhaust)
+    apply (simp_all add: eval_exp.simps)
+    by (metis Type.inject(2) load.simps(1) type.simps(1) word_exhaust )
   .
 
 lemma LOAD_UN_ADDR: \<open>\<Delta> \<turnstile> e\<^sub>1[unknown[str]: imm\<langle>sz'\<rangle>, ed]:usz \<leadsto> (unknown[str]: imm\<langle>sz\<rangle>)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LOAD_UN_MEM: \<open>\<Delta> \<turnstile> ((unknown[str]: t)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz) \<leadsto> (unknown[str]: imm\<langle>sz\<rangle>)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LOAD_WORD_BE:
   assumes \<open>sz > sz\<^sub>m\<^sub>e\<^sub>m\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close> and \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> 
     shows \<open>\<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz) \<leadsto> (((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m) @ (((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))))\<close> 
   using assms apply (rule_tac val_exhaust[of v])
   subgoal by auto
-  subgoal unfolding SUCC bv_plus.simps by auto
+  subgoal unfolding SUCC bv_plus.simps by (auto simp add: eval_exp.simps)
   subgoal for mem w v'
+    apply (auto simp add: eval_exp.simps)
     apply (cases w rule: word_exhaust, auto)
-    unfolding SUCC concat_en_be bv_plus.simps by simp
+    unfolding SUCC concat_en_be bv_plus.simps by auto
   .
 
 lemma LOAD_WORD_EL:
@@ -123,8 +124,9 @@ lemma LOAD_WORD_EL:
     shows \<open>\<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> ((((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> 
   using assms apply (rule_tac val_exhaust[of v])
   subgoal by auto
-  subgoal unfolding SUCC bv_plus.simps by auto
+  subgoal unfolding SUCC bv_plus.simps by (auto simp add: eval_exp.simps)
   subgoal for mem w v'
+    apply (auto simp add: eval_exp.simps)
     apply (cases w rule: word_exhaust, auto)
     unfolding SUCC concat_en_el bv_plus.simps by simp
   .
@@ -132,15 +134,15 @@ lemma LOAD_WORD_EL:
 lemma LOAD_WORD_EL_MEM_INTER:
   assumes \<open>sz > sz\<^sub>m\<^sub>e\<^sub>m\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close> and \<open>\<exists>num. w = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close>
     shows \<open>\<Delta> \<turnstile> (v[w \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> (((v[w \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ (v[w \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> 
-  using assms apply (frule_tac LOAD_WORD_EL[of _ _ \<open>v[w \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]\<close>])
-  by auto
+  unfolding storage_constructor_exp_def using assms(1,2) apply (rule LOAD_WORD_EL)
+  using assms(3) by auto
 
 
 lemma LOAD_WORD_EL_MEM:
   assumes \<open>sz > sz\<^sub>m\<^sub>e\<^sub>m\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close>
     shows \<open>\<Delta> \<turnstile> (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> (((v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> 
-  using assms apply (frule_tac LOAD_WORD_EL[of _ _ \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]\<close>])
-  by simp_all
+  unfolding storage_constructor_exp_def using assms apply (rule LOAD_WORD_EL)
+  by (rule type_storageI)
 
 lemma LOAD_WORD_EL_MEM_SUCC:
   assumes \<open>sz > sz\<^sub>m\<^sub>e\<^sub>m\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close>
@@ -167,7 +169,7 @@ lemma LOAD_WORD_EL_MEM_WORD_ADDR:
   assumes \<open>sz > sz\<^sub>m\<^sub>e\<^sub>m\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close>
     shows \<open>\<Delta> \<turnstile> (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> (((v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> 
   using assms apply (frule_tac LOAD_WORD_EL[of _ _ \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]\<close>])
-  by simp_all
+  by (simp_all add: eval_exp.simps)
 
 lemma LOAD_BYTE_FROM_NEXT_MEM_INTER:
   assumes \<open>\<exists>num. w = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> and \<open>\<exists>num. w' = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<and> num \<noteq> num\<^sub>3\<close>
@@ -186,12 +188,12 @@ lemma LOAD_BYTE_FROM_NEXT_MEM:
 lemma STORE_STEP_VAL:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<leadsto> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3')\<close> 
-  using assms by (cases e\<^sub>3, auto)
+  using assms by (cases e\<^sub>3, auto simp add: eval_exp.simps)
 
 lemma STORE_STEP_ADDR:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> (e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> (Val v\<^sub>3))\<close> 
-  using assms by (cases e\<^sub>2, auto) 
+  using assms by (cases e\<^sub>2, auto simp add: eval_exp.simps) 
 
 lemma STORE_STEP_ADDR_WORD:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
@@ -201,13 +203,13 @@ lemma STORE_STEP_ADDR_WORD:
 lemma STORE_STEP_MEM:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [(Val v\<^sub>2), en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> (e\<^sub>1' with [(Val v\<^sub>2), en]:usz \<leftarrow> (Val v\<^sub>3))\<close> 
-  using assms by (cases e\<^sub>1, auto) 
+  using assms by (cases e\<^sub>1, auto simp add: eval_exp.simps) 
 
 lemma STORE_WORD_BE:
   assumes \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m < sz\<close> and \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>type val = imm\<langle>sz\<rangle>\<close>
       and \<open>e\<^sub>1 = ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast High sz\<^sub>m\<^sub>e\<^sub>m (Val val)))\<close>
     shows \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz \<leftarrow> (Val val)) \<leadsto> (e\<^sub>1 with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast Low (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close>
-  using assms unfolding xtract.simps apply auto
+  using assms unfolding xtract.simps apply (auto simp add: eval_exp.simps)
   apply (cases val rule: val_exhaust, auto)
   unfolding SUCC xtract.simps bv_plus.simps by auto
 
@@ -215,19 +217,19 @@ lemma STORE_WORD_EL:
   assumes \<open>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m < sz\<close> and \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>type val = imm\<langle>sz\<rangle>\<close>
       and \<open>e\<^sub>1 = ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast Low sz\<^sub>m\<^sub>e\<^sub>m (Val val)))\<close>
     shows \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<leadsto> (e\<^sub>1 with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast High (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close>
-  using assms unfolding xtract.simps apply auto
+  using assms unfolding xtract.simps apply (auto simp add: eval_exp.simps)
   apply (cases val rule: val_exhaust, auto)
   unfolding SUCC xtract.simps bv_plus.simps by auto
 
 lemma STORE_VAL:
   assumes \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>type v' = imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m > 0\<close>
     shows \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Val v')) \<leadsto> (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m])\<close>
-  using assms by (cases ed, auto)
+  using assms by (cases ed, auto simp add: eval_exp.simps)
   
 lemma STORE_UN_ADDR:
   assumes \<open>type v = t\<close>
     shows \<open>\<Delta> \<turnstile> ((Val v) with [unknown[str]: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>, ed]:usz' \<leftarrow> (Val v')) \<leadsto> (unknown[str]: t)\<close>
-  using assms by (cases t, auto)
+  using assms by (cases t, auto simp add: eval_exp.simps)
 
 lemma STORE_STEP_MEM_WORD:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
@@ -254,7 +256,7 @@ lemma STORE_WORD:
   assumes \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m > 0\<close>
     shows \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (num\<^sub>v\<^sub>a\<^sub>l \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) \<leadsto> (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> (num\<^sub>v\<^sub>a\<^sub>l \<Colon> sz\<^sub>m\<^sub>e\<^sub>m), sz\<^sub>m\<^sub>e\<^sub>m])\<close>
   using assms apply (drule_tac STORE_VAL[of _ _ _ \<open>(num\<^sub>v\<^sub>a\<^sub>l \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close> _ num ed])
-  by simp_all
+  by (auto simp add: eval_exp.simps)
 
 lemma STORE_WORD_IN_MEM:
   assumes \<open>sz\<^sub>m\<^sub>e\<^sub>m > 0\<close>
@@ -294,7 +296,7 @@ lemma STORE_XTRACT_IN_MEM:
 lemma LET_STEP:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<leadsto> (Let var e\<^sub>1' e\<^sub>2)\<close>
-  using assms by (cases e\<^sub>1, auto)
+  using assms by (cases e\<^sub>1, auto simp add: eval_exp.simps)
 (*
 fun 
   capture_avoiding :: \<open>(Id \<times> Type) set \<Rightarrow> exp \<Rightarrow> bool\<close>
@@ -333,40 +335,40 @@ lemma LET:
 lemma ITE_STEP_COND:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (Ite e\<^sub>1 (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> (Ite e\<^sub>1' (Val v\<^sub>2) (Val v\<^sub>3))\<close>
-  using assms by (cases e\<^sub>1, auto)
+  using assms by (cases e\<^sub>1, auto simp add: eval_exp.simps)
 
 lemma ITE_STEP_THEN:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
     shows \<open>\<Delta> \<turnstile> (Ite e\<^sub>1 e\<^sub>2 (Val v\<^sub>3)) \<leadsto> (Ite e\<^sub>1 e\<^sub>2' (Val v\<^sub>3))\<close>
-  using assms by (cases e\<^sub>2, auto)
+  using assms by (cases e\<^sub>2, auto simp add: eval_exp.simps)
 
 lemma ITE_STEP_ELSE:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3'\<close>
     shows \<open>\<Delta> \<turnstile> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<leadsto> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3')\<close>
-  using assms by (cases e\<^sub>3, auto)
+  using assms by (cases e\<^sub>3, auto simp add: eval_exp.simps)
 
 lemma ITE_TRUE: \<open>\<Delta> \<turnstile> (Ite true (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> (Val v\<^sub>2)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma ITE_FALSE: \<open>\<Delta> \<turnstile> (Ite false (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> (Val v\<^sub>3)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma ITE_UNK:
   assumes \<open>type v\<^sub>2 = t'\<close>
     shows \<open>\<Delta> \<turnstile> (Ite (unknown[str]: t) (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> (unknown[str]: t')\<close>
-  using assms by (simp add: unknown_constructor_exp_def)
+  using assms by (auto simp add: eval_exp.simps unknown_constructor_exp_def)
 
 text \<open>BOP Lemmas\<close>
 
 lemma bop_lhsI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (BinOp e\<^sub>1 bop e\<^sub>2) \<leadsto> (BinOp e\<^sub>1' bop e\<^sub>2)\<close>
-  using assms by (cases e\<^sub>1, auto)
+  using assms by (cases e\<^sub>1, auto simp add: eval_exp.simps)
 
 lemma bop_rhsI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
     shows \<open>\<Delta> \<turnstile> (BinOp (Val v\<^sub>1) bop e\<^sub>2) \<leadsto> (BinOp (Val v\<^sub>1) bop e\<^sub>2')\<close>
-  using assms by (cases e\<^sub>2, auto)
+  using assms by (cases e\<^sub>2, auto simp add: eval_exp.simps)
 
 lemma bop_rhs_wordI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
@@ -396,11 +398,11 @@ lemma rhs_wordI:
 end
 
 lemma aop_unk_lhsI: \<open>\<Delta> \<turnstile> (BinOp (unknown[str]: t) (AOp aop) e) \<leadsto> (unknown[str]: t)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 (* revisit this*)
 lemma aop_unk_rhs_wordI: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (AOp aop) (unknown[str]: t)) \<leadsto> (unknown[str]: t)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 locale aop_lemmas =
     fixes bop_fun :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> and aop :: AOp
@@ -424,10 +426,10 @@ end
 
 
 lemma LOP_UNK_LHS: \<open>\<Delta> \<turnstile> (BinOp (unknown[str]: t) (LOp lop) e) \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LOP_UNK_RHS: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp lop) (unknown[str]: t)) \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 (* TODO can the unreserved syntax just be abbreviations (probable functions?) and attach to exp instead of separate class *)
 interpretation plus: aop_lemmas \<open>(+)\<close> \<open>Plus\<close> by (standard, unfold plus_exp.simps, rule)
@@ -454,87 +456,85 @@ lemmas PLUS_RHS_WORD = plus.rhs_wordI
 lemmas PLUS_LHS = plus.lhsI
 
 lemma PLUS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  unfolding plus_exp.simps by (auto simp add: bv_plus.simps)
+  unfolding plus_exp.simps by (auto simp add: bv_plus.simps eval_exp.simps)
 
 lemma MINUS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by (cases \<open>num\<^sub>2 \<le> num\<^sub>1\<close>, auto)
+  by (cases \<open>num\<^sub>2 \<le> num\<^sub>1\<close>, auto simp add: eval_exp.simps)
   
 lemma TIMES: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) * (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) *\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma DIV: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) div (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma SDIV: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) sdiv (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma MOD: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) % (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma SMOD: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) smod (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LSL: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) << (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LSR: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) >> (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma ASR: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) >>> (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LAND: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) && (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LOR: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) || (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma XOR: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) xor (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma EQ_SAME: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Eq) (num \<Colon> sz)) \<leadsto> true\<close>
-  by (simp add: bv_eq_def)
+  by (simp add: bv_eq_def eval_exp.simps)
 
 lemma EQ_DIFF: 
   assumes \<open>(num\<^sub>1 \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true\<close>
     shows \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz)) \<leadsto> false\<close>
-  using assms apply auto
-  unfolding bv_eq_def by auto
+  using assms apply (auto simp add: eval_exp.simps)
+  unfolding bv_eq_def  by auto
 
 lemma NEQ_SAME: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Neq) (num \<Colon> sz)) \<leadsto> false\<close>
-  by (simp add: bv_eq_def)
+  by (simp add: bv_eq_def eval_exp.simps)
 
 lemma NEQ_DIFF: 
   assumes \<open>(num\<^sub>1 \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true\<close>
     shows \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz)) (LOp Neq) (num\<^sub>2 \<Colon> sz) \<leadsto> true\<close>
   using assms apply auto
-  apply (simp add: bv_eq_def)
+  apply (simp add: bv_eq_def eval_exp.simps)
   by (cases \<open>num\<^sub>1 = num\<^sub>2\<close>, auto)
 
 lemma LESS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) lteq (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  apply auto
-  by (simp_all add: bv_eq_def)
+  by (auto simp add: bv_eq_def eval_exp.simps)
 
 lemma SIGNED_LESS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma SIGNED_LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) slteq (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
-  apply auto
-  by (simp_all add: bv_eq_def)
+  by (auto simp add: bv_eq_def eval_exp.simps)
 
 lemma UOP: 
   assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close>
     shows \<open>\<Delta> \<turnstile> (UnOp uop e) \<leadsto> (UnOp uop e')\<close>
-  using assms by (cases e, auto)
+  using assms by (cases e, auto simp add: eval_exp.simps)
 
 lemma UOP_UNK: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<leadsto> (unknown[str]: t)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma NOT: \<open>\<Delta> \<turnstile> ~(num \<Colon> sz) \<leadsto> (~\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
-  unfolding BIL_Syntax.not_exp.simps by auto
+  unfolding BIL_Syntax.not_exp.simps by (auto simp add: eval_exp.simps)
 
 lemma NOT_FALSE: \<open>\<Delta> \<turnstile> ~false \<leadsto> true\<close>
   using bv_negation_false_true NOT by (metis false_word)
@@ -542,15 +542,14 @@ lemma NOT_FALSE: \<open>\<Delta> \<turnstile> ~false \<leadsto> true\<close>
 lemma NOT_TRUE: \<open>\<Delta> \<turnstile> ~true \<leadsto> false\<close>
   using bv_negation_true_false NOT by (metis true_word)
 
-
 lemma NEG: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma CONCAT_RHS:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 @ e\<^sub>2) \<leadsto> (e\<^sub>1 @ e\<^sub>2')\<close>
   using assms unfolding step_pred_exp.simps
-  apply auto
+  apply (auto simp add: eval_exp.simps)
   apply (simp add: STEP_NOT_EQ)
   by (metis STEP_NOT_REDUCTION)
 
@@ -558,7 +557,7 @@ lemma CONCAT_LHS:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 @ (Val v\<^sub>2)) \<leadsto> (e\<^sub>1' @ (Val v\<^sub>2))\<close>
   using assms unfolding step_pred_exp.simps
-  apply auto
+  apply (auto simp add: eval_exp.simps)
   apply (simp add: STEP_NOT_EQ)
   by (metis STEP_NOT_REDUCTION)
 
@@ -566,57 +565,52 @@ lemma CONCAT_LHS_WORD:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> (e\<^sub>1 @ (num \<Colon> sz)) \<leadsto> (e\<^sub>1' @ (num \<Colon> sz))\<close>
   using assms apply (drule_tac CONCAT_LHS)
-  unfolding Val_simp_word by simp
+  unfolding Val_simp_word by (auto simp add: eval_exp.simps)
+
 
 lemma CONCAT_LHS_UN:
   assumes \<open>type v\<^sub>2 = imm\<langle>sz\<^sub>2\<rangle>\<close>
     shows \<open>\<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) @ (Val v\<^sub>2)) \<leadsto> unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
-  using assms by (cases v\<^sub>2 rule: val_exhaust, auto) 
+  using assms by (cases v\<^sub>2 rule: val_exhaust, auto simp add: eval_exp.simps) 
 
 lemma CONCAT_RHS_UN:
     \<open>\<Delta> \<turnstile> (num \<Colon> sz\<^sub>1) @ (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) \<leadsto> (unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>)\<close>
-  by (simp_all add: unknown_constructor_exp_def)
+  by (auto simp add: eval_exp.simps unknown_constructor_exp_def)
 
 lemma CONCAT: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2) \<leadsto> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma EXTRACT: 
   assumes \<open>sz\<^sub>2 \<le> sz\<^sub>1\<close>
     shows \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<leadsto> (ext (num \<Colon> sz) \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2)\<close>
-  using assms by (auto simp add: xtract.simps)
+  using assms by (auto simp add: eval_exp.simps xtract.simps)
 
 lemma CAST_REDUCE:
   assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close>
     shows \<open>\<Delta> \<turnstile> (Cast cast sz e) \<leadsto> (Cast cast sz e')\<close>
-  using assms by (cases e, auto)
+  using assms by (cases e, auto simp add: eval_exp.simps)
 
 lemma CAST_UNK: \<open>\<Delta> \<turnstile> (Cast cast sz (unknown[str]: t)) \<leadsto> (unknown[str]: imm\<langle>sz\<rangle>)\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma CAST_LOW: \<open>\<Delta> \<turnstile> (low:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close>
-  by (auto simp add: xtract.simps)
+  by (auto simp add: xtract.simps eval_exp.simps)
 
 lemma CAST_HIGH: \<open>\<Delta> \<turnstile> (high:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz' - 1) \<sim> lo : (sz' - sz))\<close>
-  by (auto simp add: xtract.simps)
+  by (auto simp add: xtract.simps eval_exp.simps)
 
 lemma CAST_SIGNED: \<open>\<Delta> \<turnstile> (extend:sz[(num \<Colon> sz')]) \<leadsto> (exts (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close>
-  by auto
+  by (auto simp add: sxtract.simps eval_exp.simps)
 
 lemma CAST_UNSIGNED: \<open>\<Delta> \<turnstile> (pad:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close>
-  by (auto simp add: xtract.simps)
+  by (auto simp add: xtract.simps eval_exp.simps)
   
-fun
-  eval_exps_pred_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<leadsto>* _\<close>)
-where
-  \<open>(\<Delta> \<turnstile> e \<leadsto>* v) = (v = eval_exp \<Delta> e)\<close>
-
-
 lemma REDUCE: \<open>(\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2) \<Longrightarrow> (\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* v) \<Longrightarrow> (\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* v)\<close>
   apply auto
   by (metis STEP_NOT_REDUCTION)
 
 lemma REFL:  \<open>\<Delta> \<turnstile> (Val v) \<leadsto>* v\<close>
-  by auto
+  by (auto simp add: eval_exp.simps)
 
 lemma REFL_UNKNOWN[simp]:  \<open>\<Delta> \<turnstile> unknown[str]: t \<leadsto>* unknown[str]: t\<close>
   by auto
@@ -637,26 +631,23 @@ lemma REFL_FALSE[simp]: \<open>\<Delta>a \<turnstile> false \<leadsto>* false\<c
 
 lemma reflI:
   assumes \<open>e = (Val v)\<close> shows \<open>\<Delta> \<turnstile> e \<leadsto>* v\<close>
-  using assms by auto
+  using assms by (auto simp add: eval_exp.simps)
+
 
 lemma step_exp_eqI: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz)) \<leadsto> (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-  by (auto simp add: bv_eq_def)
+  by (auto simp add: bv_eq_def eval_exp.simps)
 
 method solve_exp = (
+  rule NOT_TRUE | rule NOT_FALSE | 
+  rule UOP_UNK |
+
+  (rule VAR_IN_TRUE, solve_in_var?) | (rule VAR_IN_FALSE, solve_in_var?) |
+  (rule VAR_IN_WORD, solve_in_var?) | (rule VAR_IN_STORAGE, solve_in_var?) |
+  (rule VAR_IN_UNKNOWN, solve_in_var?) | (rule VAR_IN, (unfold var_simps)?, solve_in_var?) |
+
   match conclusion in
-
     \<open>_ \<turnstile> ~ _ \<leadsto> ~ _\<close> \<Rightarrow> \<open>unfold BIL_Syntax.not_exp.simps, rule UOP, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> ~ unknown[_]: _ \<leadsto> unknown[_]: _\<close> \<Rightarrow> \<open>rule UOP_UNK\<close>
-  \<bar> \<open>_ \<turnstile> ~ false \<leadsto> true\<close> \<Rightarrow> \<open>rule NOT_FALSE\<close>
-  \<bar> \<open>_ \<turnstile> ~ true \<leadsto> false\<close> \<Rightarrow> \<open>rule NOT_TRUE\<close>
-
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> true\<close> \<Rightarrow> \<open>rule VAR_IN_TRUE, assumption?\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> false\<close> \<Rightarrow> \<open>rule VAR_IN_FALSE, assumption?\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule VAR_IN_WORD, assumption?\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> (_[_ \<leftarrow> _, _])\<close> \<Rightarrow> \<open>rule VAR_IN_STORAGE, assumption?\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> (unknown[_]: _)\<close> \<Rightarrow> \<open>rule VAR_IN_UNKNOWN, assumption?\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto> (Val _)\<close> \<Rightarrow> \<open>rule VAR_IN, (unfold var_simps)?, assumption?\<close>
-
+  
   \<bar> \<open>_ \<turnstile> pad:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_UNSIGNED\<close>
   \<bar> \<open>_ \<turnstile> extend:_[_ \<Colon> _] \<leadsto> exts _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_SIGNED\<close>
   \<bar> \<open>_ \<turnstile> low:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_LOW\<close>

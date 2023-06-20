@@ -23,4 +23,8 @@ lemma concat_take_drop_bit_nat_eq_self:
 lemma concat_bit_drop_bit: \<open>concat_bit a x (concat_bit b (drop_bit a x) z) = concat_bit (a + b) x z\<close>
   using add.commute bits_ident concat_bit_assoc concat_bit_eq by (metis )
 
+lemma notin_unionI:
+  assumes \<open>x \<notin> A\<close> and \<open>x \<notin> B\<close>
+    shows \<open>x \<notin> A \<union> B\<close>
+  using assms by simp
 end

@@ -13,14 +13,8 @@ no_notation HOL.Not (\<open>~ _\<close> [40] 40)
 no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
 no_notation List.append (infixr "@" 65)
 
-
 declare eval_exps_pred_exp.simps[simp del]
-declare xtract.simps[simp del]
 declare step_pred_exp.simps[simp del]
-lemma MOVE_AUX:
-  \<open>\<Delta> \<turnstile> e \<leadsto>* v \<Longrightarrow> w' = w \<Longrightarrow> \<Delta>' = \<Delta>(var \<mapsto> v) \<Longrightarrow>
-  \<Delta>,w \<turnstile> var := e \<leadsto> \<Delta>',w'\<close>
-  using MOVE by simp
 
 lemma stmt_ifI:
   assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty)) \<or> ((\<Delta> \<turnstile> e \<leadsto>* false) \<and> (\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w',Empty))\<close>
@@ -39,32 +33,24 @@ lemma stmt_if_thenI:
   .
 
 
+(* Can't use match conclusion as it will not instantiate schematic variables *)
 method solve_stmt = (
+  (rule MOVE, solve_exps) |
+  (rule JMP, solve_exps) |
+  (rule CPUEXN) |
+  (rule SPECIAL) |
   match conclusion in
-    \<comment> \<open>Move\<close>
-    \<open>_,_ \<turnstile> (_ := _) \<leadsto> (_(_ \<mapsto> _)),_\<close> \<Rightarrow> \<open>rule MOVE, solve_exps\<close>
-  \<bar> \<open>_,_ \<turnstile> (_ := _) \<leadsto> _,_\<close> \<Rightarrow> \<open>rule MOVE_AUX, solve_exps\<close>
-
-    \<comment> \<open>Jmp\<close>
-  \<bar> \<open>_,_ \<turnstile> (jmp _) \<leadsto> _,_\<close> \<Rightarrow> \<open>rule JMP, solve_exps\<close>
-
     \<comment> \<open>If - disjunct, hand over to caller to solve\<close>
-  \<bar> \<open>_,_ \<turnstile> (IfThen _ _) \<leadsto> _,_\<close> \<Rightarrow> \<open>rule stmt_if_thenI\<close>
+    \<open>_,_ \<turnstile> (IfThen _ _) \<leadsto> _,_\<close> \<Rightarrow> \<open>rule stmt_if_thenI\<close>
   \<bar> \<open>_,_ \<turnstile> (If _ _ _ ) \<leadsto> _,_\<close> \<Rightarrow> \<open>rule stmt_ifI\<close>
 
   \<bar> _ \<Rightarrow> \<open>succeed\<close>
-(* Attempt to fix any unfixed vars *)
-  ; fastforce?
 )
 
 method solve_bil = (
-  match conclusion in
-    \<comment> \<open>Reducible values\<close>
-    \<open>_,_ \<turnstile> Empty \<leadsto> _,_,Empty\<close> \<Rightarrow> \<open>rule SEQ_NIL\<close>           
-  \<bar> \<open>_,_ \<turnstile> Stmt _ Empty \<leadsto> _,_,Empty\<close> \<Rightarrow> \<open>rule SEQ_ONE; solve_stmt\<close>
-  \<bar> \<open>_,_ \<turnstile> Stmt _ _ \<leadsto> _,_,Empty\<close> \<Rightarrow> \<open>rule SEQ_NEXT, solve_stmt, solve_bil\<close>
-
-  \<bar> _ \<Rightarrow> \<open>succeed\<close>
+  rule SEQ_NIL | 
+  (rule SEQ_ONE, solve_stmt) | 
+  (rule step_bil_nextI[rotated, rotated], rule bil.distinct(2), solve_stmt, solve_bil?)
 )
 
 end

@@ -26,11 +26,6 @@ lemma TWF_MEM:
   assumes \<open>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r > 0\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m > 0\<close> shows \<open>mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> is ok\<close>
   using assms by auto
 
-
-method solve_TWF = (
-  match conclusion in
-    \<open>imm\<langle>_\<rangle> is ok\<close> \<Rightarrow> \<open>rule TWF_IMM, linarith\<close>
-  \<bar> \<open>mem\<langle>_, _\<rangle> is ok\<close> \<Rightarrow> \<open>rule TWF_MEM, linarith, linarith\<close>
-)
+method solve_TWF = ((rule TWF_IMM | rule TWF_MEM); linarith)
 
 end

@@ -137,16 +137,6 @@ lemma unknown_storage_neq[simp]: \<open>(unknown[str]: t) \<noteq> (v[w \<leftar
 lemma unknown_word_neq[simp]: \<open>(unknown[str]: t) \<noteq> (num \<Colon> sz)\<close>
   by (metis word_unknown_neq)
 
-
-lemma val_syntax_induct: (* TODO get rid? *)
-  assumes \<open>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q (num \<Colon> sz)\<close>
-      and \<open>\<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q (unknown[str]: t)\<close>
-      and \<open>\<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q (mem[w \<leftarrow> v', sz])\<close>
-      and \<open>\<lbrakk>\<forall>num sz. v \<noteq> (num \<Colon> sz); \<forall>mem w v' sz. v \<noteq> (mem[w \<leftarrow> v', sz]); 
-              \<forall>str t. v \<noteq> (unknown[str]: t)\<rbrakk> \<Longrightarrow> Q v\<close>
-    shows \<open>Q v\<close>
-  using assms by blast
-
 lemma val_syntax_exhaust:
   obtains 
     (Word) num sz where \<open>v = (num \<Colon> sz)\<close>
@@ -354,24 +344,9 @@ and bil =
     Stmt stmt bil
   | Empty
 
+lemma Stmt_not_nested[simp]: \<open>Stmt s\<^sub>1 seq \<noteq> seq\<close>
+  by simp
 
-(*
-class move_syntax =
-    fixes move_syntax :: \<open>var \<Rightarrow> exp \<Rightarrow> 'a\<close> (infixl \<open>:=\<close> 55)
-  assumes move_eq[simp]: \<open>\<And>a b c d. (a := b) = (c := d) \<longleftrightarrow> a = c \<and> b = d\<close>
-
-instantiation stmt :: move_syntax
-begin
-
-fun 
-  move_syntax_stmt :: \<open>var \<Rightarrow> exp \<Rightarrow> stmt\<close>
-where
-  \<open>move_syntax_stmt var exp = Move var exp\<close>
-
-instance by (standard, simp)
-
-end
-*)
 abbreviation \<open>IfThen e bil \<equiv> If e bil Empty\<close> 
 
 end

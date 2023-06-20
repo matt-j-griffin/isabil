@@ -36,12 +36,11 @@ lemma in_vars_the_simp:
 lemma var_in_addI[simp]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta> (var \<mapsto> val)\<close>
   unfolding val_var_in_vars.simps by simp
 
-text \<open>Attempt to solve a proof of the form (var, val) \<in>\<Delta> \<Delta>\<close>
+text \<open>Attempt to solve a proof of the form (var, val) \<in> \<Delta>\<close>
 
 method solve_in_var = (
-    ((rule var_in_addI | (rule var_in_dropI))+); 
-    (unfold var_syntax_class.var_eq List.list.inject String.char.inject Type.inject, blast)[1]
+    ((assumption | rule var_in_addI | (rule var_in_dropI))+);
+    (assumption | (unfold var_syntax_class.var_eq List.list.inject String.char.inject Type.inject, blast)[1])
 )
-
 
 end

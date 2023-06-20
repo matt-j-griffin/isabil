@@ -64,7 +64,6 @@ where
       by blast+
     .
   apply (simp_all del: is_ok_word.simps)  
-  using word_eq_P apply auto[1]
   by blast+
 
 termination

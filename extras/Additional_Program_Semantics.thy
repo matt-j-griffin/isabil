@@ -29,17 +29,12 @@ begin
 method solve_prog uses decoder = (
     rule step_progI, 
 
-(* 
-  Unfold make definition to a conventional record - this is an issue with Isabelle/ML and 
-  constructing record types
-*)
+ \<comment> \<open>Unfold make definition to a conventional record - this is an issue with Isabelle/ML and
+     constructing record types\<close>
     unfold insn.make_def[symmetric],
-
     rule decoder,
 
-(*
-  Attempt to tidy any syntax mess left by the parser
-*)
+ \<comment> \<open>Attempt to tidy any syntax mess left by the parser\<close>
     (unfold syntax_simps)?,
     solve_bil
 )

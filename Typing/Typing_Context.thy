@@ -2,6 +2,25 @@ theory Typing_Context
   imports Typing_Type
 begin
 
+
+section \<open>Context syntax\<close>
+
+text \<open>Contexts are used in the typing judgments to specify the types of all variables. While each 
+      variable is annotated with its type, the context ensures that all uses of a given variable 
+      have the same type.\<close>
+
+type_synonym TypingContext = \<open>var list\<close>
+
+definition
+  dom\<^sub>\<Gamma> :: \<open>TypingContext \<Rightarrow> string set\<close>
+where
+  \<open>dom\<^sub>\<Gamma> \<Gamma> = name ` (set \<Gamma>)\<close>
+
+lemma tg_set_nil: \<open>dom\<^sub>\<Gamma> [] = {}\<close>
+  by (simp add: dom\<^sub>\<Gamma>_def)
+  
+
+
 subsection \<open>\<Gamma> is ok\<close>
 
 instantiation list :: (var_syntax) is_ok
@@ -45,13 +64,9 @@ lemma TG_SINGLE:
 
 
 method solve_TG = (
-  match conclusion in
-    \<open>[] is ok\<close> \<Rightarrow> \<open>rule TG_NIL\<close>
-  \<bar> \<open>[_] is ok\<close> \<Rightarrow> \<open>rule TG_SINGLE, solve_TWF\<close>
-  \<bar> \<open>(Cons _ _) is ok\<close> \<Rightarrow> \<open>rule TG_CONS,
-      (unfold dom\<^sub>\<Gamma>_def, simp),
-      solve_TWF,
-      solve_TG\<close>
+    rule TG_NIL | 
+    (rule TG_SINGLE, solve_TWF) | 
+    (rule TG_CONS, (unfold dom\<^sub>\<Gamma>_def, simp), solve_TWF, solve_TG) (* TODO simp *)
 )
 
 
