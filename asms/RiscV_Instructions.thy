@@ -29,7 +29,7 @@ subsubsection \<open>SD\<close>
 lemma step_sd:
   assumes decode_sd: \<open>\<And>\<Delta> var. (\<Delta>, (address \<Colon> 64), var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l make (address \<Colon> 64) (2 \<Colon> 64) (Stmt (mem := mem with [(rs1 :\<^sub>t imm\<langle>64\<rangle>) + (imm \<Colon> 64), el]:u64 \<leftarrow> (rs2 :\<^sub>t imm\<langle>64\<rangle>)) Empty)\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), mem_addr \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), val \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>(mem, mem') \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>type mem' = mem\<langle>64, 8\<rangle>\<close>
-    shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage64 mem' ((mem_addr + imm) mod 18446744073709551616) 64 val), (address \<Colon> 64) +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage64 mem' ((mem_addr + imm) mod 2 ^ 64) 64 val), (address \<Colon> 64) +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
   apply (insert assms(2-))
   by (solve_prog decoder: decode_sd)
 
@@ -108,22 +108,32 @@ lemma step_ld:
   apply (solve_prog decoder: decode_ld)
   by simp
 
+subsection \<open>J\<close>
+
+lemma step_j:
+  assumes decode_j: \<open>\<And>\<Delta> var. (\<Delta>, address \<Colon> 64, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l make (address \<Colon> 64) (2 \<Colon> 64) (Stmt (jmp (offset \<Colon> 64)) Empty)\<close>
+    shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>, (offset \<Colon> 64), var)\<close>
+  by (solve_prog decoder: decode_j)
 
 subsection \<open>RISC V auto solver\<close>
 
-method solve_risc_v uses decoder = (
-    (rule step_ld)
-  | (rule step_beqz)
-  | (rule step_lw)
-  | (rule step_mv)
-  | (rule step_jal)
-  | (rule step_li)
-  | (rule step_sd)
-  | (rule step_addi)
+method solve_decode uses decoder = (insert decoder, (unfold syntax_simps)?, assumption)[1]
 
+method solve_risc_v uses decoder = (
+    (rule step_ld, solve_decode decoder: decoder, (solve_in_var, solve_in_var)?)
+  | (rule step_beqz, solve_decode decoder: decoder, solve_in_var?)
+  | (rule step_lw, solve_decode decoder: decoder, (solve_in_var, solve_in_var)?)
+  | (rule step_mv, solve_decode decoder: decoder, solve_in_var?)
+  | (rule step_jal, solve_decode decoder: decoder)
+  | (rule step_li, solve_decode decoder: decoder, solve_in_var?)
+  | (rule step_sd, solve_decode decoder: decoder, (solve_in_var, solve_in_var, solve_in_var)?)
+  | (rule step_addi, solve_decode decoder: decoder, solve_in_var?)
+  | (rule step_j, solve_decode decoder: decoder)
+)
+(*
   \<comment> \<open>If all else fails, use the conventional solver\<close>    
   | solve_prog decoder: decoder
-)
+*)
 
 end
 

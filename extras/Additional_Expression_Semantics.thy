@@ -49,6 +49,9 @@ where
 
 end
 
+lemma type_storage64: \<open>type (storage64 mem address 64 val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+
 declare eval_exps_pred_exp.simps[simp del]
 declare step_pred_exp.simps[simp del]
 

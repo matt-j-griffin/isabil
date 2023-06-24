@@ -1,6 +1,5 @@
 theory Statement_Elims
   imports Statement_Syntax
-          "../ExpressionSemantics/Expression_Elims"
 begin
 
 lemma step_bil_sameE:

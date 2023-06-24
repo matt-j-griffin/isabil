@@ -848,5 +848,83 @@ fun
 where
   \<open>(\<Delta> \<turnstile> e \<leadsto>* v) = (v = eval_exp \<Delta> e)\<close>
 
+(*
+inductive
+  eval_exp' :: \<open>variables \<Rightarrow> exp \<Rightarrow> exp \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<Rrightarrow> _\<close> [400, 400, 400] 401)
+where
+  VarIn: \<open>\<lbrakk>((name' :\<^sub>t t), val) \<in>\<^sub>\<Delta> \<Delta>\<rbrakk> \<Longrightarrow> (\<Delta> \<turnstile> (name' :\<^sub>t t) \<Rrightarrow> Val val)\<close> |
+  VarNotIn: \<open>\<lbrakk>((name' :\<^sub>t t)) \<notin> dom \<Delta>\<rbrakk> \<Longrightarrow> (\<Delta> \<turnstile> (name' :\<^sub>t t) \<Rrightarrow> unknown[str]: t)\<close> |
+  LoadStepAddr: \<open>\<lbrakk>\<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow> e\<^sub>2'; e\<^sub>2 \<noteq> e\<^sub>2'\<rbrakk> \<Longrightarrow> (\<Delta> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz \<Rrightarrow> (e\<^sub>1[e\<^sub>2', ed]:usz))\<close> |
+  LoadStepMem: \<open>\<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>1'; e\<^sub>1 \<noteq> e\<^sub>1'\<rbrakk> \<Longrightarrow> (\<Delta> \<turnstile> e\<^sub>1[Val v\<^sub>2, ed]:usz \<Rrightarrow> (e\<^sub>1'[Val v\<^sub>2, ed]:usz))\<close>
+
+lemma step_exp_var_inE:
+  assumes \<open>\<Delta> \<turnstile> (name' :\<^sub>t t) \<Rrightarrow> e'\<close>
+      and \<open>((name' :\<^sub>t t), val) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>e' = Val val\<close>
+using assms(1) proof (cases rule: eval_exp'.cases)
+  case (VarIn name' t val)
+  then show ?thesis sorry
+next
+  case (VarNotIn name' t str)
+  then show ?thesis sorry
+next
+  case (LoadStepAddr e\<^sub>2 e\<^sub>2' e\<^sub>1 ed sz)
+  then show ?thesis sorry
+next
+  case (LoadStepMem e\<^sub>1 e\<^sub>1' v\<^sub>2 ed sz)
+  then show ?thesis sorry
+qed
+  case (VarIn name' t val)
+  thus ?thesis 
+    using assms(2) unfolding var_eq apply clarify
+    using in_vars_the_simp by blast (* TODO deterministic in_vars*)
+next
+  case (VarNotIn name' t str)
+  thus ?thesis 
+    using assms(2) val_var_in_vars.simps by auto
+qed simp_all
+
+lemma step_exp_var_not_inE:
+  assumes \<open>\<Delta> \<turnstile> (name' :\<^sub>t t) \<Rrightarrow> e'\<close>
+      and \<open>((name' :\<^sub>t t)) \<notin> dom \<Delta>\<close>
+    shows \<open>\<exists>str. e' = unknown[str]: t\<close>
+using assms(1) proof (cases rule: eval_exp'.cases)
+  case (VarIn name' t val)
+  thus ?thesis 
+    using assms(2) by (simp add: val_var_in_vars.simps) (* TODO *)
+next
+  case (VarNotIn name' t str)
+  thus ?thesis 
+    by simp
+qed simp_all
+
+lemma step_exp_load_step_addrE:
+  assumes \<open>\<Delta> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz \<Rrightarrow> e'\<close>
+    shows \<open>\<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow> e\<^sub>2' \<and> e\<^sub>2 \<noteq> e\<^sub>2'\<close>
+using assms(1) by (cases rule: eval_exp'.cases, simp_all)
+
+
+lemma eval_exp'_deterministic:
+  assumes \<open>\<Delta> \<turnstile> e \<Rrightarrow> e\<^sub>1\<close> and \<open>\<Delta> \<turnstile> e \<Rrightarrow> e\<^sub>2\<close>
+    shows \<open>e\<^sub>1 = e\<^sub>2\<close>
+  using assms proof (induct rule: eval_exp'.induct)
+  case (VarIn name' t val \<Delta>)
+  thus ?case by (rule step_exp_var_inE[symmetric, rotated]) 
+next
+  case (VarNotIn name' t \<Delta> str)
+  thus ?case sorry
+next
+  case (LoadStepAddr \<Delta> e\<^sub>a e\<^sub>a' e\<^sub>m ed sz)
+  thus ?case 
+    using step_exp_load_step_addrE
+    sorry
+next
+  case (LoadStepMem \<Delta> e\<^sub>1 e\<^sub>1' v\<^sub>2 ed sz)
+  thus ?case 
+    
+    sorry
+qed
+*)
+
 
 end

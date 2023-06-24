@@ -27,4 +27,10 @@ lemma notin_unionI:
   assumes \<open>x \<notin> A\<close> and \<open>x \<notin> B\<close>
     shows \<open>x \<notin> A \<union> B\<close>
   using assms by simp
+
+lemma insert_diffE:
+  assumes \<open>a \<notin> insert b C\<close>
+    shows \<open>a \<notin> C \<and> a \<noteq> b\<close>
+  using assms by simp
+
 end
