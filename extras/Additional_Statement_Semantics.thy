@@ -17,7 +17,7 @@ declare eval_exps_pred_exp.simps[simp del]
 declare step_pred_exp.simps[simp del]
 
 lemma stmt_ifI:
-  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty)) \<or> ((\<Delta> \<turnstile> e \<leadsto>* false) \<and> (\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w',Empty))\<close>
+  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> ((\<Delta> \<turnstile> e \<leadsto>* false) \<and> (\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w'))\<close>
     shows \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
   using assms apply (elim disjE conjE)
   subgoal by (rule IF_TRUE)
@@ -25,7 +25,7 @@ lemma stmt_ifI:
   .
 
 lemma stmt_if_thenI:
-  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty)) \<or> (\<Delta> \<turnstile> e \<leadsto>* false \<and> \<Delta>' = \<Delta> \<and> w' = w)\<close>
+  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> (\<Delta> \<turnstile> e \<leadsto>* false \<and> \<Delta>' = \<Delta> \<and> w' = w)\<close>
     shows \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>',w'\<close>
   using assms apply (elim disjE conjE)
   subgoal by (rule IF_TRUE)
@@ -48,9 +48,10 @@ method solve_stmt = (
 )
 
 method solve_bil = (
-  rule SEQ_NIL | 
-  (rule SEQ_ONE, solve_stmt) | 
-  (rule step_bil_nextI[rotated, rotated], rule bil.distinct(2), solve_stmt, solve_bil?)
+  rule step_bil_emptyI | 
+  (rule step_bil_singleI, solve_stmt) | 
+  (rule step_bil_seqI, solve_stmt, solve_bil) |
+  succeed
 )
 
 end

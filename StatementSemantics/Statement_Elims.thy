@@ -1,83 +1,58 @@
 theory Statement_Elims
   imports Statement_Syntax
-begin
+begin                  
 
-lemma step_bil_sameE:
-  assumes \<open>\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>',w',seq\<close>
+lemma step_bil_emptyE:
+  assumes \<open>\<Delta>,w \<turnstile> ([]::bil) \<leadsto> \<Delta>',w'\<close>
     shows \<open>\<Delta>' = \<Delta> \<and> w' = w\<close>
-using assms by (cases rule: step_pred_bil.cases[of _ _ seq _ _ seq], simp_all)
-
-lemmas step_bil_emptyE = step_bil_sameE[of _ _ Empty]
+  using assms unfolding step_syntax_list_def by (rule EmptyE, safe)
 
 lemma step_bil_seqE:
-  assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> Stmt s\<^sub>1 seq \<leadsto> \<Delta>\<^sub>2,w\<^sub>2,seq\<close>
-    shows \<open>(\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s\<^sub>1 \<leadsto> \<Delta>\<^sub>2, w\<^sub>2)\<close>
-using assms proof (cases rule: step_pred_bil.cases)
-  case (Next \<Delta>'' w'')
-  show ?thesis 
-    using Next(2) apply (drule_tac step_bil_sameE, simp)
-    using Next(1) by simp
-next
-  case Eq
-  then show ?thesis 
-    using Stmt_not_nested by simp
-qed
-
-lemma step_bil_nextE:
-  assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> Stmt s\<^sub>1 seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3,seq'\<close> and \<open>seq' \<noteq> Stmt s\<^sub>1 seq\<close>
-    shows \<open>\<exists>\<Delta>\<^sub>2 w\<^sub>2. (\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s\<^sub>1 \<leadsto> \<Delta>\<^sub>2, w\<^sub>2 \<and> \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3,seq')\<close>
-using assms proof (cases rule: step_pred_bil.cases)
-  case (Next \<Delta>\<^sub>2 w\<^sub>2)
-  show ?thesis 
-    apply (rule exI[of _ \<Delta>\<^sub>2], rule exI[of _ w\<^sub>2])
-    using Next by simp
-next
-  case Eq
-  then show ?thesis 
-    using assms(2) by simp
-qed
+    fixes s :: stmt
+  assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s # seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<close>
+    shows \<open>\<exists>\<Delta>\<^sub>2 w\<^sub>2. \<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s \<leadsto> \<Delta>\<^sub>2, w\<^sub>2 \<and> \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<close>
+  using assms unfolding step_syntax_list_def step_syntax_stmt_def apply (rule NextE)
+  by blast
 
 lemma step_stmt_specialE:
   assumes \<open>\<Delta>,w \<turnstile> (Special str) \<leadsto> \<Delta>',w'\<close>
     shows \<open>\<Delta>' = \<Delta> \<and> w' = w\<close>
-  using assms by (cases rule: step_pred_stmt.cases, auto)
+  using assms unfolding step_syntax_stmt_def by (rule SpecialE, safe)
 
 lemma step_stmt_cpuexnE:
   assumes \<open>\<Delta>,w \<turnstile> (cpuexn code) \<leadsto> \<Delta>',w'\<close>
     shows \<open>\<Delta>' = \<Delta> \<and> w' = w\<close>
-  using assms by (cases rule: step_pred_stmt.cases, auto)
+  using assms unfolding step_syntax_stmt_def by (rule CpuExnE, safe)
 
 lemma step_stmt_moveE:
   assumes \<open>\<Delta>,w \<turnstile> (var := e) \<leadsto> \<Delta>',w'\<close>
     shows \<open>\<exists>v. (\<Delta> \<turnstile> e \<leadsto>* v) \<and> \<Delta>' = \<Delta>(var \<mapsto> v) \<and> w' = w\<close>
-using assms proof (cases rule: step_pred_stmt.cases)
-  case (Move v)
-  show ?thesis 
-    apply (rule exI[of _ v])
-    using Move by blast
-qed
+  using assms unfolding step_syntax_stmt_def apply (rule MoveE, safe)
+  apply (rule exI[of _ \<open>eval_exp \<Delta> e\<close>])
+  by auto
 
 lemma step_stmt_jmpE:
   assumes \<open>\<Delta>,w \<turnstile> (jmp e) \<leadsto> \<Delta>',w'\<close>
     shows \<open>\<exists>num sz. (\<Delta> \<turnstile> e \<leadsto>* (num \<Colon> sz)) \<and> \<Delta>' = \<Delta> \<and> w' = (num \<Colon> sz)\<close>
-using assms proof (cases rule: step_pred_stmt.cases)
-  case (Jmp num sz)
-  show ?thesis 
-    apply (rule exI[of _ num], rule exI[of _ sz])
-    using Jmp by blast
-qed
+  using assms unfolding step_syntax_stmt_def apply (rule JmpE, safe)
+  by auto
 
 lemma step_stmt_if_trueE:
   assumes \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close> and \<open>\<Delta> \<turnstile> e \<leadsto>* true\<close>
-    shows \<open>\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w',Empty\<close>
-using assms by (cases rule: step_pred_stmt.cases, auto)
+    shows \<open>\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w'\<close>
+using assms(1) unfolding step_syntax_stmt_def step_syntax_list_def proof (rule IfE)
+  show \<open>true = eval_exp \<Delta> e \<Longrightarrow>
+    step_pred_bil \<Delta> w seq\<^sub>1 \<Delta>' w' \<Longrightarrow>
+    step_pred_bil \<Delta> w seq\<^sub>1 \<Delta>' w'\<close>
+    by blast
+qed (use assms(2) in auto)
 
-lemmas step_stmt_if_then_trueE = step_stmt_if_trueE[of _ _ _ _ Empty]
+lemmas step_stmt_if_then_trueE = step_stmt_if_trueE[of _ _ _ _ \<open>[]\<close>]
 
 lemma step_stmt_if_falseE:
   assumes \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close> and \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
-    shows \<open>\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w',Empty\<close>
-using assms by (cases rule: step_pred_stmt.cases, auto)
+    shows \<open>\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w'\<close>
+using assms(1) unfolding step_syntax_stmt_def step_syntax_list_def by (rule IfE, use assms(2) in auto)
 
 lemma step_stmt_if_then_falseE:
   assumes \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>',w'\<close> and \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
@@ -88,34 +63,36 @@ lemma step_stmt_if_then_falseE:
 lemma step_stmt_whileE:
   assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3, w\<^sub>3\<close>
       and \<open>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* true\<close>
-    shows \<open>\<exists>\<Delta>\<^sub>2 w\<^sub>2. \<Delta>\<^sub>1,w\<^sub>1 \<turnstile> seq \<leadsto> \<Delta>\<^sub>2, w\<^sub>2, Empty \<and> \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3, w\<^sub>3\<close>
-using assms by (cases rule: step_pred_stmt.cases, auto)
+    shows \<open>\<exists>\<Delta>\<^sub>2 w\<^sub>2. \<Delta>\<^sub>1,w\<^sub>1 \<turnstile> seq \<leadsto> \<Delta>\<^sub>2, w\<^sub>2 \<and> \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>3, w\<^sub>3\<close>
+using assms(1) unfolding step_syntax_stmt_def step_syntax_list_def by (rule WhileE, use assms(2) in auto)
+
 
 lemma step_stmt_while_falseE:
   assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> (While e seq) \<leadsto> \<Delta>\<^sub>2, w\<^sub>2\<close>
       and \<open>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* false\<close>
     shows \<open>\<Delta>\<^sub>2 = \<Delta>\<^sub>1 \<and> w\<^sub>2 = w\<^sub>1\<close>
-  using assms by (cases rule: step_pred_stmt.cases, auto)
+using assms(1) unfolding step_syntax_stmt_def step_syntax_list_def by (rule WhileE, use assms(2) in auto)
 
 lemma step_bil_stmt_deterministic_intermediary:
+  fixes stmt :: stmt and seq :: bil shows
   "((\<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>1,w1) \<longrightarrow> (\<forall>\<Delta>2 w2. (\<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>2,w2) \<longrightarrow> \<Delta>1 = \<Delta>2 \<and> w1 = w2)) \<and>
-   ((\<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>3,w3,seq') \<longrightarrow> (\<forall>\<Delta>4 w4. (\<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>4,w4,seq') \<longrightarrow> \<Delta>3 = \<Delta>4 \<and> w3 = w4))"
+   ((\<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>3,w3) \<longrightarrow> (\<forall>\<Delta>4 w4. (\<Delta>',w' \<turnstile> seq \<leadsto> \<Delta>4,w4) \<longrightarrow> \<Delta>3 = \<Delta>4 \<and> w3 = w4))"
+unfolding step_syntax_stmt_def step_syntax_list_def
 proof (induct  rule: step_pred_stmt_step_pred_bil.induct)
   case (WhileTrue \<Delta>\<^sub>1 e w\<^sub>1 seq \<Delta>\<^sub>2 w\<^sub>2 \<Delta>\<^sub>3 w\<^sub>3)
   then show ?case 
     apply clarify
     subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_whileE[of \<Delta>\<^sub>1])
-      apply clarify
-      by blast
+      apply (rule WhileE[of \<Delta>\<^sub>1], blast, blast)
+      by (metis eval_exps_pred_exp.elims(2) true_not_false_val)
     .
 next
   case (WhileFalse \<Delta> e w seq)
   then show ?case 
     apply clarify
     subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_while_falseE[of])
-      apply clarify
+      apply (rule WhileE[of \<Delta>], blast)
+      apply (metis eval_exps_pred_exp.elims(2) true_not_false_val)
       by blast
     .
 next
@@ -123,29 +100,23 @@ next
   then show ?case 
     apply clarify
     subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_if_trueE)
-      apply blast
-      apply (erule allE[of _ \<Delta>2], erule allE[of _ w2])
-      by blast
+      apply (rule IfE, blast, blast)
+      by (metis eval_exps_pred_exp.elims(2) true_not_false_val)
     .
 next
   case (IfFalse \<Delta> e w seq\<^sub>2 \<Delta>' w' seq\<^sub>1)
   then show ?case 
     apply clarify
     subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_if_falseE)
-      apply blast
-      apply (erule allE[of _ \<Delta>2], erule allE[of _ w2])
+      apply (rule IfE, blast)
+      apply (metis eval_exps_pred_exp.elims(2) true_not_false_val)
       by blast
     .
 next
   case (Jmp \<Delta> e num sz w)
   then show ?case
     apply clarify
-    subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_jmpE)
-      apply (elim exE conjE)
-      unfolding word_constructor_val_def
+    subgoal for \<Delta>2 w2 num' sz'
       apply simp
       by (metis word_eq)
     .
@@ -154,8 +125,6 @@ next
   then show ?case 
     apply clarify
     subgoal for \<Delta>2 w2
-      apply (drule_tac step_stmt_moveE)
-      apply (elim exE conjE)
       by simp
     .
 next
@@ -167,19 +136,19 @@ next
   then show ?case 
     using step_stmt_specialE by blast
 next
-  case (Next \<Delta> w s\<^sub>1 \<Delta>'' w'' seq \<Delta>' w' seq')
+  case (Next \<Delta> w s \<Delta>'' w'' seq \<Delta>' w')
   then show ?case 
-    by (metis step_bil_nextE)
+    by force
 next
-  case (Eq \<Delta> w seq)
-  then show ?case 
-    by (metis step_bil_sameE)
+  case (Empty \<Delta> w)
+  then show ?case by force
 qed
 
 lemma step_bil_stmt_deterministic:
-  "\<lbrakk>\<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>1,w1; \<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>2,w2\<rbrakk> \<Longrightarrow> \<Delta>1 = \<Delta>2 \<and> w1 = w2"
-  "\<lbrakk>\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>3,w3,seq'; \<Delta>,w \<turnstile> seq \<leadsto> \<Delta>4,w4,seq'\<rbrakk> \<Longrightarrow> \<Delta>3 = \<Delta>4 \<and> w3 = w4"
-  using step_bil_stmt_deterministic_intermediary by force+
+  fixes stmt :: stmt and seq :: bil shows
+  \<open>\<lbrakk>\<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>1,w1; \<Delta>,w \<turnstile> stmt \<leadsto> \<Delta>2,w2\<rbrakk> \<Longrightarrow> \<Delta>1 = \<Delta>2 \<and> w1 = w2\<close>
+  \<open>\<lbrakk>\<Delta>,w \<turnstile> seq \<leadsto> \<Delta>3,w3; \<Delta>,w \<turnstile> seq \<leadsto> \<Delta>4,w4\<rbrakk> \<Longrightarrow> \<Delta>3 = \<Delta>4 \<and> w3 = w4\<close>
+  using step_bil_stmt_deterministic_intermediary by presburger+
 
 lemmas step_stmt_deterministic = step_bil_stmt_deterministic(1)
 lemmas step_bil_deterministic = step_bil_stmt_deterministic(2)

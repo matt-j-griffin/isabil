@@ -36,6 +36,12 @@ lemma in_vars_the_simp:
 lemma var_in_addI[simp]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta> (var \<mapsto> val)\<close>
   unfolding val_var_in_vars.simps by simp
 
+lemma var_in_deterministic:
+  assumes \<open>(var, val\<^sub>1) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>(var, val\<^sub>2) \<in>\<^sub>\<Delta> \<Delta>\<close>
+    shows \<open>val\<^sub>1 = val\<^sub>2\<close>
+  using assms unfolding val_var_in_vars.simps by simp
+
+
 text \<open>Attempt to solve a proof of the form (var, val) \<in> \<Delta>\<close>
 
 method solve_in_var = (

@@ -30,21 +30,21 @@ class bil_ops = plus + minus + modulo + times + divide + uminus + bool_syntax +
       and smod :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>smod\<close> 56)
       and negation :: \<open>'a \<Rightarrow> 'a\<close>
       and lt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>lt\<close> 65)
-      and lteq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>lteq\<close> 65)
+      and le :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>le\<close> 65)
       and slt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>slt\<close> 65)
-      and slteq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>slteq\<close> 65)
+      and sle :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>sle\<close> 65)
 
 abbreviation (input)
-  gteq  (infix \<open>gteq\<close> 50)
-  where \<open>x gteq y \<equiv> y lteq x\<close>
+  ge  (infix \<open>ge\<close> 50)
+  where \<open>x ge y \<equiv> y le x\<close>
 
 abbreviation (input)
   gt  (infix \<open>gt\<close> 50)
   where \<open>x gt y \<equiv> y lt x\<close>
 
 abbreviation (input)
-  sgteq  (infix \<open>sgteq\<close> 50)
-  where \<open>x sgteq y \<equiv> y slteq x\<close>
+  sge  (infix \<open>sge\<close> 50)
+  where \<open>x sge y \<equiv> y sle x\<close>
 
 abbreviation (input)
   sgt  (infix \<open>sgt\<close> 50)

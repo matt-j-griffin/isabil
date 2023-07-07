@@ -1,5 +1,5 @@
 theory RiscV_64
-  imports "../BIL_Syntax"
+  imports "../../BIL_Syntax"
 begin
 
 text \<open>Architecture size of 32/64/128 bits\<close>

@@ -14,7 +14,7 @@ function
 where
   \<open>(\<Delta>, w\<^sub>1, mem) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>', w\<^sub>3, mem) = (\<exists>w\<^sub>2 bil.
     (\<Delta>, w\<^sub>1, mem) \<mapsto>\<^sub>b\<^sub>i\<^sub>l \<lparr> addr = w\<^sub>1, size = w\<^sub>2, code = bil \<rparr> \<and>
-    (\<Delta>, (w\<^sub>1 +\<^sub>b\<^sub>v w\<^sub>2) \<turnstile> bil \<leadsto> \<Delta>', w\<^sub>3, Empty))\<close> |
+    (\<Delta>, (w\<^sub>1 +\<^sub>b\<^sub>v w\<^sub>2) \<turnstile> bil \<leadsto> \<Delta>', w\<^sub>3))\<close> |
   \<open>\<lbrakk>mem \<noteq> mem'\<rbrakk> \<Longrightarrow> (_, _, mem) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (_, _, mem') = False\<close>
   subgoal for P x
     apply (cases x)

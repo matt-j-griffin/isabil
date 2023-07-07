@@ -2,16 +2,22 @@ theory Simp_Variables
   imports 
     HOL.Fun 
     HOL.Map 
-    "HOL-Eisbach.Eisbach"
 begin
 
-lemma map_upd_all_eq: "(z \<noteq> x \<Longrightarrow> f z = f' z) \<Longrightarrow> (f(x \<mapsto> y)) z = (f'(x \<mapsto> y)) z"
+text \<open>
+  A program's variable state may contain duplicate variables from move statements, to prevent
+  the variable state from becoming too large we employ a simp procedure .
+      
+  We cant use fun_upd as it invokes the simplifier.      
+\<close>
+
+lemma map_upd_all_eq: \<open>(z \<noteq> x \<Longrightarrow> f z = f' z) \<Longrightarrow> (f(x \<mapsto> y)) z = (f'(x \<mapsto> y)) z\<close>
   by simp
 
-lemma map_upd_all_neq_left: "z \<noteq> x \<Longrightarrow> f z = f' z \<Longrightarrow> (f(x \<mapsto> y)) z = f' z"
+lemma map_upd_all_neq_left: \<open>z \<noteq> x \<Longrightarrow> f z = f' z \<Longrightarrow> (f(x \<mapsto> y)) z = f' z\<close>
   by simp
 
-simproc_setup fun_upd_to_left ("f(v \<mapsto> w, x \<mapsto> y)") = \<open>fn _ =>
+simproc_setup fun_upd_to_left (\<open>f(v \<mapsto> w, x \<mapsto> y)\<close>) = \<open>fn _ =>
   let
     fun gen_fun_upd NONE T _ _ = NONE
       | gen_fun_upd (SOME f) T x y = SOME (Const (\<^const_name>\<open>fun_upd\<close>, T) $ f $ x $ y)
@@ -42,6 +48,8 @@ simproc_setup fun_upd_to_left ("f(v \<mapsto> w, x \<mapsto> y)") = \<open>fn _ 
       end
   in proc end
 \<close>
+
+text \<open>Remove this method from the simpset to prevent it interfering\<close>
 
 declare [[simproc del: fun_upd_to_left]]
 

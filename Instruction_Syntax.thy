@@ -11,7 +11,7 @@ record insn =
 function
   no_insn :: \<open>word \<Rightarrow> insn\<close>
 where
-  \<open>no_insn (val \<Colon> sz) = \<lparr> addr = (val \<Colon> sz), size = (0 \<Colon> sz), code = Empty \<rparr>\<close>
+  \<open>no_insn (val \<Colon> sz) = \<lparr> addr = (val \<Colon> sz), size = (0 \<Colon> sz), code = [] \<rparr>\<close>
   using wordI apply auto[1]
   by auto
 termination by (standard, auto)

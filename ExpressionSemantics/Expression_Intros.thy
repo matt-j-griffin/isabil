@@ -93,8 +93,6 @@ lemma LOAD_BYTE_FROM_NEXT:
   assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> and \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<rangle>\<close>
   shows \<open>\<Delta> \<turnstile> (v[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz])[(num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz \<leadsto> ((Val v)[(num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz)\<close>
   using assms apply auto
-  subgoal 
-    unfolding storage_constructor_exp_def storage_constructor_val_def by auto
   subgoal
     apply (rule val_exhaust[of v])
     apply (simp_all add: eval_exp.simps)
@@ -446,6 +444,9 @@ interpretation lsl: aop_lemmas \<open>(<<)\<close> \<open>LShift\<close> by (sta
 interpretation lsr: aop_lemmas \<open>(>>)\<close> \<open>RShift\<close> by (standard, unfold lsr_exp.simps, rule)
 interpretation asr: aop_lemmas \<open>(>>>)\<close> \<open>ARShift\<close> by (standard, unfold asr_exp.simps, rule)
 
+interpretation leq: bop_lemmas \<open>(le)\<close> \<open>LOp Le\<close> by (standard, unfold le_exp.simps, rule)
+
+
 lemmas BOP_LHS = bop_lhsI
 lemmas BOP_RHS = bop_rhsI
 lemmas BOP_RHS_WORD = bop_rhs_wordI
@@ -521,13 +522,13 @@ lemma NEQ_DIFF:
 lemma LESS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
   by (auto simp add: eval_exp.simps)
 
-lemma LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) lteq (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+lemma LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
   by (auto simp add: bv_eq_def eval_exp.simps)
 
 lemma SIGNED_LESS: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
   by (auto simp add: eval_exp.simps)
 
-lemma SIGNED_LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) slteq (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+lemma SIGNED_LESS_EQ: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) sle (num\<^sub>2 \<Colon> sz) \<leadsto> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
   by (auto simp add: bv_eq_def eval_exp.simps)
 
 lemma UOP: 
@@ -535,8 +536,24 @@ lemma UOP:
     shows \<open>\<Delta> \<turnstile> (UnOp uop e) \<leadsto> (UnOp uop e')\<close>
   using assms by (cases e, auto simp add: eval_exp.simps)
 
+lemma UOP_NOT: 
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close>
+    shows \<open>\<Delta> \<turnstile> ~ e \<leadsto> ~ e'\<close>
+  using assms unfolding BIL_Syntax.not_exp.simps by (rule UOP)
+
+lemma UOP_NEG:
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close>
+    shows \<open>\<Delta> \<turnstile> - e \<leadsto> - e'\<close>
+  using assms unfolding uminus_exp.simps by (rule UOP)
+
 lemma UOP_UNK: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<leadsto> (unknown[str]: t)\<close>
   by (auto simp add: eval_exp.simps)
+
+lemma UOP_UNK_NOT: \<open>\<Delta> \<turnstile> ~ (unknown[str]: t) \<leadsto> (unknown[str]: t)\<close>
+  unfolding BIL_Syntax.not_exp.simps by (rule UOP_UNK)
+
+lemma UOP_UNK_NEG: \<open>\<Delta> \<turnstile> - (unknown[str]: t) \<leadsto> (unknown[str]: t)\<close>
+  unfolding uminus_exp.simps by (rule UOP_UNK)
 
 lemma NOT: \<open>\<Delta> \<turnstile> ~(num \<Colon> sz) \<leadsto> (~\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
   unfolding BIL_Syntax.not_exp.simps by (auto simp add: eval_exp.simps)
@@ -547,7 +564,7 @@ lemma NOT_FALSE: \<open>\<Delta> \<turnstile> ~false \<leadsto> true\<close>
 lemma NOT_TRUE: \<open>\<Delta> \<turnstile> ~true \<leadsto> false\<close>
   using bv_negation_true_false NOT by (metis true_word)
 
-lemma NEG: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
+lemma NEG: \<open>\<Delta> \<turnstile> - (num \<Colon> sz) \<leadsto> (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
   by (auto simp add: eval_exp.simps)
 
 lemma CONCAT_RHS:
@@ -644,29 +661,52 @@ lemma step_exp_eqI: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz
 
 method solve_exp = (
   rule NOT_TRUE | rule NOT_FALSE | 
-  rule UOP_UNK |
 
-  (rule VAR_IN_TRUE, solve_in_var?) | (rule VAR_IN_FALSE, solve_in_var?) |
-  (rule VAR_IN_WORD, solve_in_var?) | (rule VAR_IN_STORAGE, solve_in_var?) |
-  (rule VAR_IN_UNKNOWN, solve_in_var?) | (rule VAR_IN, (unfold var_simps)?, solve_in_var?) |
+  rule UOP_UNK_NOT | rule UOP_UNK_NEG | rule UOP_UNK |
+  (rule UOP, solve_exp) |
 
-  match conclusion in
-    \<open>_ \<turnstile> ~ _ \<leadsto> ~ _\<close> \<Rightarrow> \<open>unfold BIL_Syntax.not_exp.simps, rule UOP, solve_exp\<close>
-  
-  \<bar> \<open>_ \<turnstile> pad:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_UNSIGNED\<close>
+  (rule VAR_IN_TRUE, solve_in_var) | (rule VAR_IN_FALSE, solve_in_var) |
+  (rule VAR_IN_WORD, solve_in_var) | (rule VAR_IN_STORAGE, solve_in_var) |
+  (rule VAR_IN_UNKNOWN, solve_in_var) | (rule VAR_IN, (unfold var_simps)?, solve_in_var) |
+
+  (rule LESS_EQ) | 
+  (rule leq.rhs_wordI, solve_exp) |
+  (rule leq.rhsI, solve_exp) |
+  (rule leq.lhsI, solve_exp) |
+
+  (rule PLUS) | 
+  (rule PLUS_RHS_WORD, solve_exp) |
+  (rule PLUS_LHS, solve_exp) |
+
+  (rule PLUS) | 
+  (rule PLUS_RHS_WORD, solve_exp) |
+  (rule PLUS_LHS, solve_exp) |
+
+  (rule MINUS) | 
+  (rule MINUS_RHS_WORD, solve_exp) |
+  (rule MINUS_LHS, solve_exp) |
+
+  (rule STORE_STEP_MEM, solve_exp) |
+  (rule STORE_STEP_MEM_WORD, solve_exp) |
+  (rule STORE_STEP_ADDR, solve_exp) |
+  (rule STORE_STEP_ADDR_WORD, solve_exp) |
+  (rule STORE_STEP_VAL, solve_exp) |
+
+  (rule step_exp_eqI) |
+
+  (match conclusion in
+    \<open>_ \<turnstile> pad:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_UNSIGNED\<close>
   \<bar> \<open>_ \<turnstile> extend:_[_ \<Colon> _] \<leadsto> exts _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_SIGNED\<close>
   \<bar> \<open>_ \<turnstile> low:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : 0\<close> \<Rightarrow> \<open>rule CAST_LOW\<close>
   \<bar> \<open>_ \<turnstile> high:_[_ \<Colon> _] \<leadsto> ext _ \<Colon> _ \<sim> hi : _ - 1 \<sim> lo : (_ - _)\<close> \<Rightarrow> \<open>rule CAST_HIGH\<close>
-  \<bar> \<open>_ \<turnstile> _:_[_] \<leadsto> _\<close> \<Rightarrow> \<open>rule CAST_REDUCE, solve_exp\<close>
 
   \<comment>\<open>Load operations\<close>
   \<bar> \<open>_ \<turnstile> _[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> (num\<^sub>v \<Colon> sz), sz][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), _]:usz \<leadsto> (num\<^sub>v \<Colon> sz)\<close> for num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>v sz \<Rightarrow> \<open>rule LOAD_BYTE_WORD\<close>
   \<bar> \<open>_ \<turnstile> _[(_ \<Colon> _) \<leftarrow> _, _][_ \<leftarrow> _, _][(_ \<Colon> _), _]:u_ \<leadsto> (_[(_ \<Colon> _) \<leftarrow> _, _][(_ \<Colon> _), _]:u_)\<close> \<Rightarrow> \<open>rule LOAD_BYTE_FROM_NEXT_MEM, linarith?\<close>
-  \<bar> \<open>_ \<turnstile> _[_ \<Colon> _, _]:u_ \<leadsto> (_[_ \<Colon> _, _]:u_)\<close> \<Rightarrow> \<open>rule LOAD_STEP_MEM_WORD, solve_exp\<close>
+ (* \<bar> \<open>_ \<turnstile> _[_ \<Colon> _, _]:u_ \<leadsto> (_[_ \<Colon> _, _]:u_)\<close> \<Rightarrow> \<open>rule LOAD_STEP_MEM_WORD, solve_exp\<close>*)
   \<bar> \<open>_ \<turnstile> _ with [succ (_ \<Colon> _), _]:u_ \<leftarrow> (_ \<Colon> _) \<leadsto> _ with [succ (_ \<Colon> _), _]:u_ \<leftarrow> (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule STORE_STEP_MEM_SUCC, solve_exp\<close>
   \<bar> \<open>_ \<turnstile> _ with [succ (_ \<Colon> _), _]:u_ \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _ \<leadsto> _ with [succ (_ \<Colon> _), _]:u_ \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _\<close> \<Rightarrow> \<open>rule STORE_STEP_MEM_SUCC_XTRACT, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _[_, _]:u_ \<leadsto> (_[_, _]:u_)\<close> \<Rightarrow> \<open>rule LOAD_STEP_ADDR, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _[_, _]:u_ \<leadsto> (_[_, el]:u_) @ (_[_, _]:u_)\<close> \<Rightarrow> \<open>rule LOAD_WORD_EL_MEM, linarith, linarith\<close>
+  \<bar> \<open>_ \<turnstile> _[_, el]:u_ \<leadsto> (_[_, el]:u_) @ (_[_, el]:u_)\<close> \<Rightarrow> \<open>rule LOAD_WORD_EL_MEM, linarith, linarith\<close>
 
   \<comment>\<open>Concat operations\<close>
   \<bar> \<open>_ \<turnstile> (_ \<Colon> _) @ (_ \<Colon> _) \<leadsto> (_ \<Colon> _) \<cdot> (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule CONCAT\<close>
@@ -684,24 +724,19 @@ method solve_exp = (
   \<bar> \<open>_ \<turnstile> (Val _ with [(_ \<Colon> _), _]:u_ \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _) \<leadsto> (_[(_ \<Colon> _) \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _, _])\<close> \<Rightarrow> \<open>rule STORE_XTRACT, linarith, linarith, blast\<close>
   \<bar> \<open>_ \<turnstile> (_[(_ \<Colon> _) \<leftarrow> (_ \<Colon> _), _] with [(_ \<Colon> _), _]:u_ \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _) \<leadsto> (_[(_ \<Colon> _) \<leftarrow> ext (_ \<Colon> _) \<sim> hi : _ \<sim> lo : _, _])\<close> \<Rightarrow> \<open>rule STORE_XTRACT_IN_MEM, linarith, linarith\<close>
 
-  \<bar> \<open>_ \<turnstile> _ with [(Val _), _]:u_ \<leftarrow> (Val _) \<leadsto> _ with [(Val _), _]:u_ \<leftarrow> (Val _)\<close> \<Rightarrow> \<open>rule STORE_STEP_MEM, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ with [(_ \<Colon> _), _]:u_ \<leftarrow> (_ \<Colon> _) \<leadsto> _ with [(_ \<Colon> _), _]:u_ \<leftarrow> (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule STORE_STEP_MEM_WORD, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ with [_, _]:u_ \<leftarrow> (Val _) \<leadsto> _ with [_, _]:u_ \<leftarrow> (Val _)\<close> \<Rightarrow> \<open>rule STORE_STEP_ADDR, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ with [_, _]:u_ \<leftarrow> (_ \<Colon> _) \<leadsto> _ with [_, _]:u_ \<leftarrow> (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule STORE_STEP_ADDR_WORD, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ with [_, _]:u_ \<leftarrow> _ \<leadsto> _ with [_, _]:u_ \<leftarrow> _\<close> \<Rightarrow> \<open>rule STORE_STEP_VAL, solve_exp\<close>
+
 
   \<comment>\<open>Binary Operations\<close>
-  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) + (_ \<Colon> _) \<leadsto> ((_ \<Colon> _) +\<^sub>b\<^sub>v (_ \<Colon> _))\<close> \<Rightarrow> \<open>rule PLUS\<close>
-  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) + _ \<leadsto> ((_ \<Colon> _) + _)\<close> \<Rightarrow> \<open>rule PLUS_RHS_WORD, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ + _ \<leadsto> (_ + _)\<close> \<Rightarrow> \<open>rule PLUS_LHS, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) - (_ \<Colon> _) \<leadsto> ((_ \<Colon> _) -\<^sub>b\<^sub>v (_ \<Colon> _))\<close> \<Rightarrow> \<open>rule MINUS\<close>
-  \<bar> \<open>_ \<turnstile> (_ \<Colon> _) - _ \<leadsto> ((_ \<Colon> _) - _)\<close> \<Rightarrow> \<open>rule MINUS_RHS_WORD, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> _ - _ \<leadsto> (_ - _)\<close> \<Rightarrow> \<open>rule MINUS_LHS, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (_ \<Colon> _) (LOp Eq) (_ \<Colon> _) \<leadsto> (_ \<Colon> _) =\<^sub>b\<^sub>v (_ \<Colon> _)\<close> \<Rightarrow> \<open>rule step_exp_eqI\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (_ \<Colon> _) _ _ \<leadsto> BinOp (_ \<Colon> _) _ _\<close> \<Rightarrow> \<open>rule BOP_RHS_WORD, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (Val _) _ _ \<leadsto> BinOp (Val _) _ _\<close> \<Rightarrow> \<open>rule BOP_RHS, solve_exp\<close>
-  \<bar> \<open>_ \<turnstile> BinOp _ _ _ \<leadsto> BinOp _ _ _\<close> \<Rightarrow> \<open>rule BOP_LHS, solve_exp\<close>
-  \<bar> _ \<Rightarrow> \<open>succeed\<close>
+  ) |
+
+  (rule BOP_RHS_WORD, solve_exp) |
+  (rule BOP_RHS, solve_exp) |
+  (rule BOP_LHS, solve_exp) |
+
+  (rule CAST_REDUCE, solve_exp) |
+  (rule LOAD_STEP_MEM_WORD, solve_exp) |
+  (rule LOAD_STEP_ADDR, solve_exp) |
+  succeed
 )
 
 end

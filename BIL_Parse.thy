@@ -34,7 +34,7 @@ lemmas syntax_simps = var_simps  plus_exp.simps[symmetric]   minus_exp.simps[sym
     lsr_exp.simps[symmetric]     lsl_exp.simps[symmetric]    asr_exp.simps[symmetric] 
     land_exp.simps[symmetric]    lor_exp.simps[symmetric]    xor_exp.simps[symmetric]
     sdivide_exp.simps[symmetric] smod_exp.simps[symmetric]   negation_exp.simps[symmetric]
-    lt_exp.simps[symmetric]      lteq_exp.simps[symmetric]   slt_exp.simps[symmetric]
-    slteq_exp.simps[symmetric]   uminus_exp.simps[symmetric]
-    
+    lt_exp.simps[symmetric]      le_exp.simps[symmetric]   slt_exp.simps[symmetric]
+    sle_exp.simps[symmetric]   uminus_exp.simps[symmetric]
+    BIL_Syntax.not_exp.simps[symmetric]
 end

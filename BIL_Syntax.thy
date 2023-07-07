@@ -75,7 +75,7 @@ class var = var_syntax +
   assumes var_exhaust: \<open>\<And>P var. (\<And>id t. var = (id :\<^sub>t t) \<Longrightarrow> P) \<Longrightarrow> P\<close>
 
 
-datatype var = Var (name: string) (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
+datatype var = Var string (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
 
 instantiation var :: var
 begin
@@ -114,7 +114,7 @@ class unknown_constructor =
             \<open>\<And>str str' t t'. (unknown[str]: t) = (unknown[str']: t') \<longleftrightarrow> str = str' \<and> t = t'\<close>
 
 class storage_constructor = size + word_constructor +
-    fixes storage_constructor :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>_[_ \<leftarrow> _, _]\<close>)
+    fixes storage_constructor :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>_[_ \<leftarrow> _, _]\<close>) (*TODO bad syntax*)
   assumes storage_eq[simp]: \<open>\<And>mem w v sz mem' w' v' sz'. (mem[w \<leftarrow> v, sz]) = (mem'[w' \<leftarrow> v', sz']) \<longleftrightarrow>
                                         mem = mem' \<and> w = w' \<and> v = v' \<and> sz = sz'\<close>
 
@@ -192,7 +192,7 @@ datatype exp =
     Val val
   | Var var
   | Load exp exp Endian nat	 (\<open>_[_, _]:u_\<close>)
-  | Store exp exp Endian nat exp (\<open>_ with [_, _]:u_ \<leftarrow> _\<close>)
+  | Store exp exp Endian nat exp (\<open>_ with [_, _]:u_ \<leftarrow> _\<close>) (*TODO: u?*)
   | BinOp exp BinOp exp
   | UnOp UnOp exp
   | Cast Cast nat exp  (\<open>_:_[_]\<close>)
@@ -338,15 +338,11 @@ datatype stmt =
   | Jmp exp (\<open>jmp _\<close>)
   | CpuExn int (\<open>cpuexn _\<close>)
   | Special string (\<open>special[_]\<close>)
-  | While exp bil (\<open>while(_) _\<close>)
-  | If exp bil bil (\<open>if(_) _ else _\<close>)
-and bil = 
-    Stmt stmt bil
-  | Empty
+  | While exp \<open>stmt list\<close> (\<open>while(_) _\<close>) (* TODO *)
+  | If exp \<open>stmt list\<close> \<open>stmt list\<close> (\<open>if(_) _ else _\<close>)
 
-lemma Stmt_not_nested[simp]: \<open>Stmt s\<^sub>1 seq \<noteq> seq\<close>
-  by simp
+type_synonym bil = \<open>stmt list\<close>
 
-abbreviation \<open>IfThen e bil \<equiv> If e bil Empty\<close> 
+abbreviation \<open>IfThen e bil \<equiv> If e bil []\<close> 
 
 end

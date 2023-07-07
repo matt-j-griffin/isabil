@@ -64,8 +64,6 @@ where
   by auto
 termination by (standard, auto)
 
-declare bv_plus.simps[simp del]
-
 function
   bv_inc :: \<open>'a \<Rightarrow> 'a\<close>  (\<open>++\<^sub>b\<^sub>v _\<close> [81] 80)
 where
@@ -78,8 +76,7 @@ termination by (standard, auto)
 function 
   bv_minus :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>-\<^sub>b\<^sub>v\<close> 56)
 where 
-  \<open>\<lbrakk>nat\<^sub>2 \<le> nat\<^sub>1\<rbrakk> \<Longrightarrow> (nat\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = ((nat\<^sub>1 - nat\<^sub>2) \<Colon> sz)\<close> |
-  \<open>\<lbrakk>nat\<^sub>1 < nat\<^sub>2\<rbrakk> \<Longrightarrow> (nat\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = (((2 ^ sz + nat\<^sub>1) - nat\<^sub>2) \<Colon> sz)\<close> |
+  \<open>(nat\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = ((((if (nat\<^sub>1 < nat\<^sub>2) then 2 ^ sz else 0) + nat\<^sub>1) - nat\<^sub>2) \<Colon> sz)\<close> |
   \<open>\<lbrakk>sz\<^sub>1 \<noteq> sz\<^sub>2\<rbrakk> \<Longrightarrow> (_ \<Colon> sz\<^sub>1) -\<^sub>b\<^sub>v (_ \<Colon> sz\<^sub>2) = undefined\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w\<^sub>1 \<noteq> (nat \<Colon> sz)) \<or> (\<forall>nat sz. w\<^sub>2 \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> w\<^sub>1 -\<^sub>b\<^sub>v w\<^sub>2 = undefined\<close>
   subgoal for P x 
@@ -154,6 +151,16 @@ where
   by auto
 
 termination by (standard, auto)
+
+lemma lor_true[simp]: 
+    \<open>true |\<^sub>b\<^sub>v false = true\<close> 
+    \<open>false |\<^sub>b\<^sub>v true = true\<close> 
+    \<open>true |\<^sub>b\<^sub>v true = true\<close>
+  unfolding true_word false_word bv_lor.simps or_one_eq one_or_eq by simp_all
+
+lemma lor_false[simp]:
+    \<open>false |\<^sub>b\<^sub>v false = false\<close>
+  unfolding false_word bv_lor.simps or.idem by simp_all
 
 function
   bv_xor :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>xor\<^sub>b\<^sub>v\<close> 56)
@@ -382,12 +389,12 @@ where
 abbreviation
   bv_leq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
 where
-  \<open>a \<le>\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) &\<^sub>b\<^sub>v (a <\<^sub>b\<^sub>v b)\<close>
+  \<open>a \<le>\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) |\<^sub>b\<^sub>v (a <\<^sub>b\<^sub>v b)\<close>
 
 abbreviation
   bv_sleq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>s\<^sub>b\<^sub>v\<close> 56)
 where
-  \<open>a \<le>\<^sub>s\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) &\<^sub>b\<^sub>v (a <\<^sub>s\<^sub>b\<^sub>v b)\<close>
+  \<open>a \<le>\<^sub>s\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) |\<^sub>b\<^sub>v (a <\<^sub>s\<^sub>b\<^sub>v b)\<close>
 
 
 end

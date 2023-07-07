@@ -156,8 +156,7 @@ fun mk_exp (Load (e1, e2, en, sz)) = @{term "Load"} $ mk_exp e1  $ mk_exp e2 $ m
  ----------------------
  Converts ML/BIL to Isabelle/BIL 
  **)
-fun mk_bil [] = @{term "Empty"}
-  | mk_bil (stmt::bil) = @{term "Stmt"} $ mk_stmt stmt $ mk_bil bil  
+fun mk_bil bil = HOLogic.mk_list @{typ "stmt"} (List.map mk_stmt bil)
 and mk_stmt (CpuExn i) = @{term "CpuExn"} $ HOLogic.mk_number HOLogic.intT i
   | mk_stmt (Jmp e) = @{term "Jmp"} $ mk_exp e
   | mk_stmt (Special str) = @{term "Special"} $ HOLogic.mk_string str

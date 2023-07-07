@@ -52,6 +52,13 @@ end
 lemma type_storage64: \<open>type (storage64 mem address 64 val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
+lemma type_storage32: \<open>type (storage32 mem address val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+
+
+method solve_type_storage = (rule type_storage64 | rule type_storage32 | rule type_storageI)
+
+
 declare eval_exps_pred_exp.simps[simp del]
 declare step_pred_exp.simps[simp del]
 
@@ -161,6 +168,40 @@ next
     unfolding Val_simp_storage by blast+
 qed
 
+lemma refl8_load_storage_skip32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[v\<^sub>1[w\<^sub>1 \<leftarrow> v\<^sub>2, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<^sub>4\<close>
+      and \<open>w\<^sub>2 \<noteq> (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
+      and \<open>w\<^sub>2 \<noteq> succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
+      and \<open>w\<^sub>2 \<noteq> succ (succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))\<close>
+      and \<open>w\<^sub>2 \<noteq> succ (succ (succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))\<close>
+    shows \<open>\<Delta> \<turnstile> extend:64[v\<^sub>1[w\<^sub>1 \<leftarrow> v\<^sub>2, 8][w\<^sub>2 \<leftarrow> v\<^sub>3, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<^sub>4\<close>
+  apply (insert assms)
+  unfolding eval_exps_pred_exp.simps eval_exp.simps eval_exp_storage eval_exp.simps by simp
+
+lemma refl8_load_skip32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[(Val v\<^sub>1)[num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<^sub>4\<close> and \<open>type v\<^sub>1 = mem\<langle>64, 8\<rangle>\<close>
+      and \<open>w\<^sub>2 \<noteq> (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
+      and \<open>w\<^sub>2 \<noteq> succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
+      and \<open>w\<^sub>2 \<noteq> succ (succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))\<close>
+      and \<open>w\<^sub>2 \<noteq> succ (succ (succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))\<close>
+    shows \<open>\<Delta> \<turnstile> extend:64[v\<^sub>1[w\<^sub>2 \<leftarrow> v\<^sub>3, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<^sub>4\<close>
+proof (cases v\<^sub>1 rule: val_exhaust)
+  case (1 num sz)
+  then show ?thesis 
+    using assms(2) by simp
+next
+  case (2 str t)
+  then show ?thesis 
+    using assms unfolding eval_exps_pred_exp.simps eval_exp.simps eval_exp_storage eval_exp.simps by simp
+next
+  case (3 mem w v' sz)
+  then show ?thesis 
+    using assms apply clarify
+    apply (cases w rule: word_exhaust, simp)
+    apply (rule refl8_load_storage_skip32I)
+    unfolding Val_simp_storage by blast+
+qed
+
 method solve_succ_neq = 
   match conclusion in \<open>succ (succ _) \<noteq> succ (succ _)\<close> \<Rightarrow> \<open>rule succ_succ_neqI, solve_succ_neq\<close>
                     \<bar> \<open>succ (succ _) \<noteq> succ _\<close> \<Rightarrow> \<open>rule succ_left_neqI, assumption, assumption\<close>
@@ -210,6 +251,42 @@ lemma refl32_load_all_rev_cut64I:
   apply assumption+
   by solve_succ_neq+
 
+text \<open>32bit read skipping a 32bit word\<close>
+
+abbreviation 
+  no_address_overlap_32_32 :: \<open>nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool\<close>
+where 
+  \<open>no_address_overlap_32_32 num\<^sub>1 num\<^sub>2 sz \<equiv> (
+    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
+    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (num\<^sub>2 \<Colon> sz) \<and>
+    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (num\<^sub>2 \<Colon> sz)) \<and>
+    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (num\<^sub>2 \<Colon> sz))) \<and>
+    succ ((num\<^sub>1 \<Colon> sz)::word) \<noteq> (num\<^sub>2 \<Colon> sz) \<and> 
+    succ (succ ((num\<^sub>1 \<Colon> sz)::word)) \<noteq> (num\<^sub>2 \<Colon> sz) \<and> 
+    succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))) \<noteq> (num\<^sub>2 \<Colon> sz)
+)\<close>
+
+lemma refl32_load_rev_cut32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[mem[w' \<leftarrow> v', 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+      and \<open>num\<^sub>1 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> and \<open>num\<^sub>3 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+      and \<open>no_address_overlap_32_32 num\<^sub>1 num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+    shows \<open>\<Delta> \<turnstile> extend:64[mem[w' \<leftarrow> v', 8][(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>1, 8][succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>2, 8][succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> v\<^sub>3, 8][succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> v\<^sub>4, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+  apply (insert assms, elim conjE)
+  apply (rule refl8_load_storage_skip32I)+
+  apply assumption
+  by solve_succ_neq+
+
+lemma refl32_load_all_rev_cut32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[(Val mem)[num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close> and \<open>type mem = mem\<langle>64, 8\<rangle>\<close>
+      and \<open>num\<^sub>1 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> and \<open>num\<^sub>3 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+      and \<open>no_address_overlap_32_32 num\<^sub>1 num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+    shows \<open>\<Delta> \<turnstile> extend:64[mem[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>1, 8][succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>2, 8][succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> v\<^sub>3, 8][succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> v\<^sub>4, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+  apply (insert assms, elim conjE)
+  apply (rule refl8_load_storage_skip32I)+
+  apply (rule refl8_load_skip32I)
+  apply assumption+
+  by solve_succ_neq+
+
 text \<open>64bit read skipping a 64bit word\<close>
 
 abbreviation 
@@ -242,6 +319,43 @@ lemma refl64_load_all_rev_cut64I:
     shows \<open>\<Delta> \<turnstile> mem[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>1, 8][succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>2, 8][succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> v\<^sub>3, 8][succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> v\<^sub>4, 8][succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> v\<^sub>5, 8][succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> v\<^sub>6, 8][succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> v\<^sub>7, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> v\<^sub>8, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<close>
   apply (insert assms, elim conjE)
   apply (rule refl32_load_all_rev_cut64I | rule refl8_load_storage_skip64I)+
+  apply assumption+
+  apply (intro conjI)
+  apply assumption+
+  by solve_succ_neq+
+
+text \<open>64bit read skipping a 64bit word\<close>
+
+abbreviation 
+  no_address_overlap_32_64 :: \<open>nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool\<close>
+where 
+  \<open>no_address_overlap_32_64 num\<^sub>1 num\<^sub>2 sz \<equiv> (
+    no_address_overlap_32_32 num\<^sub>1 num\<^sub>2 sz \<and>
+    succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word)))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
+    succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
+    succ (succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word)))))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
+    succ (succ (succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))))))) \<noteq> (num\<^sub>2 \<Colon> sz)
+)\<close>
+
+lemma refl64_load_rev_cut32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[mem[w' \<leftarrow> v', 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+      and \<open>num\<^sub>1 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> and \<open>num\<^sub>3 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+      and \<open>no_address_overlap_32_64 num\<^sub>1 num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> 
+    shows \<open>\<Delta> \<turnstile> extend:64[mem[w' \<leftarrow> v', 8][(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>1, 8][succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>2, 8][succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> v\<^sub>3, 8][succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> v\<^sub>4, 8][succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> v\<^sub>5, 8][succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> v\<^sub>6, 8][succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> v\<^sub>7, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> v\<^sub>8, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+  apply (insert assms, elim conjE)
+  apply (rule refl32_load_rev_cut32I | rule refl8_load_storage_skip32I)+
+  apply assumption+
+  apply (intro conjI)
+  apply assumption+
+  by solve_succ_neq+
+
+lemma refl64_load_all_rev_cut32I:
+  assumes \<open>\<Delta> \<turnstile> extend:64[(Val mem)[num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close> and \<open>type mem = mem\<langle>64, 8\<rangle>\<close>
+      and \<open>num\<^sub>1 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> and \<open>num\<^sub>3 < 2 ^ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close>
+      and \<open>no_address_overlap_32_64 num\<^sub>1 num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> 
+    shows \<open>\<Delta> \<turnstile> extend:64[mem[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>1, 8][succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>2, 8][succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> v\<^sub>3, 8][succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> v\<^sub>4, 8][succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> v\<^sub>5, 8][succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> v\<^sub>6, 8][succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> v\<^sub>7, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> v\<^sub>8, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u32] \<leadsto>* v\<close>
+  apply (insert assms, elim conjE)
+  apply (rule refl32_load_all_rev_cut32I | rule refl8_load_storage_skip32I)+
   apply assumption+
   apply (intro conjI)
   apply assumption+
@@ -1241,19 +1355,21 @@ lemma word8_refl_store_el_word64_in_memI:
       storage64 (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> 8, 8]) num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>4\<close>
   using word8_refl_store_el_word64I by (simp add: storage_constructor_exp_def)
 
-(* TODO - remove? *)
-lemma refl_var_inI: \<open>\<Delta>(var :\<^sub>t t \<mapsto> val) \<turnstile> var :\<^sub>t t \<leadsto>* val\<close>
-  apply (rule REDUCE[of _ _ \<open>Val val\<close>])
-  apply (rule VAR_IN)
-  apply (rule var_in_addI)
-  by (rule REFL)
 
+lemma refl_leI: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz) \<leadsto>* (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  apply (rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>])
+  apply (rule LESS_EQ)
+  by (simp add: bv_eq_def)
 
 (* use raw ML instead *)
 method solve_exps = (
   (unfold var_simps)?, (
   rule REFL_WORD | rule REFL_TRUE | rule REFL_FALSE | rule REFL_STORAGE | rule REFL_UNKNOWN | 
-  rule REFL | rule refl_var_inI | 
+  rule REFL |
+
+  rule refl_leI |
+
+  rule word8_refl_load_rev_ext_concat_word64I | rule word8_refl_load_rev_ext_concat_word32I |
 
   rule word8_refl_store_el_word64_in_memI | (rule word8_refl_store_el_word64I, blast?) |
   rule word8_refl_store_el_word32_in_memI | (rule word8_refl_store_el_word32I, blast?) |
@@ -1304,56 +1420,75 @@ method solve_exps = (
 
   \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (low:sz[num\<^sub>1 \<Colon> sz\<^sub>1]) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz num\<^sub>1 sz\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> ext num\<^sub>1 \<Colon> sz\<^sub>1 \<sim> hi : sz - 1 \<sim> lo : 0\<close>]\<close>
   \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (high:sz[val \<Colon> sz']) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz val sz' \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, el]:usz \<leftarrow> (ext val \<Colon> sz' \<sim> hi : sz' - 1 \<sim> lo : sz' - sz)\<close>]\<close>  
-, solve_exp) 
+
+  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _) + e\<^sub>2, en]:usz \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_ + e\<^sub>2, en]:usz\<close>]\<close>
+
+  
+  \<comment> \<open>BOPS LHS VAR\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) le e \<leadsto>* _\<close> for e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ le e\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) + (num \<Colon> sz) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ + (num \<Colon> sz)\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) - (num \<Colon> sz) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ - (num \<Colon> sz)\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> BinOp (_ :\<^sub>t _) bop e \<leadsto>* _\<close> for bop e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp _ bop e\<close>]\<close>
+
+  \<comment> \<open>BOPS RHS VAR\<close>
+  \<bar> \<open>_ \<turnstile> (num \<Colon> sz) le (_ :\<^sub>t _) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num \<Colon> sz) le _\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> BinOp (num \<Colon> sz) bop (_ :\<^sub>t _) \<leadsto>* _\<close> for num sz bop \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp (num \<Colon> sz) bop _\<close>]\<close>
+
+  \<comment> \<open>EXTEND LOAD ADDR BOP LHS VAR\<close>
+  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[e\<^sub>1[(_ :\<^sub>t _), en]:usz\<^sub>2] \<leadsto>* _\<close>for sz\<^sub>1 e\<^sub>1 en sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[e\<^sub>1[_, en]:usz\<^sub>2]\<close>]\<close>
+
+  \<comment> \<open>EXTEND LOAD ADDR BOP LHS VAR\<close>
+  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[mem[(_ :\<^sub>t _) + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for mem num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[_ + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>]\<close>
+
+  \<comment> \<open>EXTEND LOAD MEM VAR\<close>
+  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[(_ :\<^sub>t _)[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[_[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>]\<close>
+
+
+
+
+  \<comment> \<open>EXTEND CAST BOP LHS VAR\<close>
+  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(_ :\<^sub>t _) + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]] \<leadsto>* _\<close> for num sz\<^sub>1 sz\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[_ + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]]\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(_ :\<^sub>t _)]] \<leadsto>* _\<close> for  sz\<^sub>1 sz\<^sub>2 \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[_]]\<close>]\<close>
+
+  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _), en]:usz \<leadsto>* _\<close> for e\<^sub>1 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_, en]:usz\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _) + e\<^sub>2, en]:usz \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_ + e\<^sub>2, en]:usz\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _)[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leadsto>* _\<close> for num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>2 sz\<^sub>2 en sz num\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz)\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (_ :\<^sub>t _) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> _\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(_ :\<^sub>t _), en]:usz \<leftarrow> (num \<Colon> sz) \<leadsto>* _\<close> for e\<^sub>1 en num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [_, en]:usz \<leftarrow> (num \<Colon> sz)\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(_ :\<^sub>t _) + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2) \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 sz\<^sub>1 en num\<^sub>2 sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [_ + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>]\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (low:sz[_ :\<^sub>t _]) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> low:sz[_]\<close>]\<close>
+
+
+  , solve_exp)
   |
   (match conclusion in
-
-    \<comment> \<open>Reducible Bops\<close>
-    \<open>\<Delta> \<turnstile> BinOp (var :\<^sub>t t) bop e \<leadsto>* _\<close> for \<Delta> var t bop e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp (Val (the (\<Delta> (var :\<^sub>t t)))) bop e\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
-  \<bar> \<open>\<Delta> \<turnstile> BinOp (num \<Colon> sz) bop (var :\<^sub>t t) \<leadsto>* _\<close> for \<Delta> num sz var t bop \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp (num \<Colon> sz) bop (Val (the (\<Delta> (var :\<^sub>t t))))\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
-
-    \<comment> \<open>Reducible Plus\<close>
-  \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t) + (num \<Colon> sz) \<leadsto>* _\<close> for \<Delta> var t num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>Val (the (\<Delta> (var :\<^sub>t t))) + (num \<Colon> sz)\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
-  \<bar> \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, unfold bv_plus.simps\<close>
-
-    \<comment> \<open>Reducible Minus\<close>
-  \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t) - (num \<Colon> sz) \<leadsto>* _\<close> for \<Delta> var t num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>Val (the (\<Delta> (var :\<^sub>t t))) - (num \<Colon> sz)\<close>], (solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?)\<close>
-  \<bar> \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, unfold bv_minus.simps\<close>
-
     \<comment> \<open>Reducible Eq\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>], solve_exp, (unfold bv_eq_def, simp (no_asm))[1]\<close>
-
-  \<bar> \<open>\<Delta> \<turnstile> extend:sz\<^sub>1[mem[(var :\<^sub>t t) + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for \<Delta> mem var t num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[Val (the (\<Delta> (var :\<^sub>t t))) + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for mem num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>], solve_exp, unfold bv_plus.simps\<close>
-  \<bar> \<open>\<Delta> \<turnstile> extend:sz\<^sub>1[(var :\<^sub>t t)[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for \<Delta> var t num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[Val (the (\<Delta> (var :\<^sub>t t)))[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-
-  \<bar> \<open>\<Delta> \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(var :\<^sub>t t) + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]] \<leadsto>* _\<close> for \<Delta> var t num sz\<^sub>1 sz\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[Val (the (\<Delta> (var :\<^sub>t t))) + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]]\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
+    \<open>_ \<turnstile> BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, (unfold bv_eq_def, simp (no_asm))[1]
+  ) |
+  (match conclusion in
+    \<comment> \<open>Reducible Plus\<close>
+    \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, unfold bv_plus.simps
+  ) |
+  (match conclusion in
+    \<comment> \<open>Reducible Minus\<close>
+    \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, unfold bv_minus.simps
+  ) |
+  (match conclusion in
+    \<open>_ \<turnstile> extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for mem num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>], solve_exp, unfold bv_plus.simps\<close>
   \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) + (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]] \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]]\<close>], solve_exp, unfold bv_plus.simps\<close>
 
-  \<bar> \<open>\<Delta> \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(var :\<^sub>t t)]] \<leadsto>* _\<close> for \<Delta> var t sz\<^sub>1 sz\<^sub>2 \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[Val (the (\<Delta> (var :\<^sub>t t)))]]\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-
    \<comment> \<open>LOAD_STEP_ADDR\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1[(var :\<^sub>t t), en]:usz \<leadsto>* _\<close> for \<Delta> e\<^sub>1 var t en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[(Val (the (\<Delta> (var :\<^sub>t t)))), en]:usz\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1[(var :\<^sub>t t) + e\<^sub>2, en]:usz \<leadsto>* _\<close> for \<Delta> e\<^sub>1 var t e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[(Val (the (\<Delta> (var :\<^sub>t t)))) + e\<^sub>2, en]:usz\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
   \<bar> \<open>_ \<turnstile> e\<^sub>1[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) + (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 num\<^sub>2 en sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz\<close>], solve_exp, unfold bv_plus.simps\<close>
 
 
    \<comment> \<open>LOAD_STEP_MEM\<close>
-  \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t)[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leadsto>* _\<close> for \<Delta> var t num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(Val (the (\<Delta> (var :\<^sub>t t))))[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-
    \<comment> \<open>LOAD_BYTE + LOAD_NEXT\<close>
 
    \<comment> \<open>LOAD_EL\<close>
 
     \<comment> \<open>Reducible Store\<close>
-
-
-  \<bar> \<open>\<Delta> \<turnstile> (var :\<^sub>t t) with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz) \<leadsto>* _\<close> for \<Delta> var t num\<^sub>2 sz\<^sub>2 en sz num\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(Val (the (\<Delta> (var :\<^sub>t t)))) with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz)\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (var :\<^sub>t t) \<leadsto>* _\<close> for \<Delta> e\<^sub>1 e\<^sub>2 en sz var t \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (Val (the (\<Delta> (var :\<^sub>t t))))\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1 with [(var :\<^sub>t t), en]:usz \<leftarrow> (num \<Colon> sz) \<leadsto>* _\<close> for \<Delta> e\<^sub>1 var t en num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [(Val (the (\<Delta> (var :\<^sub>t t)))), en]:usz \<leftarrow> (num \<Colon> sz)\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1 with [(var :\<^sub>t t) + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2) \<leadsto>* _\<close> for \<Delta> e\<^sub>1 var t num\<^sub>1 sz\<^sub>1 en num\<^sub>2 sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [(Val (the (\<Delta> (var :\<^sub>t t)))) + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3) \<leadsto>* _\<close> for \<Delta> e\<^sub>1 num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2 en num\<^sub>3 sz\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3)\<close>], solve_exp, unfold bv_plus.simps, simp del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>\<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (low:sz[var :\<^sub>t t]) \<leadsto>* _\<close> for \<Delta> e\<^sub>1 e\<^sub>2 en sz var t \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> low:sz[(Val (the (\<Delta> (var :\<^sub>t t))))]\<close>], solve_exp, rule var_in_val_the_var, assumption?, (unfold in_vars_the_simp)?\<close>
+  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3) \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2 en num\<^sub>3 sz\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3)\<close>], solve_exp, unfold bv_plus.simps, simp del: dvd_imp_mod_0 mod_less\<close>
 
     \<comment> \<open>Reducible Concat\<close>
   \<bar> \<open>_ \<turnstile> (((((((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7)) @ (num\<^sub>8 \<Colon> sz\<^sub>8) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>8 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 sz\<^sub>5 sz\<^sub>6 sz\<^sub>7 sz\<^sub>8 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7)) @ (num\<^sub>8 \<Colon> sz\<^sub>8)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
