@@ -33,4 +33,7 @@ lemma insert_diffE:
     shows \<open>a \<notin> C \<and> a \<noteq> b\<close>
   using assms by simp
 
+lemma not_in_empty_set_list: \<open>z \<notin> set []\<close>
+  by auto
+
 end

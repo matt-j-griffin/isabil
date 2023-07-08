@@ -51,8 +51,6 @@ qed
 
 end
 
-(* TODO these suck *)
-
 lemma Word_simp: \<open>Word a b = (a \<Colon> b)\<close>
   by (simp add: word_constructor_word_def)
 

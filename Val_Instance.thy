@@ -45,8 +45,6 @@ instance
 
 end
 
-(* TODO these suck *)
-
 lemmas Immediate_simp[simp] = word_constructor_val_def[symmetric]
 
 end
