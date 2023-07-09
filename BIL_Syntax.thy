@@ -75,7 +75,7 @@ class var = var_syntax +
   assumes var_exhaust: \<open>\<And>P var. (\<And>id t. var = (id :\<^sub>t t) \<Longrightarrow> P) \<Longrightarrow> P\<close>
 
 
-datatype var = Var string (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
+datatype var = Var (name: string) (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
 
 instantiation var :: var
 begin
@@ -282,18 +282,12 @@ where
   \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
   \<open>[v\<sslash>var](Concat e\<^sub>1 e\<^sub>2) = Concat ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close>
 
-lemma capture_val:
-  assumes \<open>Val v = [v\<sslash>var]e\<close>
-    shows \<open>e = Val v \<or> e = (Var var)\<close>
-using assms proof (induct e)
-  case (Var x)
-  then show ?case 
-  proof (cases \<open>var = x\<close>)
-    case False
-    then show ?thesis 
-      using Var by auto
-  qed auto
-qed simp_all
+lemma capture_avoiding_sub_size_eq[simp]: \<open>size_class.size ([v\<sslash>var]e) = size_class.size e\<close>
+  by (induct e, auto)
+
+lemma let_neq_capture_avoid[simp]: \<open>exp.Let var (Val v) e \<noteq> [v\<sslash>var]e\<close>
+  apply (induct e, auto)
+  by (metis add_0 add_eq_self_zero canonically_ordered_monoid_add_class.lessE capture_avoiding_sub_size_eq exp.size(12) exp.size(19) less_numeral_extra(1) nat_1 nat_one_as_int)
 
 
 
