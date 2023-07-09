@@ -337,10 +337,15 @@ lemma no_unknowns_true[simp]: \<open>no_unknowns \<Delta> true\<close>
 lemma no_unknowns_false[simp]: \<open>no_unknowns \<Delta> false\<close>
   by (simp add: false_word)
 
+lemma typing_exp_det: fixes e :: exp shows \<open>\<Gamma> \<turnstile> e :: t \<Longrightarrow> \<Gamma> \<turnstile> e :: t' \<Longrightarrow> t = t'\<close>
+  apply (induct e)
+
+
+
 lemma 
   assumes \<open>\<Gamma> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz :: t\<close>
-    shows Q
-  apply (insert assms, rule typed_ok_exp.elims)
+    shows \<open> t = imm\<langle>sz\<rangle> \<Longrightarrow> 0 < sz \<Longrightarrow> sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<Longrightarrow> \<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow> \<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle> \<Longrightarrow> Q\<close>
+  using assms apply (rule typed_ok_exp.elims, auto)
 
 
 lemma step_exp_no_unknowns:

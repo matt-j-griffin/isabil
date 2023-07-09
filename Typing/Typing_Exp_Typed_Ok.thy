@@ -147,6 +147,52 @@ instance
 end
 
 
+(*
+
+
+  \<open>typed_ok_exp \<Gamma> (id' :\<^sub>t t) t = ((id' :\<^sub>t t) \<in> set \<Gamma> \<and> (\<Gamma> is ok) \<and> (t is ok))\<close> |
+  \<open>\<lbrakk>t \<noteq> t'\<rbrakk> \<Longrightarrow> typed_ok_exp _ (_ :\<^sub>t t) t' = False\<close> |
+  (* Load *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1[e\<^sub>2, ed]:usz) imm\<langle>sz\<rangle> = (sz > 0 \<and> (\<exists>sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<and>
+                                             (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>)))\<close> |
+  \<open>\<lbrakk>sz \<noteq> sz'\<rbrakk> \<Longrightarrow> typed_ok_exp _ (_[_, _]:usz) imm\<langle>sz'\<rangle> = False\<close> |
+  \<open>typed_ok_exp _ (_[_, _]:u_) mem\<langle>_, _\<rangle> = False\<close> |
+  (* Store *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1 with [e\<^sub>2, ed]:usz \<leftarrow> e\<^sub>3) mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> = (sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<and> sz > 0 \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: imm\<langle>sz\<rangle>)
+                                                    \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>) 
+                                                    \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>))\<close> |
+  \<open>typed_ok_exp _ (_ with [_, _]:u_ \<leftarrow> _) imm\<langle>_\<rangle> = False\<close> |
+  (* BinOp *)
+  \<open>typed_ok_exp \<Gamma> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) imm\<langle>sz\<rangle> = ((\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>))\<close> |
+  \<open>typed_ok_exp \<Gamma> (BinOp e\<^sub>1 (LOp lop) e\<^sub>2) imm\<langle>1\<rangle> = (\<exists>sz. (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>))\<close> | 
+  \<open>\<lbrakk>sz \<noteq> 1\<rbrakk> \<Longrightarrow> typed_ok_exp _ (BinOp _ (LOp _) _) imm\<langle>sz\<rangle> = False\<close> | 
+  \<open>typed_ok_exp _ (BinOp _ _ _) mem\<langle>_, _\<rangle> = False\<close> |
+  (* UnOp *)
+  \<open>typed_ok_exp \<Gamma> (UnOp uop e) imm\<langle>sz\<rangle> = (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>)\<close> |
+  \<open>typed_ok_exp _ (UnOp _ _) mem\<langle>_,_\<rangle> = False\<close> |
+  (* Cast *)
+  \<open>typed_ok_exp \<Gamma> (pad:sz[e]) imm\<langle>sz\<rangle> = (sz > 0 \<and> (\<exists>sz'. sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)))\<close> |
+  \<open>typed_ok_exp \<Gamma> (extend:sz[e]) imm\<langle>sz\<rangle> = (sz > 0 \<and> (\<exists>sz'. sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)))\<close> |
+  \<open>typed_ok_exp \<Gamma> (high:sz[e]) imm\<langle>sz\<rangle> = (sz > 0 \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)))\<close> |
+  \<open>typed_ok_exp \<Gamma> (low:sz[e]) imm\<langle>sz\<rangle> = (sz > 0 \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)))\<close> |
+  \<open>\<lbrakk>sz \<noteq> sz'\<rbrakk> \<Longrightarrow> typed_ok_exp _ ((_::Cast):sz[_]) imm\<langle>sz'\<rangle> = False\<close> |
+  \<open>typed_ok_exp \<Gamma> ((_::Cast):_[_]) mem\<langle>_,_\<rangle> = False\<close> |
+  (* Let *)
+  \<open>typed_ok_exp \<Gamma> (Let (id' :\<^sub>t t) e\<^sub>1 e\<^sub>2) t' = (id' \<notin> dom\<^sub>\<Gamma> \<Gamma> \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: t) \<and> (((id' :\<^sub>t t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'))\<close> |
+  (* Ite *)
+  \<open>typed_ok_exp \<Gamma> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) t = ((\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: t) \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: t))\<close> |
+  (* extract *)
+  \<open>typed_ok_exp \<Gamma> (extract:sz\<^sub>1:sz\<^sub>2[e]) imm\<langle>sz\<^sub>1 - sz\<^sub>2 + 1\<rangle> = (sz\<^sub>1 \<ge> sz\<^sub>2 \<and> (\<exists>sz. (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>)))\<close> |
+  \<open>\<lbrakk>sz \<noteq> sz\<^sub>1 - sz\<^sub>2 + 1\<rbrakk> \<Longrightarrow> typed_ok_exp _ (extract:sz\<^sub>1:sz\<^sub>2[_]) imm\<langle>sz\<rangle> = False\<close> |
+  \<open>typed_ok_exp _ (extract:_:_[_]) mem\<langle>_,_\<rangle> = False\<close> |
+  (* concat *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1 @ e\<^sub>2) imm\<langle>sz\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t\<rangle> = (\<exists>sz\<^sub>1 sz\<^sub>2. sz\<^sub>c\<^sub>o\<^sub>n\<^sub>c\<^sub>a\<^sub>t = sz\<^sub>1 + sz\<^sub>2 \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<^sub>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>2\<rangle>))\<close> |
+  \<open>typed_ok_exp _ (_ @ _) mem\<langle>_, _\<rangle> = False\<close> |
+  (* val *)
+  \<open>typed_ok_exp \<Gamma> (Val v) t = (\<Gamma> \<turnstile> v :: t)\<close>
+
+*)
+
 lemma load_exp_typed_okI:
   assumes \<open>sz dvd sz'\<close> and \<open>sz' > 0\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>nat', sz\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>nat'\<rangle>\<close>
     shows \<open>\<Gamma> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz' :: imm\<langle>sz'\<rangle>\<close>
