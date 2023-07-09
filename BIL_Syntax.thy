@@ -267,72 +267,38 @@ lemma exp_syntax_exhaust:
 
 end
 
-(*
-text \<open>Expressions are well formed if they recursively contain loads that target memory widths 
-      greater than zero (in bytes). Well formed expressions can be evaluated ahead of time.\<close>
-
-fun 
-  wfe :: \<open>exp \<Rightarrow> bool\<close>
-where
-  \<open>wfe (Load e\<^sub>1 e\<^sub>2 _ sz) = (sz \<ge> 8 \<and> wfe e\<^sub>1 \<and> wfe e\<^sub>2)\<close> |
-  \<open>wfe (Store e\<^sub>1 e\<^sub>2 _ sz e\<^sub>3) = (sz \<ge> 8 \<and> wfe e\<^sub>1 \<and> wfe e\<^sub>2 \<and> wfe e\<^sub>3)\<close> |  
-  \<open>wfe (BinOp e\<^sub>1 _ e\<^sub>2) = (wfe e\<^sub>1 \<and> wfe e\<^sub>2)\<close> |
-  \<open>wfe (UnOp _ e) = wfe e\<close> |
-  \<open>wfe (Cast _ _ e) = wfe e\<close> |
-  \<open>wfe (Let _ e\<^sub>1 e\<^sub>2) = (wfe e\<^sub>1 \<and> wfe e\<^sub>2)\<close> |
-  \<open>wfe (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = (wfe e\<^sub>1 \<and> wfe e\<^sub>2 \<and> wfe e\<^sub>3)\<close> |
-  \<open>wfe (Extract _ _ e) = wfe e\<close> |
-  \<open>wfe (Concat e\<^sub>1 e\<^sub>2) = (wfe e\<^sub>1 \<and> wfe e\<^sub>2)\<close> |
-  \<open>wfe _ = True\<close>
-
-class capture_avoiding_sub =
-  fixes let_substitute :: \<open>word \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close>)
-
-instantiation exp and val :: capture_avoiding_sub
-begin
-
 primrec 
-  let_substitute_exp :: \<open>exp \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close>
+  capture_avoiding_sub :: \<open>val \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close> [501,500,502] 508)
 where
-  \<open>let_substitute_exp _ _ (Val v) = (Val v)\<close> |
-  \<open>let_substitute_exp e var (Var var') = (if var = var' then e else (Var var'))\<close> |
-  \<open>let_substitute_exp e var (Load e\<^sub>1 e\<^sub>2 ed sz) = Load (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2) ed sz\<close> |
-  \<open>let_substitute_exp e var (Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2) ed sz (let_substitute_exp e var e\<^sub>3)\<close> |
-  \<open>let_substitute_exp e var (BinOp e\<^sub>1 bop e\<^sub>2) = BinOp (let_substitute_exp e var e\<^sub>1) bop (let_substitute_exp e var e\<^sub>2)\<close> |
-  \<open>let_substitute_exp e var (UnOp uop e') = UnOp uop (let_substitute_exp e var e')\<close> |
-  \<open>let_substitute_exp e var (Cast cast sz e') = Cast cast sz (let_substitute_exp e var e')\<close> |
-  \<open>let_substitute_exp e var (Let var' e\<^sub>1 e\<^sub>2) = Let var' (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2)\<close> |
-  \<open>let_substitute_exp e var (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2) (let_substitute_exp e var e\<^sub>3)\<close> |
-  \<open>let_substitute_exp e var (Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 (let_substitute_exp e var e')\<close> |
-  \<open>let_substitute_exp e var (Concat e\<^sub>1 e\<^sub>2) = Concat (let_substitute_exp e var e\<^sub>1) (let_substitute_exp e var e\<^sub>2)\<close>
+  \<open>[_\<sslash>_](Val v) = (Val v)\<close> |
+  \<open>[v\<sslash>var](Var var') = (if var = var' then (Val v) else (Var var'))\<close> |
+  \<open>[v\<sslash>var](Load e\<^sub>1 e\<^sub>2 ed sz) = Load ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz\<close> |
+  \<open>[v\<sslash>var](Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz ([v\<sslash>var]e\<^sub>3)\<close> |
+  \<open>[v\<sslash>var](BinOp e\<^sub>1 bop e\<^sub>2) = BinOp ([v\<sslash>var]e\<^sub>1) bop ([v\<sslash>var]e\<^sub>2)\<close> |
+  \<open>[v\<sslash>var](UnOp uop e) = UnOp uop ([v\<sslash>var]e)\<close> |
+  \<open>[v\<sslash>var](Cast cast sz e) = Cast cast sz ([v\<sslash>var]e)\<close> |
+  \<open>[v\<sslash>var](Let var' e\<^sub>1 e\<^sub>2) = Let var' ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close> |
+  \<open>[v\<sslash>var](Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ([v\<sslash>var]e\<^sub>3)\<close> |
+  \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
+  \<open>[v\<sslash>var](Concat e\<^sub>1 e\<^sub>2) = Concat ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close>
 
-primrec 
-  let_substitute_val :: \<open>val \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close>
-where
-  \<open>let_substitute_val _ _ (Val v) = (Val v)\<close> |
-  \<open>let_substitute_val v var (Var var') = (if var = var' then (Val v) else (Var var'))\<close> |
-  \<open>let_substitute_val v var (Load e\<^sub>1 e\<^sub>2 ed sz) = Load (let_substitute_val v var e\<^sub>1) (let_substitute_val v var e\<^sub>2) ed sz\<close> |
-  \<open>let_substitute_val v var (Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store (let_substitute_val v var e\<^sub>1) (let_substitute_val v var e\<^sub>2) ed sz (let_substitute_val v var e\<^sub>3)\<close> |
-  \<open>let_substitute_val v var (BinOp e\<^sub>1 bop e\<^sub>2) = BinOp (let_substitute_val v var e\<^sub>1) bop (let_substitute_val v var e\<^sub>2)\<close> |
-  \<open>let_substitute_val v var (UnOp uop e') = UnOp uop (let_substitute_val v var e')\<close> |
-  \<open>let_substitute_val v var (Cast cast sz e') = Cast cast sz (let_substitute_val v var e')\<close> |
-  \<open>let_substitute_val v var (Let var' e\<^sub>1 e\<^sub>2) = Let var' (let_substitute_val v var e\<^sub>1) (let_substitute_val v var e\<^sub>2)\<close> |
-  \<open>let_substitute_val v var (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite (let_substitute_val v var e\<^sub>1) (let_substitute_val v var e\<^sub>2) (let_substitute_val v var e\<^sub>3)\<close> |
-  \<open>let_substitute_val v var (Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 (let_substitute_val v var e')\<close> |
-  \<open>let_substitute_val v var (Concat e\<^sub>1 e\<^sub>2) = Concat (let_substitute_val v var e\<^sub>1) (let_substitute_val v var e\<^sub>2)\<close>
+lemma capture_val:
+  assumes \<open>Val v = [v\<sslash>var]e\<close>
+    shows \<open>e = Val v \<or> e = (Var var)\<close>
+using assms proof (induct e)
+  case (Var x)
+  then show ?case 
+  proof (cases \<open>var = x\<close>)
+    case False
+    then show ?thesis 
+      using Var by auto
+  qed auto
+qed simp_all
 
-instance ..
-end 
 
-lemma let_substitue_val_exp_val_eq:
-  \<open>[v\<sslash>var]e = [(Val v)\<sslash>var]e\<close>
-  by (induct e, auto)
+
   
-lemma let_substitute_val_size_eq: 
-    fixes v :: val
-    shows \<open>size_class.size e = size_class.size ([v\<sslash>var]e)\<close>
-  by (induct e, auto)
-*)
+
 datatype stmt =
     Move var exp (infixl \<open>:=\<close> 55)
   | Jmp exp (\<open>jmp _\<close>)

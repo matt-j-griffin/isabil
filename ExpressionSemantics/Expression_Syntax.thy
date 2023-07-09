@@ -880,6 +880,7 @@ where
 
   \<comment> \<open>Let rules\<close>
   LetStep: \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<Rrightarrow> (Let var e\<^sub>1' e\<^sub>2)\<close> |
+  Let: \<open>\<Delta> \<turnstile> (Let var (Val v) e) \<Rrightarrow> [v\<sslash>var]e\<close> |
   (* one missing rule *)
 
   \<comment> \<open>If rules\<close>
@@ -977,7 +978,10 @@ inductive_cases IfStepElseE: \<open>\<Delta> \<turnstile> (ite e\<^sub>1 e\<^sub
 inductive_cases IfTrueE: \<open>\<Delta> \<turnstile> (ite true (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
 inductive_cases IfFalseE: \<open>\<Delta> \<turnstile> (ite false (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
 inductive_cases IfUnknownE: \<open>\<Delta> \<turnstile> (ite unknown[str]: t (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
+
 inductive_cases LetStepE: \<open>\<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<Rrightarrow> e\<close>
+inductive_cases LetE: \<open>\<Delta> \<turnstile> (Let var (Val v) e) \<Rrightarrow> e'\<close>
+
 inductive_cases BopRhsE: \<open>\<Delta> \<turnstile> BinOp (Val v) bop e\<^sub>2 \<Rrightarrow> e\<close>
 inductive_cases BopLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 bop e\<^sub>2 \<Rrightarrow> e\<close>
 inductive_cases AOpE: \<open>\<Delta> \<turnstile> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) \<Rrightarrow> e'\<close>
@@ -1073,6 +1077,15 @@ next
   case (CastUnsigned \<Delta> sz num sz')
   then show ?case 
     unfolding xtract.simps by simp
+next
+  case (Let \<Delta> var v e)
+  then show ?case 
+    apply (induct e, auto)
+    apply (drule capture_val, elim disjE)
+    apply simp_all
+    sledgehammer
+    sorry
+next
 qed simp_all
 
 lemma step_exp_neq: \<open>\<not>(\<Delta> \<turnstile> e \<Rrightarrow> e)\<close>
