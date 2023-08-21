@@ -57,5 +57,9 @@ lemma Word_simp: \<open>Word a b = (a \<Colon> b)\<close>
 lemma bits_Word[simp]: "bits ((a \<Colon> b)::word) = b"
   unfolding word_constructor_word_def by auto
 
+lemma word_szD: 
+  assumes \<open>(num1 \<Colon> sz) \<noteq> (num2 \<Colon> sz)\<close>
+    shows \<open>num1 \<noteq> num2\<close>
+  using assms by simp
 
 end

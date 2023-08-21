@@ -374,6 +374,9 @@ definition
 where
   \<open>a =\<^sub>b\<^sub>v b \<equiv> if a = b then true else false\<close>  
 
+lemma bv_eq[simp]: \<open>(num \<Colon> sz) =\<^sub>b\<^sub>v (num \<Colon> sz) = true\<close>
+  unfolding bv_eq_def by simp
+
 lemma and_eq_true[simp]: \<open>((num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) &\<^sub>b\<^sub>v true = (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   using bv_land.simps  bv_eq_def local.false_word local.true_word by fastforce  
 
@@ -385,6 +388,9 @@ abbreviation
   bv_neq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<noteq>\<^sub>b\<^sub>v\<close> 56)
 where
   \<open>a \<noteq>\<^sub>b\<^sub>v b \<equiv> ~\<^sub>b\<^sub>v (a =\<^sub>b\<^sub>v b)\<close>
+
+lemma bv_not_eq[simp]: \<open>(num \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num \<Colon> sz) = false\<close>
+  by simp
 
 abbreviation
   bv_leq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
