@@ -128,6 +128,12 @@ class val_syntax = word_constructor + unknown_constructor + storage_constructor 
       and storage_not_false[simp]: \<open>\<And>v w v' sz. (v[w \<leftarrow> v', sz]) \<noteq> false\<close>
 begin
 
+lemma true_not_unknown[simp]: \<open>true \<noteq> (unknown[str]: t)\<close>
+  using local.unknown_not_true by blast
+
+lemma false_not_unknown[simp]: \<open>false \<noteq> (unknown[str]: t)\<close>
+  using local.unknown_not_false by blast
+
 lemma word_storage_neq[simp]: \<open>(num \<Colon> sz') \<noteq> (v[w \<leftarrow> v', sz])\<close>
   by (metis storage_word_neq)
 
@@ -246,7 +252,26 @@ class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
       and concat_not_storage_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 v w v' sz. e\<^sub>1 @ e\<^sub>2 \<noteq> (v[w \<leftarrow> v', sz])\<close>
       and concat_not_true[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> true\<close>
       and concat_not_false[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> false\<close>
+      and exp_simps[simp]:
+        \<open>\<And>id t e\<^sub>1 e\<^sub>2. id :\<^sub>t t \<noteq> e\<^sub>1 + e\<^sub>2\<close>
+        \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1 @ e\<^sub>2)\<close>
+
 begin
+
+lemma true_not_var[simp]: \<open>true \<noteq> (id' :\<^sub>t t)\<close>
+  using var_not_true by metis
+
+lemma false_not_var[simp]: \<open>false \<noteq> (id' :\<^sub>t t)\<close>
+  using var_not_false by metis
+
+lemma concat_not_var[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> name' :\<^sub>t t\<close>
+  using var_not_concat by metis
+
+lemma concat_not_plus[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> e\<^sub>3 + e\<^sub>4\<close>
+  using exp_simps(2) by metis
+
+lemma plus_not_var[simp]: \<open>e\<^sub>1 + e\<^sub>2 \<noteq> id' :\<^sub>t t\<close>
+  using exp_simps(1) by metis
 
 lemma exp_syntax_exhaust:
   obtains 
@@ -285,10 +310,14 @@ where
 lemma capture_avoiding_sub_size_eq[simp]: \<open>size_class.size ([v\<sslash>var]e) = size_class.size e\<close>
   by (induct e, auto)
 
-lemma let_neq_capture_avoid[simp]: \<open>exp.Let var (Val v) e \<noteq> [v\<sslash>var]e\<close>
+lemma let_neq_capture_avoid_v[simp]: \<open>exp.Let var (Val v) e \<noteq> [v\<sslash>var]e\<close>
   apply (induct e, auto)
   by (metis add_0 add_eq_self_zero canonically_ordered_monoid_add_class.lessE capture_avoiding_sub_size_eq exp.size(12) exp.size(19) less_numeral_extra(1) nat_1 nat_one_as_int)
 
+lemma let_neq_capture_avoid_e[simp]: \<open>exp.Let var e\<^sub>1 e\<^sub>2 \<noteq> [v\<sslash>var]e\<^sub>2\<close>
+  apply (induct e\<^sub>2, auto)
+  using capture_avoiding_sub_size_eq
+  by (metis (no_types, lifting) add.commute add_diff_cancel_right' diff_add_zero exp.size(19) less_add_Suc2 not_add_less1 plus_1_eq_Suc)
 
 
   
