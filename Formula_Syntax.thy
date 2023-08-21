@@ -41,6 +41,9 @@ lemma var_in_deterministic:
     shows \<open>val\<^sub>1 = val\<^sub>2\<close>
   using assms unfolding val_var_in_vars.simps by simp
 
+lemma var_in_dom_\<Delta>[intro]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta> \<Longrightarrow> var \<in> dom \<Delta>\<close> 
+  unfolding val_var_in_vars.simps by blast
+
 
 text \<open>Attempt to solve a proof of the form (var, val) \<in> \<Delta>\<close>
 
