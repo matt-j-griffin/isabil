@@ -47,4 +47,7 @@ end
 
 lemmas Immediate_simp[simp] = word_constructor_val_def[symmetric]
 
+lemma storage_not_nested_val[simp]: \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v', sz] \<noteq> v\<close>
+  unfolding storage_constructor_val_def by simp
+
 end
