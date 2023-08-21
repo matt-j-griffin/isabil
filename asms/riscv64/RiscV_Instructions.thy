@@ -111,7 +111,8 @@ lemma step_sw:
     shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage32 mem' ((mem_addr + imm) mod 18446744073709551616) (take_bit 32 val)), (address \<Colon> 64) +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
   apply (insert assms(2-))
   apply (solve_prog decoder: decode_sw)
-  unfolding xtract.simps(1)[of val] apply simp
+  unfolding xtract.simps(1)[of val]
+  apply (simp del : plus_exp.simps)
   by solve_exps
 
 subsection \<open>BEQZ\<close>
