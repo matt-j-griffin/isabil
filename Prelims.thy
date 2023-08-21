@@ -36,4 +36,17 @@ lemma insert_diffE:
 lemma not_in_empty_set_list: \<open>z \<notin> set []\<close>
   by auto
 
+
+lemma length_1: \<open>length [x] = 1\<close>
+  by auto
+
+lemma nat_lt2: \<open>((i::nat) < 1 + 1) = (i = 0 \<or> i = 1)\<close>
+  by auto
+
+text \<open>simp rules for solving nth numerals\<close>
+
+lemmas nth_numeral_simps = nth_Cons_numeral One_nat_def nth_Cons_Suc diff_numeral_Suc diff_zero pred_numeral_simps 
+            Num.BitM.simps(1) numeral_One nth_Cons_0
+
+
 end
