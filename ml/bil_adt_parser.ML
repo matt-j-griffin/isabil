@@ -294,7 +294,7 @@ fun bil_parser_lines localename assembly lthy =
     val fixes_decode = Element.Fixes [( Binding.name "decode" , SOME (@{typ "program \<Rightarrow> insn \<Rightarrow> bool"}), NoSyn)]
 
     (* the locale contains a list of assumptions, one for each instruction. They are given the [simp] attribute. *)
-    val simp_attrib = Attrib.internal (fn (_) => Simplifier.simp_add)
+    val simp_attrib = Attrib.internal (Position.start) (fn (_) => Simplifier.simp_add)
     fun mk_assume thm_name term = ((Binding.name thm_name, [simp_attrib]), [term]); (* string -> term -> (binding * Token.src list) * term list*)
     
     val mk_decode = Free ("decode", @{typ "program \<Rightarrow> insn \<Rightarrow> bool"})

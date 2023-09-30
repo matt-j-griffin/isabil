@@ -1,6 +1,5 @@
 theory Expression_Rules
   imports Expression_Syntax
-          "../Typing/Typing_Exp_Typed_Ok"
 begin
 
 inductive
@@ -19,7 +18,7 @@ where
   LoadUnAddr: \<open>\<Delta> \<turnstile> v[w \<leftarrow> v', sz][unknown[str]: t, ed]:usz' \<Rrightarrow> unknown[str]: imm\<langle>sz'\<rangle>\<close> |
   LoadWordBe: \<open>\<lbrakk>sz > sz\<^sub>m\<^sub>e\<^sub>m; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<rbrakk> \<Longrightarrow> 
       \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz) \<Rrightarrow> (((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m) @ (((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))))\<close> |
-  LoadWordEl: \<open>\<lbrakk>sz > sz\<^sub>m\<^sub>e\<^sub>m; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<rbrakk> \<Longrightarrow> 
+  LoadWordEl: \<open>\<lbrakk>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> 
       \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<Rrightarrow> ((((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> |
 
   \<comment> \<open>Store\<close>
@@ -31,7 +30,7 @@ where
   StoreWordEl: \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast Low sz\<^sub>m\<^sub>e\<^sub>m (Val val)))\<rbrakk> \<Longrightarrow>
     \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<Rrightarrow> (e\<^sub>1 with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast High (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close> |
   StoreVal: \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Val v')) \<Rrightarrow> (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m])\<close> |
-  StoreUnAddr: \<open>type v = t \<Longrightarrow> \<Delta> \<turnstile> ((Val v) with [unknown[str]: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>, ed]:usz' \<leftarrow> (Val v')) \<Rrightarrow> (unknown[str]: t)\<close> |
+  StoreUnAddr: \<open>type v = t \<Longrightarrow> \<Delta> \<turnstile> ((Val v) with [unknown[str]: t', ed]:usz \<leftarrow> (Val v')) \<Rrightarrow> (unknown[str]: t)\<close> |
 
 
   \<comment> \<open>Let rules\<close>
@@ -75,9 +74,9 @@ where
   XOr: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) xor (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> ((num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close> |
   (*these aren't really right*)
   EqSame: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Eq) (num \<Colon> sz)) \<Rrightarrow> true\<close> |
-  EqDiff: \<open>((num\<^sub>1 \<Colon> sz)::word) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true \<Longrightarrow> \<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> false\<close> |
+  EqDiff: \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2) = true \<Longrightarrow> \<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Eq) (num\<^sub>2 \<Colon> sz\<^sub>2)) \<Rrightarrow> false\<close> |
   NeqSame: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Neq) (num \<Colon> sz)) \<Rrightarrow> false\<close> |
-  NeqDiff: \<open>((num\<^sub>1 \<Colon> sz)::word) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true \<Longrightarrow> \<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz)) (LOp Neq) (num\<^sub>2 \<Colon> sz) \<Rrightarrow> true\<close> |
+  NeqDiff: \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2) = true \<Longrightarrow> \<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1)) (LOp Neq) (num\<^sub>2 \<Colon> sz\<^sub>2) \<Rrightarrow> true\<close> |
   Less: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> ((num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close> |
   LessEq: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close> |
   SignedLess: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> ((num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close> |
@@ -97,7 +96,7 @@ where
   Concat: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) \<Rrightarrow> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close> |
 
   \<comment> \<open>Extract\<close>
-  Extract: \<open>sz\<^sub>2 \<le> sz\<^sub>1 \<Longrightarrow> \<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<Rrightarrow> (ext (num \<Colon> sz) \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2)\<close> |
+  Extract: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<Rrightarrow> (ext (num \<Colon> sz) \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2)\<close> |
   ExtractReduce: \<open>\<Delta> \<turnstile> e \<Rrightarrow> e' \<Longrightarrow> \<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[e]) \<Rrightarrow> (extract:sz\<^sub>1:sz\<^sub>2[e'])\<close> |
   ExtractUn: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[unknown[str]: t]) \<Rrightarrow> (unknown[str]: imm\<langle>(sz\<^sub>1 - sz\<^sub>2) + 1\<rangle>)\<close> |
 
@@ -126,7 +125,10 @@ inductive_cases StoreStepMemE: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [(Va
 inductive_cases StoreWordBeE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz \<leftarrow> (Val val)) \<Rrightarrow> e\<close>
 inductive_cases StoreWordElE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<Rrightarrow> e\<close>
 inductive_cases StoreValE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Val v')) \<Rrightarrow> e\<close>
-inductive_cases StoreUnAddrE: \<open>\<Delta> \<turnstile> ((Val v) with [unknown[str]: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>, ed]:usz' \<leftarrow> (Val v')) \<Rrightarrow> e\<close>
+inductive_cases StoreUnAddrE: \<open>\<Delta> \<turnstile> ((Val v) with [unknown[str]: t', ed]:usz' \<leftarrow> (Val v')) \<Rrightarrow> e\<close>
+
+inductive_cases LetStepE: \<open>\<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<Rrightarrow> e\<close>
+inductive_cases LetE: \<open>\<Delta> \<turnstile> (Let var (Val v) e) \<Rrightarrow> e'\<close>
 
 inductive_cases IfStepCondE: \<open>\<Delta> \<turnstile> (ite e\<^sub>1 (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
 inductive_cases IfStepThenE: \<open>\<Delta> \<turnstile> (ite e\<^sub>1 e\<^sub>2 (Val v\<^sub>3)) \<Rrightarrow> e\<close>
@@ -135,12 +137,14 @@ inductive_cases IfTrueE: \<open>\<Delta> \<turnstile> (ite true (Val v\<^sub>2) 
 inductive_cases IfFalseE: \<open>\<Delta> \<turnstile> (ite false (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
 inductive_cases IfUnknownE: \<open>\<Delta> \<turnstile> (ite unknown[str]: t (Val v\<^sub>2) (Val v\<^sub>3)) \<Rrightarrow> e\<close>
 
-inductive_cases LetStepE: \<open>\<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<Rrightarrow> e\<close>
-inductive_cases LetE: \<open>\<Delta> \<turnstile> (Let var (Val v) e) \<Rrightarrow> e'\<close>
-
 inductive_cases BopRhsE: \<open>\<Delta> \<turnstile> BinOp (Val v) bop e\<^sub>2 \<Rrightarrow> e\<close>
 inductive_cases BopLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 bop e\<^sub>2 \<Rrightarrow> e\<close>
-inductive_cases AOpE: \<open>\<Delta> \<turnstile> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) \<Rrightarrow> e'\<close>
+
+inductive_cases AopUnkRhsE: \<open>\<Delta> \<turnstile> BinOp (unknown[str]: t) (AOp aop) e\<^sub>2 \<Rrightarrow> e\<close>
+inductive_cases AopUnkLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 (AOp aop) unknown[str]: t \<Rrightarrow> e\<close>
+
+inductive_cases LopUnkRhsE: \<open>\<Delta> \<turnstile> BinOp (unknown[str]: t) (LOp aop) e\<^sub>2 \<Rrightarrow> e\<close>
+inductive_cases LopUnkLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 (LOp aop) unknown[str]: t \<Rrightarrow> e\<close>
 
 inductive_cases PlusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases MinusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
@@ -156,25 +160,29 @@ inductive_cases LAndE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) &
 inductive_cases LOrE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) || (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases XOrE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) xor (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases EqSameE: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Eq) (num \<Colon> sz)) \<Rrightarrow> e\<close>
-inductive_cases EqDiffE: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
+inductive_cases EqDiffE: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Eq) (num\<^sub>2 \<Colon> sz\<^sub>2)) \<Rrightarrow> e\<close>
 inductive_cases NeqSameE: \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Neq) (num \<Colon> sz)) \<Rrightarrow> e\<close>
-inductive_cases NeqDiffE: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz)) (LOp Neq) (num\<^sub>2 \<Colon> sz) \<Rrightarrow> e\<close>
+inductive_cases NeqDiffE: \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1)) (LOp Neq) (num\<^sub>2 \<Colon> sz\<^sub>2) \<Rrightarrow> e\<close>
 inductive_cases LessE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases LessEqE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases SignedLessE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases SignedLessEqE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) sle (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e\<close>
+
 inductive_cases UopE: \<open>\<Delta> \<turnstile> (UnOp uop e) \<Rrightarrow> e'\<close>
 inductive_cases UopUnkE: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<Rrightarrow> e\<close>
 inductive_cases NotE: \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<Rrightarrow> e\<close>
 inductive_cases NegE: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<Rrightarrow> e\<close>
+
 inductive_cases ConcatRhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 @ e\<^sub>2) \<Rrightarrow> e\<close>
 inductive_cases ConcatLhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 @ (Val v\<^sub>2)) \<Rrightarrow> e\<close>
 inductive_cases ConcatRhsUnE: \<open>\<Delta> \<turnstile> ((Val v) @ (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>)) \<Rrightarrow> e\<close>
 inductive_cases ConcatLhsUnE: \<open>\<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) @ (Val v)) \<Rrightarrow> e\<close>
 inductive_cases ConcatE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) \<Rrightarrow> e\<close>
+
 inductive_cases ExtractE: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<Rrightarrow> e\<close>
 inductive_cases ExtractReduceE: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[e]) \<Rrightarrow> e'\<close>
 inductive_cases ExtractUnE: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[unknown[str]: t]) \<Rrightarrow> e\<close>
+
 inductive_cases CastReduceE: \<open>\<Delta> \<turnstile> (Cast cast sz e) \<Rrightarrow> e'\<close>
 inductive_cases CastUnkE: \<open>\<Delta> \<turnstile> (Cast cast sz (unknown[str]: t)) \<Rrightarrow> e\<close>
 inductive_cases CastLowE: \<open>\<Delta> \<turnstile> (low:sz[(num \<Colon> sz')]) \<Rrightarrow> e\<close>
@@ -184,14 +192,6 @@ inductive_cases CastUnsignedE: \<open>\<Delta> \<turnstile> (pad:sz[(num \<Colon
 
 lemma Val_not_inject: "v \<noteq> v' \<Longrightarrow> Val v \<noteq> Val v'"
   by simp
-
-lemma storage_not_nested_val[intro]: \<open>v[num\<^sub>1 \<Colon> sz\<^sub>1 \<leftarrow> v', sz] \<noteq> v\<close>
-  unfolding storage_constructor_val_def by simp
-
-lemma storage_not_val[simp]: \<open>v[num\<^sub>1 \<Colon> sz\<^sub>1 \<leftarrow> v', sz] \<noteq> Val v\<close>
-  unfolding storage_constructor_exp_def
-  apply (rule Val_not_inject)
-  by (rule storage_not_nested_val)
 
 lemma step_exp_neq': \<open>\<Delta> \<turnstile> e \<Rrightarrow> e' \<Longrightarrow> e \<noteq> e'\<close>
 proof (induct rule: eval_exp'.induct)
@@ -236,20 +236,27 @@ next
 next
   case (Let \<Delta> var v e)
   then show ?case 
-    by (rule let_neq_capture_avoid)
+    by (rule let_neq_capture_avoid_v)
 qed simp_all
 
 lemma step_exp_neq: \<open>\<not>(\<Delta> \<turnstile> e \<Rrightarrow> e)\<close>
   using step_exp_neq' by auto
 
 lemma eval_exp'_val_no_step_intermediary: \<open>\<Delta> \<turnstile> e \<Rrightarrow> e' \<Longrightarrow> e \<noteq> (Val v)\<close>
-  by (induct rule: eval_exp'.induct, simp_all)
+  by (induct rule: eval_exp'.induct, unfold plus_exp.simps, simp_all)
+
 
 lemma step_exp_not_val[simp]: \<open>\<not>(\<Delta> \<turnstile> (Val v) \<Rrightarrow> e)\<close>
   using eval_exp'_val_no_step_intermediary by blast
 
 lemma step_exp_not_word[simp]: \<open>\<not>(\<Delta> \<turnstile> (num \<Colon> sz) \<Rrightarrow> e)\<close>
   unfolding word_constructor_exp_def by (rule step_exp_not_val)
+
+lemma step_exp_not_plus[simp]: \<open>\<not>(\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) \<Rrightarrow> e)\<close>
+  unfolding bv_plus.simps by (rule step_exp_not_word)
+
+lemma step_exp_not_ext[simp]: \<open>\<not>(\<Delta> \<turnstile> (ext num \<Colon> sz \<sim> hi : szh \<sim> lo : szl) \<Rrightarrow> e)\<close>
+  unfolding xtract.simps by (rule step_exp_not_word)
 
 lemma step_exp_not_unknown[simp]: \<open>\<not>(\<Delta> \<turnstile> (unknown[str]: t) \<Rrightarrow> e)\<close>
   unfolding unknown_constructor_exp_def by (rule step_exp_not_val)
@@ -265,7 +272,7 @@ lemma step_exp_not_storage[simp]: \<open>\<not>(\<Delta> \<turnstile> v[w \<left
 
 
 text \<open>We describe a well formed delta as one which\<close>
-
+(*
 definition
   wf\<Delta> :: \<open>variables \<Rightarrow> bool\<close>
 where
@@ -336,6 +343,7 @@ lemma no_unknowns_true[simp]: \<open>no_unknowns \<Delta> true\<close>
 
 lemma no_unknowns_false[simp]: \<open>no_unknowns \<Delta> false\<close>
   by (simp add: false_word)
+
 
 lemma typing_exp_det: fixes e :: exp shows \<open>\<Gamma> \<turnstile> e :: t \<Longrightarrow> \<Gamma> \<turnstile> e :: t' \<Longrightarrow> t = t'\<close>
   apply (induct e)
@@ -783,9 +791,303 @@ next
     apply (rule CastUnsignedE)
     by auto
 qed
+*)
+
+
+lemma [simp]: \<open>Cast cast sz e  \<noteq> ext num \<Colon> sz \<sim> hi : szhi \<sim> lo : szlow\<close>
+  unfolding xtract.simps by simp
+
+
+lemma step_exp_non_circular:
+  assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2\<close> 
+    shows \<open>\<not>(\<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow> e\<^sub>1)\<close>
+using assms proof (induct rule: eval_exp'.induct)
+  case (LoadStepAddr \<Delta> e\<^sub>2 e\<^sub>2' e\<^sub>1 ed sz)
+  show ?case
+    apply (rule notI)
+    apply (rule LoadStepAddrE, simp_all)
+    using LoadStepAddr by simp_all
+next
+  case (LoadStepMem \<Delta> e\<^sub>1 e\<^sub>1' v\<^sub>2 ed sz)
+  show ?case
+    apply (rule notI)
+    apply (rule LoadStepMemE, simp_all)
+    using LoadStepMem by simp_all
+next
+  case (LoadByteFromNext num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2 \<Delta> v v' sz ed)
+  show ?case 
+    apply (rule notI)
+    apply (rule LoadStepAddrE, auto)
+    using storage_constructor_exp_def storage_constructor_val_def by auto
+next
+  case (LoadWordBe sz sz\<^sub>m\<^sub>e\<^sub>m v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Delta> num)
+  show ?case 
+    apply (rule notI)
+    by (rule ConcatRhsE, auto)
+next
+  case (LoadWordEl sz sz\<^sub>m\<^sub>e\<^sub>m v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Delta> num)
+  show ?case 
+    apply (rule notI)
+    by (rule ConcatRhsE, auto)
+next
+  case (StoreStepVal \<Delta> e\<^sub>3 e\<^sub>3' e\<^sub>1 e\<^sub>2 en sz)
+  show ?case 
+    apply (rule notI)
+    apply (rule StoreStepValE, auto)
+    using StoreStepVal by auto
+next
+  case (StoreStepAddr \<Delta> e\<^sub>2 e\<^sub>2' e\<^sub>1 en sz v\<^sub>3)
+  show ?case 
+    apply (rule notI)
+    apply (rule StoreStepAddrE, auto)
+    using StoreStepAddr by auto
+next
+  case (StoreStepMem \<Delta> e\<^sub>1 e\<^sub>1' v\<^sub>2 en sz v\<^sub>3)
+  show ?case 
+    apply (rule notI)
+    apply (rule StoreStepMemE, auto)
+    using StoreStepMem by auto
+next
+  case (StoreWordBe sz\<^sub>m\<^sub>e\<^sub>m sz v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>1 num val \<Delta>)
+  show ?case 
+    apply (rule notI)
+    apply (rule StoreStepValE)
+    using StoreWordBe.hyps(3) by blast+
+next
+  case (StoreWordEl sz\<^sub>m\<^sub>e\<^sub>m sz v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>1 num val \<Delta>)
+  show ?case 
+    apply (rule notI)
+    apply (rule StoreStepValE)
+    using StoreWordEl.hyps(3) by blast+
+next
+  case (LetStep \<Delta> e\<^sub>1 e\<^sub>1' var e\<^sub>2)
+  show ?case 
+    apply (rule notI)
+    apply (rule LetStepE, auto)
+    using LetStep by auto
+next
+  case (Let \<Delta> var v e)
+  then show ?case
+  proof (rule notI, induct e)
+    case (Var x)
+    thus ?case 
+    proof (cases \<open>var = x\<close>)
+      case True
+      then show ?thesis 
+        using Var by simp
+    next
+      case False
+      then show ?thesis 
+        using Var apply auto        
+        apply (cases x rule: var_exhaust)
+        using VarE var_constructor_exp_def by fastforce
+    qed
+  next
+    case (Load e1 e2 x3 x4)
+    then show ?case 
+      apply auto
+      apply (rule LoadStepAddrE, simp_all)
+      by simp_all
+  next
+    case (Store e1 e2 x3 x4 e3)
+    then show ?case 
+      apply auto
+      apply (rule StoreStepValE, simp_all)
+      by simp_all      
+  next
+    case (BinOp e1 x2a e2)
+    then show ?case 
+      apply auto
+      apply (rule BopLhsE, auto)
+      apply (metis false.not_let true.not_let)
+      apply (smt (verit, best) bv_eq_def false.not_let' lor_false lor_true(1) lor_true(2) nat_neq_iff true.not_let' word_eq)
+      apply (metis false.not_let' true.not_let')
+      by (smt (verit, best) bv_eq_def false_word lor_false lor_true(1) lor_true(2) order_less_imp_not_eq true_word word.not_let' word_not_sz_neqI)
+  next
+    case (UnOp x1a e)
+    then show ?case 
+      apply auto
+      by (rule UopE, auto)
+  next
+    case (Cast x1a x2a e)
+    then show ?case 
+      apply auto
+      apply (rule CastReduceE, auto)
+      by (metis eval_exp'.Let step_exp_not_ext)+
+  next
+    case (Let x1a e1 e2)
+    then show ?case 
+      apply auto
+      apply (rule LetStepE, auto) 
+      by (metis One_nat_def add_0 add_diff_cancel_left' capture_avoiding_sub_size_eq diff_add_zero exp.size(12) exp.size(19) zero_neq_one)
+  next
+    case (Ite e1 e2 e3)
+    then show ?case 
+      apply auto
+      by (rule IfStepElseE, auto)
+  next
+    case (Extract x1a x2a e)
+    then show ?case 
+      apply auto
+      apply (rule ExtractReduceE, auto)
+      by (metis eval_exp'.Let step_exp_not_ext)
+  next
+    case (Concat e1 e2)
+    then show ?case 
+      apply auto
+      unfolding append_exp_def[symmetric]
+      by (rule ConcatRhsE, auto)
+  qed simp_all
+next
+  case (IfStepCond \<Delta> e\<^sub>1 e\<^sub>1' v\<^sub>2 v\<^sub>3)
+  show ?case 
+    apply (rule notI)
+    apply (rule IfStepCondE, auto)
+    using IfStepCond by auto
+next
+  case (IfStepThen \<Delta> e\<^sub>2 e\<^sub>2' e\<^sub>1 v\<^sub>3)
+  show ?case 
+    apply (rule notI)
+    apply (rule IfStepThenE, auto)
+    using IfStepThen by auto
+next
+  case (IfStepElse \<Delta> e\<^sub>3 e\<^sub>3' e\<^sub>1 e\<^sub>2)
+  show ?case 
+    apply (rule notI)
+    apply (rule IfStepElseE, auto)
+    using IfStepElse by auto    
+next
+  case (BopRhs \<Delta> e\<^sub>2 e\<^sub>2' v bop)
+  show ?case 
+    apply (rule notI)
+    apply (rule BopRhsE, auto)
+    using BopRhs apply auto
+    apply (meson false.not_binop' true.not_binop')
+    apply (smt (verit) bv_eq_def false.not_binop lor_false lor_true(1) lor_true(2) lor_true(3) true.not_binop')
+    apply (metis false.not_binop' true.not_binop')
+    by (smt (verit, best) bv_eq_def exp.distinct(7) false.not_binop lor_false lor_true(1) lor_true(2) order_less_imp_not_eq true_exp_def word_not_sz_neqI)
+next
+  case (BopLhs \<Delta> e\<^sub>1 e\<^sub>1' bop e\<^sub>2)
+  show ?case 
+    apply (rule notI)
+    apply (rule BopLhsE, auto)
+    using BopLhs apply auto
+    apply (meson false.not_binop' true.not_binop')
+    apply (metis (full_types) bv_eq_def false.not_binop' lor_false lor_true(1) lor_true(2) lor_true(3) true.not_binop')
+    apply (metis false.not_binop true.not_binop)
+    by (metis (full_types) bv_eq_def false.not_binop' lor_false lor_true(1) lor_true(2) lor_true(3) true.not_binop')
+next
+  case (LessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
+  then show ?case 
+    apply auto
+    unfolding bv_lor.simps bv_eq_def apply auto
+    by (metis (full_types) lor_false lor_true(1) step_exp_not_false step_exp_not_true)
+next
+  case (SignedLessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
+  then show ?case 
+    apply auto
+    unfolding bv_lor.simps bv_eq_def apply auto
+    by (metis (full_types) lor_false lor_true(1) step_exp_not_false step_exp_not_true)
+next
+  case (Uop \<Delta> e e' uop)
+  show ?case 
+    apply (rule notI)
+    apply (rule UopE, simp_all)
+    using Uop by simp_all    
+next
+  case (ConcatRhs \<Delta> e\<^sub>2 e\<^sub>2' e\<^sub>1)
+  show ?case 
+    apply (rule notI)
+    apply (rule ConcatRhsE, simp_all)
+    using ConcatRhs by simp_all
+next
+  case (ConcatLhs \<Delta> e\<^sub>1 e\<^sub>1' v\<^sub>2)
+  show ?case 
+    apply (rule notI)
+    apply (rule ConcatLhsE, simp_all)
+    using ConcatLhs by simp_all
+next
+  case (ExtractReduce \<Delta> e e' sz\<^sub>1 sz\<^sub>2)
+  show ?case 
+    apply (rule notI)
+    apply (rule ExtractReduceE, simp_all)
+    using ExtractReduce apply simp_all
+    by (metis eval_exp'.ExtractReduce step_exp_not_ext)
+next
+  case (CastReduce \<Delta> e e' cast sz)
+  show ?case 
+    apply (rule notI)
+    apply (rule CastReduceE, simp_all)
+    using CastReduce apply simp_all
+    using step_exp_not_ext
+    by (metis eval_exp'.CastReduce step_exp_not_ext)+
+qed (simp_all)
 
 
 declare bv_plus.simps[simp del]
-declare plus_exp.simps[simp del]
+
+inductive
+  step_exps' :: \<open>variables \<Rightarrow> exp \<Rightarrow> exp \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<Rrightarrow>* _\<close> [400, 400, 400] 401)
+where
+  Reduce: \<open>\<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2; \<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow>* e\<^sub>3\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow>* e\<^sub>3\<close> |
+  Refl: \<open>\<Delta> \<turnstile> e \<Rrightarrow>* e\<close>
+
+inductive_cases ReduceE: \<open>\<Delta> \<turnstile> e \<Rrightarrow>* e'\<close>
+
+lemma step_exps_induct[consumes 1, case_names Reduce Refl]:
+  "\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow>* e\<^sub>3 \<Longrightarrow> (\<And>e\<^sub>1 e\<^sub>2. \<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2 \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow>* e\<^sub>3 \<Longrightarrow> P e\<^sub>2 \<Longrightarrow> P e\<^sub>1) \<Longrightarrow> P e\<^sub>3 \<Longrightarrow> P e\<^sub>1"
+  by (induct \<Delta> e\<^sub>1 e\<^sub>3 rule: step_exps'.induct, blast+)
+
+text \<open>Better reduce rule that includes the assumption e3 \<noteq> e1\<close>
+
+lemma step_reduceE:
+  assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow>* e\<^sub>3\<close>
+      and reduceE: \<open>\<And>e\<^sub>2. \<lbrakk>e\<^sub>3 \<noteq> e\<^sub>1; \<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2; \<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow>* e\<^sub>3\<rbrakk> \<Longrightarrow> P\<close>
+      and reflE: \<open>e\<^sub>3 = e\<^sub>1 \<Longrightarrow> P\<close>
+    shows P
+proof (cases \<open>e\<^sub>3 = e\<^sub>1\<close>)
+  case True
+  then show ?thesis by (rule reflE)
+next
+  case False
+  show ?thesis 
+    using assms(1) apply (rule ReduceE)
+    subgoal for e\<^sub>2
+      using False by (intro reduceE[of e\<^sub>2] conjI)
+    using False by (elim notE)
+qed
+
+lemma step_reduce_strictE:
+  assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow>* e\<^sub>3\<close> and \<open>e\<^sub>3 \<noteq> e\<^sub>1\<close>
+      and reduceE: \<open>\<And>e\<^sub>2. \<lbrakk>e\<^sub>3 \<noteq> e\<^sub>1; \<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2; \<Delta> \<turnstile> e\<^sub>2 \<Rrightarrow>* e\<^sub>3\<rbrakk> \<Longrightarrow> P\<close>
+    shows P
+  using assms(1) apply (rule step_reduceE)
+  subgoal for e\<^sub>2
+    using assms(2) by (intro reduceE[of e\<^sub>2] conjI)
+  using assms(2) by (elim notE)
+
+
+
+lemma step_exps_reduce_singleI:
+  assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow> e\<^sub>2\<close>
+    shows \<open>\<Delta> \<turnstile> e\<^sub>1 \<Rrightarrow>* e\<^sub>2\<close>
+  using assms apply (rule Reduce[of _ _ e\<^sub>2])
+  by (rule Refl)
+
+
+
+
+lemma 
+  assumes "\<Delta> \<turnstile> (((Val v)[succ (num \<Colon> sz), el]:u56) @ ((Val v)[num \<Colon> sz, el]:u8)) \<Rrightarrow>* (num \<Colon> 64)"
+      and "type v = mem\<langle>sz, 8\<rangle>"
+    shows "\<Delta> \<turnstile> (Val v)[(num \<Colon> sz), el]:u64 \<Rrightarrow>* (num \<Colon> 64)"
+  apply (rule Reduce)
+  using assms(2) apply (rule LoadWordEl, linarith)
+  apply simp
+  using assms(1) by blast
+
+
+
+
 
 end

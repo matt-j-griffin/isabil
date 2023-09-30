@@ -5,7 +5,7 @@ text \<open>Additional big step semantics for expressions, designed to reduce th
       This theory is in development and subject to change.\<close>
 
 theory Additional_Expression_Semantics
-  imports "../ExpressionSemantics/Expression_Intros"
+  imports "../ExpressionSemantics/Expression_Elims"
 begin
 
 no_notation HOL.Not (\<open>~ _\<close> [40] 40)
@@ -16,48 +16,6 @@ text \<open>Succinct representation of big and little endian storage\<close>
 
 context storage_constructor
 begin
-
-fun 
-  nested_succ :: \<open>val \<Rightarrow> nat \<Rightarrow> val\<close>
-where
-  \<open>nested_succ w 0 = w\<close> |
-  \<open>nested_succ w (Suc n) = nested_succ (succ w) n\<close>
-
-abbreviation 
-  storage32 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
-where
-  \<open>storage32 mem num\<^sub>1 num\<^sub>2 \<equiv> (mem
-    [num\<^sub>1 \<Colon> 64 \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi :  7 \<sim> lo :  0, 8]
-    [succ (num\<^sub>1 \<Colon> 64) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 15 \<sim> lo :  8, 8]
-    [succ (succ (num\<^sub>1 \<Colon> 64)) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16, 8]
-    [succ (succ (succ (num\<^sub>1 \<Colon> 64))) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24, 8])
-\<close>
-
-abbreviation 
-  storage64 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
-where
-  \<open>storage64 mem num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>2 \<equiv> (mem
-    [num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0, 8]
-    [succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8, 8]
-    [succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16, 8]
-    [succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24, 8]
-    [succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32, 8]
-    [succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40, 8]
-    [succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48, 8]
-    [succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56, 8])
-\<close>
-
-end
-
-lemma type_storage64: \<open>type (storage64 mem address 64 val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
-
-lemma type_storage32: \<open>type (storage32 mem address val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
-
-
-method solve_type_storage = (rule type_storage64 | rule type_storage32 | rule type_storageI)
-
 
 declare eval_exps_pred_exp.simps[simp del]
 declare step_pred_exp.simps[simp del]
@@ -127,7 +85,7 @@ proof (cases w rule: word_exhaust)
 qed
 
 lemma refl8_load_storage_skip64I:
-  assumes \<open>\<Delta> \<turnstile> v\<^sub>1[w\<^sub>1 \<leftarrow> v\<^sub>2, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<^sub>4\<close>
+  assumes \<open>\<Delta> \<turnstile> v\<^sub>1[w\<^sub>1 \<leftarrow> v\<^sub>2, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<^sub>4\<close> 
       and \<open>w\<^sub>2 \<noteq> (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
       and \<open>w\<^sub>2 \<noteq> succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<close> 
       and \<open>w\<^sub>2 \<noteq> succ (succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))\<close>

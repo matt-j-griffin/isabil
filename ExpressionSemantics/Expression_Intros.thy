@@ -95,7 +95,7 @@ lemma LOAD_BYTE_FROM_NEXT:
   using assms apply auto
   subgoal
     apply (rule val_exhaust[of v])
-    apply (simp_all add: eval_exp.simps)
+    apply (simp_all add: eval_exp.simps)    
     by (metis Type.inject(2) load.simps(1) type.simps(1) word_exhaust )
   .
 

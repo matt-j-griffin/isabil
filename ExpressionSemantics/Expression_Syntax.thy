@@ -9,6 +9,7 @@ begin
 text \<open>Some evaluation rules depend on the type of a value. Since there are two canonical forms for
 each type, we avoid duplicating each rule by defining the following metafunction:\<close>
 
+
 context val_syntax
 begin
 
@@ -56,6 +57,60 @@ termination
 declare succ.simps[simp del]
 
 end
+
+
+(* TODO this is all non-standard (additional) semantics *)
+context storage_constructor
+begin
+
+abbreviation 
+  storage16 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
+where
+  \<open>storage16 mem num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>2 \<equiv> (mem
+    [num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> ext num\<^sub>2 \<Colon> 16 \<sim> hi :  7 \<sim> lo :  0, 8]
+    [succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> ext num\<^sub>2 \<Colon> 16 \<sim> hi : 15 \<sim> lo :  8, 8])
+\<close>
+
+abbreviation 
+  storage32 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
+where
+  \<open>storage32 mem num\<^sub>1 num\<^sub>2 \<equiv> (mem
+    [num\<^sub>1 \<Colon> 64 \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi :  7 \<sim> lo :  0, 8]
+    [succ (num\<^sub>1 \<Colon> 64) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 15 \<sim> lo :  8, 8]
+    [succ (succ (num\<^sub>1 \<Colon> 64)) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16, 8]
+    [succ (succ (succ (num\<^sub>1 \<Colon> 64))) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24, 8])
+\<close>
+
+abbreviation 
+  storage64 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
+where
+  \<open>storage64 mem num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>2 \<equiv> (mem
+    [num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0, 8]
+    [succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8, 8]
+    [succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16, 8]
+    [succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24, 8]
+    [succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32, 8]
+    [succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40, 8]
+    [succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48, 8]
+    [succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56, 8])
+\<close>
+
+end
+
+lemma type_storage16: \<open>type (storage16 mem address sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+
+lemma type_storage32: \<open>type (storage32 mem address val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+
+lemma type_storage64: \<open>type (storage64 mem address sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+
+method solve_type_storage = (
+    rule type_storage64 | rule type_storage32 | rule type_storage16 | rule type_storageI
+)
+
+
 
 instantiation exp :: exp
 begin
@@ -198,6 +253,29 @@ instance
   done
 
 end
+
+lemma exp_def_simps[simp]:
+  \<open>\<And>e\<^sub>1 e\<^sub>2 en sz e\<^sub>3 e\<^sub>4. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 en sz e\<^sub>3 e\<^sub>4. (e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> e\<^sub>3 + e\<^sub>4\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e\<^sub>3 e\<^sub>4 e\<^sub>5 en sz. e\<^sub>4 + e\<^sub>5 \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e\<^sub>3 e\<^sub>4 e\<^sub>5 en sz. (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<noteq> e\<^sub>4 + e\<^sub>5\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e cast sz. e\<^sub>1 + e\<^sub>2 \<noteq> (Cast cast sz e)\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e cast sz. (Cast cast sz e) \<noteq> e\<^sub>1 + e\<^sub>2\<close>
+  \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2 var. e\<^sub>3 + e\<^sub>4 \<noteq> (Let var e\<^sub>1 e\<^sub>2)\<close>
+  \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2 var. (Let var e\<^sub>1 e\<^sub>2) \<noteq> e\<^sub>3 + e\<^sub>4\<close>
+  \<open>\<And>e\<^sub>4 e\<^sub>5 e\<^sub>1 e\<^sub>2 e\<^sub>3. e\<^sub>4 + e\<^sub>5 \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close>
+  \<open>\<And>e\<^sub>4 e\<^sub>5 e\<^sub>1 e\<^sub>2 e\<^sub>3. (ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> e\<^sub>4 + e\<^sub>5\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e sz\<^sub>l\<^sub>o\<^sub>w sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h. e\<^sub>1 + e\<^sub>2 \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close>
+  \<open>\<And>e\<^sub>1 e\<^sub>2 e sz\<^sub>l\<^sub>o\<^sub>w sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h. (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> e\<^sub>1 + e\<^sub>2\<close>
+  \<open>\<And>uop e\<^sub>1 e\<^sub>2 e\<^sub>3. UnOp uop e\<^sub>1 \<noteq> e\<^sub>2 + e\<^sub>3\<close>
+  \<open>\<And>uop e\<^sub>1 e\<^sub>2 e\<^sub>3. e\<^sub>2 + e\<^sub>3 \<noteq> UnOp uop e\<^sub>1\<close>
+  by simp_all
+
+declare plus_exp.simps[simp del]
+
+
+lemma storage_not_nested_exp[simp]: \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v', sz] \<noteq> Val v\<close>
+  unfolding storage_constructor_exp_def by simp
 
 (* TODO add to simpset *)
 lemma Val_simp_word: \<open>Val (a \<Colon> b) = (a \<Colon> b)\<close>
