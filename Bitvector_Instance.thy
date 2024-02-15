@@ -20,13 +20,21 @@ definition
 where
   \<open>false_word = (0 \<Colon> 1)\<close>
 
+lemma wordI:
+  fixes w :: word assumes \<open>\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q\<close> shows Q
+  using assms by (cases w, unfold word_constructor_word_def, blast)
+
+function
+  type_word :: \<open>word \<Rightarrow> Type\<close>
+where
+  \<open>type_word (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close>
+  subgoal for P x by (rule wordI)
+  subgoal unfolding word_constructor_word_def by auto
+  .
+termination by (standard, auto)
+
 lemma true_neq_false_word: \<open>(true::word) \<noteq> false\<close>
   unfolding true_word_def false_word_def word_constructor_word_def by simp
-
-lemma wordI:
-  fixes w :: word 
-  shows \<open>(\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q) \<Longrightarrow> Q\<close>
-  by (metis word.exhaust_sel word_constructor_word_def)
 
 instance proof 
   show \<open>(true::word) \<noteq> false\<close>
@@ -46,16 +54,12 @@ next
 next
   show \<open>\<And>(w::word) Q. (\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q) \<Longrightarrow> Q\<close>
     using wordI by auto
-qed
+qed auto
 
 
 end
 
-lemma Word_simp: \<open>Word a b = (a \<Colon> b)\<close>
-  by (simp add: word_constructor_word_def)
-
-lemma bits_Word[simp]: "bits ((a \<Colon> b)::word) = b"
-  unfolding word_constructor_word_def by auto
+lemmas Word_simp = word_constructor_word_def[symmetric]
 
 lemma word_szD: 
   assumes \<open>(num1 \<Colon> sz) \<noteq> (num2 \<Colon> sz)\<close>

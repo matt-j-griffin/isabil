@@ -1,14 +1,8 @@
 theory BIL_Syntax
   imports Bitvector_Syntax 
+          Bitvector_Instance (* TODO tidy theories *)
           HOL.String
 begin            
-
-text \<open>The type system of BIL consists of two type families - immediate values, indexed by a bitwidth,
-and storagies (aka memories), indexed with address bitwidth and values bitwidth.\<close>
-
-datatype Type =
-    Imm nat (\<open>imm\<langle>_\<rangle>\<close>)
-  | Mem nat nat (\<open>mem\<langle>_, _\<rangle>\<close>)
 
 text \<open>BIL program is represented as a sequence of statements. Each statement performs some 
       side-effectful computation.\<close>
@@ -75,7 +69,7 @@ class var = var_syntax +
   assumes var_exhaust: \<open>\<And>P var. (\<And>id t. var = (id :\<^sub>t t) \<Longrightarrow> P) \<Longrightarrow> P\<close>
 
 
-datatype var = Var (name: string) (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *)
+datatype var = Var string Type (* (name: string) (var_type: Type) (* TODO remove var_type in favour of type var. Ideally prod type though *) *)
 
 instantiation var :: var
 begin
@@ -108,40 +102,52 @@ datatype val =
   | Unknown string Type
   | Storage val word val nat
 
-class unknown_constructor = 
-    fixes unknown_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (\<open>unknown[_]: _\<close>)
-  assumes unknown_eq[simp]: 
+class unknown_constructor = type_syntax +
+  fixes unknown_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (\<open>unknown[_]: _\<close>)
+  assumes unknown_inject[simp]: 
             \<open>\<And>str str' t t'. (unknown[str]: t) = (unknown[str']: t') \<longleftrightarrow> str = str' \<and> t = t'\<close>
+      and type_unknownI: \<open>\<And>str t. type (unknown[str]: t) = t\<close>
 
 class storage_constructor = size + word_constructor +
     fixes storage_constructor :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>_[_ \<leftarrow> _, _]\<close>) (*TODO bad syntax*)
-  assumes storage_eq[simp]: \<open>\<And>mem w v sz mem' w' v' sz'. (mem[w \<leftarrow> v, sz]) = (mem'[w' \<leftarrow> v', sz']) \<longleftrightarrow>
+  assumes storage_inject[simp]: \<open>\<And>mem w v sz mem' w' v' sz'. (mem[w \<leftarrow> v, sz]) = (mem'[w' \<leftarrow> v', sz']) \<longleftrightarrow>
                                         mem = mem' \<and> w = w' \<and> v = v' \<and> sz = sz'\<close>
-
-class val_syntax = word_constructor + unknown_constructor + storage_constructor +
-  assumes storage_word_neq[simp]: \<open>\<And>v w v' sz num sz'. v[w \<leftarrow> v', sz] \<noteq> (num \<Colon> sz')\<close>
-      and storage_unknown_neq[simp]: \<open>\<And>v w v' sz str t. v[w \<leftarrow> v', sz] \<noteq> unknown[str]: t\<close>
-      and word_unknown_neq[simp]: \<open>\<And>str t num sz. (num \<Colon> sz) \<noteq> unknown[str]: t\<close>
-      and unknown_not_true[simp]: \<open>\<And>str t. (unknown[str]: t) \<noteq> true\<close>
-      and unknown_not_false[simp]: \<open>\<And>str t. (unknown[str]: t) \<noteq> false\<close>
-      and storage_not_true[simp]: \<open>\<And>v w v' sz. (v[w \<leftarrow> v', sz]) \<noteq> true\<close>
-      and storage_not_false[simp]: \<open>\<And>v w v' sz. (v[w \<leftarrow> v', sz]) \<noteq> false\<close>
+      and type_storageI: \<open>\<And>mem num sz\<^sub>1 v sz\<^sub>2. type (mem[(num \<Colon> sz\<^sub>1) \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle>\<close>
 begin
 
-lemma true_not_unknown[simp]: \<open>true \<noteq> (unknown[str]: t)\<close>
-  using local.unknown_not_true by blast
+lemma type_storage_addrI: \<open>type w = imm\<langle>sz\<^sub>1\<rangle> \<Longrightarrow> type (mem[w \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle>\<close>
+  apply (cases w rule: word_exhaust, auto)
+  by (rule type_storageI)
 
-lemma false_not_unknown[simp]: \<open>false \<noteq> (unknown[str]: t)\<close>
-  using local.unknown_not_false by blast
+end
 
-lemma word_storage_neq[simp]: \<open>(num \<Colon> sz') \<noteq> (v[w \<leftarrow> v', sz])\<close>
-  by (metis storage_word_neq)
+class val_syntax = word_constructor + unknown_constructor + storage_constructor +
+  assumes storage_word_neq: \<open>\<And>v w v' sz num sz'. v[w \<leftarrow> v', sz] \<noteq> (num \<Colon> sz')\<close>
+      and storage_unknown_neq: \<open>\<And>v w v' sz str t. v[w \<leftarrow> v', sz] \<noteq> unknown[str]: t\<close>
+      and word_unknown_neq: \<open>\<And>str t num sz. (num \<Colon> sz) \<noteq> unknown[str]: t\<close>
+begin
 
-lemma unknown_storage_neq[simp]: \<open>(unknown[str]: t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
-  by (metis storage_unknown_neq)
+lemma unknown_simps[simp]:
+  \<open>(unknown[str]: t) \<noteq> (num \<Colon> sz)\<close> \<open>(unknown[str]: t) \<noteq> true\<close> \<open>(unknown[str]: t) \<noteq> false\<close>
+  \<open>(unknown[str]: t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
+  unfolding true_word false_word using word_unknown_neq[symmetric] storage_unknown_neq[symmetric] by auto
 
-lemma unknown_word_neq[simp]: \<open>(unknown[str]: t) \<noteq> (num \<Colon> sz)\<close>
-  by (metis word_unknown_neq)
+lemma storage_simps':
+  \<open>(v[w \<leftarrow> v', sz]) \<noteq> true\<close> \<open>(v[w \<leftarrow> v', sz]) \<noteq> false\<close>
+  unfolding true_word false_word using storage_word_neq by auto
+
+lemmas storage_simps[simp] = storage_simps' storage_unknown_neq storage_word_neq
+
+lemma word_simps':
+  \<open>(num \<Colon> sz) \<noteq> (v[w \<leftarrow> v', sz'])\<close>
+  unfolding true_word false_word using storage_word_neq[symmetric] by auto
+
+lemmas word_simps[simp] = word_simps' word_unknown_neq
+
+lemma bool_simps[simp]: 
+    \<open>true \<noteq> (unknown[str]: t)\<close> \<open>false \<noteq> (unknown[str]: t)\<close>
+    \<open>true \<noteq> (v[w \<leftarrow> v', sz])\<close>  \<open>false \<noteq> (v[w \<leftarrow> v', sz])\<close>
+  using storage_simps[symmetric] unknown_simps[symmetric] by auto
 
 lemma val_syntax_exhaust:
   obtains 
@@ -194,9 +200,9 @@ instance ..
 
 end
 
-datatype exp =
+datatype exp = 
     Val val
-  | Var var
+  | EVar var
   | Load exp exp Endian nat	 (\<open>_[_, _]:u_\<close>)
   | Store exp exp Endian nat exp (\<open>_ with [_, _]:u_ \<leftarrow> _\<close>) (*TODO: u?*)
   | BinOp exp BinOp exp
@@ -237,9 +243,6 @@ lemma append_inject[simp]:
   unfolding append_exp_def by auto
 
 
-
-
-
 class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
   assumes var_not_word_neq[simp]: \<open>\<And>id t num sz'. (id :\<^sub>t t) \<noteq> (num \<Colon> sz')\<close>
       and var_not_unknown_neq[simp]: \<open>\<And>id t str t'. (id :\<^sub>t t) \<noteq> unknown[str]: t'\<close>
@@ -256,7 +259,19 @@ class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
         \<open>\<And>id t e\<^sub>1 e\<^sub>2. id :\<^sub>t t \<noteq> e\<^sub>1 + e\<^sub>2\<close>
         \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1 @ e\<^sub>2)\<close>
 
+      and le_word_simp[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 num sz. e\<^sub>1 le e\<^sub>2 \<noteq> (num \<Colon> sz)\<close>
+
 begin
+
+lemma le_simps[simp]: 
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> true\<close> \<open>e\<^sub>1 le e\<^sub>2 \<noteq> false\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  unfolding bv_le.simps bv_lor.simps bv_eq_def 
+  using le_word_simp apply simp_all
+  unfolding true_word false_word
+  using le_word_simp by simp_all
 
 lemma true_not_var[simp]: \<open>true \<noteq> (id' :\<^sub>t t)\<close>
   using var_not_true by metis
@@ -296,7 +311,7 @@ primrec
   capture_avoiding_sub :: \<open>val \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close> [501,500,502] 508)
 where
   \<open>[_\<sslash>_](Val v) = (Val v)\<close> |
-  \<open>[v\<sslash>var](Var var') = (if var = var' then (Val v) else (Var var'))\<close> |
+  \<open>[v\<sslash>var](EVar var') = (if var = var' then (Val v) else (EVar var'))\<close> |
   \<open>[v\<sslash>var](Load e\<^sub>1 e\<^sub>2 ed sz) = Load ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz\<close> |
   \<open>[v\<sslash>var](Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz ([v\<sslash>var]e\<^sub>3)\<close> |
   \<open>[v\<sslash>var](BinOp e\<^sub>1 bop e\<^sub>2) = BinOp ([v\<sslash>var]e\<^sub>1) bop ([v\<sslash>var]e\<^sub>2)\<close> |

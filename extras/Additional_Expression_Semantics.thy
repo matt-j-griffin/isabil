@@ -5,7 +5,8 @@ text \<open>Additional big step semantics for expressions, designed to reduce th
       This theory is in development and subject to change.\<close>
 
 theory Additional_Expression_Semantics
-  imports "../ExpressionSemantics/Expression_Elims"
+  imports "../ExpressionSemantics/Expression_Intros"
+          "../ExpressionSemantics/Expression_Elims"
 begin
 
 no_notation HOL.Not (\<open>~ _\<close> [40] 40)
@@ -14,19 +15,12 @@ no_notation List.append (infixr "@" 65)
 
 text \<open>Succinct representation of big and little endian storage\<close>
 
+
+
+
 context storage_constructor
 begin
-
-declare eval_exps_pred_exp.simps[simp del]
-declare step_pred_exp.simps[simp del]
-
-lemma refl_load_wordI: \<open>\<Delta> \<turnstile> v[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>v \<Colon> sz, sz][num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, ed]:usz \<leadsto>* (num\<^sub>v \<Colon> sz)\<close>
-  apply (rule_tac REDUCE[of _ _ \<open>num\<^sub>v \<Colon> sz\<close>])
-  apply solve_exp
-  by (rule REFL_WORD)
-
-lemmas word8_refl_load_word8I = refl_load_wordI[of _ _ _ _ _ 8]
-
+(*
 lemma mod_Suc_neqI:
   assumes \<open>num\<^sub>1 mod sz\<^sub>1 \<noteq> num\<^sub>2 mod sz\<^sub>1\<close>
     shows \<open>Suc num\<^sub>1 mod sz\<^sub>1 \<noteq> Suc num\<^sub>2 mod sz\<^sub>1\<close>
@@ -318,7 +312,7 @@ lemma refl64_load_all_rev_cut32I:
   apply (intro conjI)
   apply assumption+
   by solve_succ_neq+
-
+*)
 
 subsection \<open>Big-step load evaluation\<close>
 
@@ -335,123 +329,7 @@ lemma Suc_6: "6 + x = Suc (Suc (Suc (Suc (Suc (Suc x)))))"
   by auto
 
 
-lemma word8_refl_load_rev_word32I: \<open>\<Delta> \<turnstile> v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u32 \<leadsto>* (((num\<^sub>4 \<Colon> 8) \<cdot> (num\<^sub>3 \<Colon> 8)) \<cdot> (num\<^sub>2 \<Colon> 8)) \<cdot> (num\<^sub>1 \<Colon> 8)\<close>
-  apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(32 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u8)\<close>])
-  subgoal
-    apply (rule LOAD_WORD_EL_MEM_INTER, linarith, linarith)
-    unfolding succ.simps bv_plus.simps by simp
-  apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(32 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u8)\<close>])
-  subgoal
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER) using LOAD_BYTE_FROM_NEXT_MEM_INTER
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(32 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u8)\<close>])
-  subgoal
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER)
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(32 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u8)\<close>])
-  subgoal
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER)
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(32 - 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_RHS)
-    by (rule LOAD_BYTE_WORD)
-  unfolding succ.simps apply (simp add: bv_plus.simps del: bv_concat.simps)
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64)) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64), el]:u(24 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64)) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64, el]:u8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule LOAD_WORD_EL_MEM_INTER, linarith, linarith)
-    unfolding succ.simps bv_plus.simps by simp
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64)) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64), el]:u(24 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64, el]:u8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER)
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64)) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64), el]:u(24 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64, el]:u8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER)
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64)) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64), el]:u(24 - 8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_RHS)
-    by (rule LOAD_BYTE_WORD)
-  unfolding succ.simps apply (simp add: bv_plus.simps del: bv_concat.simps)
-  unfolding mod_Suc_eq
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64), el]:u(16 - 8) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64, el]:u8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule LOAD_WORD_EL_MEM_INTER, linarith, linarith)
-    unfolding succ.simps bv_plus.simps
-    by simp
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64), el]:u(16 - 8) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>3 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64, el]:u8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_RHS)
-    apply (rule LOAD_BYTE_FROM_NEXT_MEM_INTER)
-    unfolding succ.simps bv_plus.simps apply simp_all
-    unfolding mod_Suc_eq 
-    apply (induct num\<^sub>a)
-    unfolding mod_Suc by simp_all
-  apply (rule REDUCE[of _ _ \<open>((v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][Suc num\<^sub>a mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>2 \<Colon> 8, 8][Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64 \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (Suc (Suc num\<^sub>a) mod 18446744073709551616 \<Colon> 64), el]:u(16 - 8) @ (num\<^sub>3 \<Colon> 8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_RHS)
-    by (rule LOAD_BYTE_WORD)
-  unfolding succ.simps apply (simp add: bv_plus.simps del: bv_concat.simps)
-  unfolding mod_Suc_eq
-  apply (rule REDUCE[of _ _ \<open>(((num\<^sub>4 \<Colon> 8) @ (num\<^sub>3 \<Colon> 8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  subgoal
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_LHS_WORD)
-    apply (rule CONCAT_LHS_WORD)
-    by (rule LOAD_BYTE_WORD)
-  apply (rule REDUCE[of _ _ \<open>(((num\<^sub>4 \<Colon> 8) \<cdot> (num\<^sub>3 \<Colon> 8)) @ (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  apply solve_exp
-  unfolding bv_concat.simps
-  apply (rule REDUCE[of _ _ \<open>((nat (concat_bit 8 (int num\<^sub>3) (int num\<^sub>4)) \<Colon> 8 + 8) \<cdot> (num\<^sub>2 \<Colon> 8)) @ (num\<^sub>1 \<Colon> 8)\<close>])
-  apply solve_exp
-  unfolding bv_concat.simps
-  apply (rule REDUCE[of _ _ \<open>(nat (concat_bit 8 (int num\<^sub>2) (int (nat (concat_bit 8 (int num\<^sub>3) (int num\<^sub>4))))) \<Colon> 8 + 8 + 8) \<cdot> (num\<^sub>1 \<Colon> 8)\<close>])
-  apply solve_exp
-  unfolding bv_concat.simps by (rule REFL_WORD)
-
-lemma word8_refl_load_rev_ext_concat_word32: 
-  assumes \<open>num < 2 ^ 32\<close>
-    shows \<open>\<Delta> \<turnstile> v[num\<^sub>a \<Colon> 64 \<leftarrow> ext num \<Colon> 32 \<sim> hi : 7 \<sim> lo : 0, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 15 \<sim> lo : 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24, 8][num\<^sub>a \<Colon> 64, el]:u32 \<leadsto>* (num \<Colon> 32)\<close>
-  apply (subgoal_tac \<open>\<Delta> \<turnstile> v[num\<^sub>a \<Colon> 64 \<leftarrow> ext num \<Colon> 32 \<sim> hi : 7 \<sim> lo : 0, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 15 \<sim> lo : 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> ext num \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24, 8][num\<^sub>a \<Colon> 64, el]:u32 \<leadsto>* ((((ext num \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24) \<cdot>
-      ext num \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
-     ext num \<Colon> 32 \<sim> hi : 15 \<sim> lo : 8) \<cdot>
-    ext num \<Colon> 32 \<sim> hi : 7 \<sim> lo : 0)\<close>)
-  apply (metis assms extract_concat32)
-  unfolding xtract.simps apply (simp add: bv_plus.simps del: bv_concat.simps)
-  using word8_refl_load_rev_word32I by blast
-
-
+(*
 lemma word8_refl_load_rev_word64I: \<open>\<Delta> \<turnstile> v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))) \<leftarrow> num\<^sub>5 \<Colon> 8, 8][succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))) \<leftarrow> num\<^sub>6 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))))) \<leftarrow> num\<^sub>7 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))))) \<leftarrow> num\<^sub>8 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u64 \<leadsto>* (((((((num\<^sub>8 \<Colon> 8) \<cdot> (num\<^sub>7 \<Colon> 8)) \<cdot> (num\<^sub>6 \<Colon> 8)) \<cdot> (num\<^sub>5 \<Colon> 8)) \<cdot> (num\<^sub>4 \<Colon> 8)) \<cdot> (num\<^sub>3 \<Colon> 8)) \<cdot> (num\<^sub>2 \<Colon> 8)) \<cdot> (num\<^sub>1 \<Colon> 8)\<close>
   apply (rule REDUCE[of _ _ \<open>(v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))) \<leftarrow> num\<^sub>5 \<Colon> 8, 8][succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))) \<leftarrow> num\<^sub>6 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))))) \<leftarrow> num\<^sub>7 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))))) \<leftarrow> num\<^sub>8 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64), el]:u(64 - 8)) @ (v[num\<^sub>a \<Colon> 64 \<leftarrow> num\<^sub>1 \<Colon> 8, 8][succ (num\<^sub>a \<Colon> 64) \<leftarrow> num\<^sub>2 \<Colon> 8, 8][succ (succ (num\<^sub>a \<Colon> 64)) \<leftarrow> num\<^sub>3 \<Colon> 8, 8][succ (succ (succ (num\<^sub>a \<Colon> 64))) \<leftarrow> num\<^sub>4 \<Colon> 8, 8][succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))) \<leftarrow> num\<^sub>5 \<Colon> 8, 8][succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))) \<leftarrow> num\<^sub>6 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64)))))) \<leftarrow> num\<^sub>7 \<Colon> 8, 8][succ (succ (succ (succ (succ (succ (succ (num\<^sub>a \<Colon> 64))))))) \<leftarrow> num\<^sub>8 \<Colon> 8, 8][num\<^sub>a \<Colon> 64, el]:u8)\<close>])
   subgoal
@@ -1313,153 +1191,8 @@ lemma word8_refl_store_el_word64_in_memI:
       storage64 (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> 8, 8]) num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>4\<close>
   using word8_refl_store_el_word64I by (simp add: storage_constructor_exp_def)
 
+*)
 
-lemma refl_leI: \<open>\<Delta> \<turnstile> (num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz) \<leadsto>* (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-  apply (rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>])
-  apply (rule LESS_EQ)
-  by (simp add: bv_eq_def)
-
-(* use raw ML instead *)
-method solve_exps = (
-  (unfold var_simps)?, (
-  rule REFL_WORD | rule REFL_TRUE | rule REFL_FALSE | rule REFL_STORAGE | rule REFL_UNKNOWN | 
-  rule REFL |
-
-  rule refl_leI |
-
-  rule word8_refl_load_rev_ext_concat_word64I | rule word8_refl_load_rev_ext_concat_word32I |
-
-  rule word8_refl_store_el_word64_in_memI | (rule word8_refl_store_el_word64I, blast?) |
-  rule word8_refl_store_el_word32_in_memI | (rule word8_refl_store_el_word32I, blast?) |
-
-  (match conclusion in
-
-    \<comment> \<open>Reducible Variables\<close>
-    \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto>* (num \<Colon> sz)\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) \<leadsto>* v\<close> for v \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>Val v\<close>]\<close>
-
-    \<comment> \<open>Reducible Pad\<close>
-  \<bar> \<open>_ \<turnstile> pad:sz'[num \<Colon> sz] \<leadsto>* (_ \<Colon> _)\<close> for sz' sz num \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>ext num \<Colon> sz \<sim> hi : sz' - 1 \<sim> lo : 0\<close>]\<close>
-
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r]] \<leadsto>* _\<close> for sz\<^sub>1 sz\<^sub>2 num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[ext num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<sim> hi : sz\<^sub>2 - 1 \<sim> lo : 0]\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r] \<leadsto>* _\<close> for sz\<^sub>1 num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>exts num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<sim> hi : sz\<^sub>1 - 1 \<sim> lo : 0\<close>]\<close>
-
-   \<comment> \<open>LOAD_BYTE + LOAD_NEXT\<close>
-  \<bar> \<open>_ \<turnstile> ((((((_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>8 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz @ (num\<^sub>7 \<Colon> sz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>8 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((((num\<^sub>8 \<Colon> sz) @ (num\<^sub>7 \<Colon> sz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>8 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz @ (num\<^sub>7 \<Colon> sz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for v num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>8 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>8 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz) @ (num\<^sub>7 \<Colon> sz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((((e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>7 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((((e @ (num\<^sub>7 \<Colon> sz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>7 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>7 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (((((e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>6 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((e @ (num\<^sub>6 \<Colon> sz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>6 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>6 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>5 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((e @ (num\<^sub>5 \<Colon> sz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>5 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>5 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (((e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>4 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((e @ (num\<^sub>4 \<Colon> sz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>4 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>4 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>3 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((e @ (num\<^sub>3 \<Colon> sz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>3 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>3 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(e @ (num\<^sub>2 \<Colon> sz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>1 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)) @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e @ (_[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e @ (num\<^sub>1 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz, sz][_ \<Colon> _ \<leftarrow> _ \<Colon> _, _][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz e v en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz, sz][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, en]:usz)\<close>]\<close>
-
-
-   \<comment> \<open>LOAD_EL\<close>
-  \<bar> \<open>_ \<turnstile> (((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>6 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>5 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>6 num\<^sub>5 num\<^sub>4 num\<^sub>3 num\<^sub>2 num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>6 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>5 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>5 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>5 num\<^sub>4 num\<^sub>3 num\<^sub>2 num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))) @ (num\<^sub>5 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>4 num\<^sub>3 num\<^sub>2 num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))) @ (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> ((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>3 num\<^sub>2 num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))) @ (num\<^sub>3 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>2 num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))) @ (num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close>  for v num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num sz\<^sub>m\<^sub>e\<^sub>m num\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz num\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (v[num\<^sub>a\<^sub>d\<^sub>d\<^sub>r' \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))) @ (num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> v[num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz v \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(v[num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][succ (num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m) @ (v[num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>1 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m)\<close>]\<close>
-
-    \<comment> \<open>Reducible Store\<close>
-  \<bar> \<open>_ \<turnstile> v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] with [num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, _]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m) \<leadsto>* _\<close> for v num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>4 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] with [num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> low:sz\<^sub>m\<^sub>e\<^sub>m[num\<^sub>4 \<Colon> sz\<^sub>1]) with [num\<^sub>5 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>2 \<leftarrow> num\<^sub>6 \<Colon> sz\<^sub>2 \<leadsto>* _\<close> for v num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>1 sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(v[num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> num\<^sub>2 \<Colon> sz\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m] with [num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (ext (num\<^sub>4 \<Colon> sz\<^sub>1) \<sim> hi : sz\<^sub>m\<^sub>e\<^sub>m - 1 \<sim> lo : 0)) with [num\<^sub>5 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>2 \<leftarrow> num\<^sub>6 \<Colon> sz\<^sub>2\<close>]\<close>
-
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (low:sz[num\<^sub>1 \<Colon> sz\<^sub>1]) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz num\<^sub>1 sz\<^sub>1 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> ext num\<^sub>1 \<Colon> sz\<^sub>1 \<sim> hi : sz - 1 \<sim> lo : 0\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (high:sz[val \<Colon> sz']) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz val sz' \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, el]:usz \<leftarrow> (ext val \<Colon> sz' \<sim> hi : sz' - 1 \<sim> lo : sz' - sz)\<close>]\<close>  
-
-  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _) + e\<^sub>2, en]:usz \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_ + e\<^sub>2, en]:usz\<close>]\<close>
-
-  
-  \<comment> \<open>BOPS LHS VAR\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) le e \<leadsto>* _\<close> for e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ le e\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) + (num \<Colon> sz) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ + (num \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) - (num \<Colon> sz) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ - (num \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (_ :\<^sub>t _) bop e \<leadsto>* _\<close> for bop e \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp _ bop e\<close>]\<close>
-
-  \<comment> \<open>BOPS RHS VAR\<close>
-  \<bar> \<open>_ \<turnstile> (num \<Colon> sz) le (_ :\<^sub>t _) \<leadsto>* _\<close> for num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num \<Colon> sz) le _\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> BinOp (num \<Colon> sz) bop (_ :\<^sub>t _) \<leadsto>* _\<close> for num sz bop \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>BinOp (num \<Colon> sz) bop _\<close>]\<close>
-
-  \<comment> \<open>EXTEND LOAD ADDR BOP LHS VAR\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[e\<^sub>1[(_ :\<^sub>t _), en]:usz\<^sub>2] \<leadsto>* _\<close>for sz\<^sub>1 e\<^sub>1 en sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[e\<^sub>1[_, en]:usz\<^sub>2]\<close>]\<close>
-
-  \<comment> \<open>EXTEND LOAD ADDR BOP LHS VAR\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[mem[(_ :\<^sub>t _) + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for mem num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[_ + (num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>]\<close>
-
-  \<comment> \<open>EXTEND LOAD MEM VAR\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[(_ :\<^sub>t _)[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for num sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[_[(num \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>]\<close>
-
-
-
-
-  \<comment> \<open>EXTEND CAST BOP LHS VAR\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(_ :\<^sub>t _) + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]] \<leadsto>* _\<close> for num sz\<^sub>1 sz\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[_ + (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]]\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(_ :\<^sub>t _)]] \<leadsto>* _\<close> for  sz\<^sub>1 sz\<^sub>2 \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[_]]\<close>]\<close>
-
-  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _), en]:usz \<leadsto>* _\<close> for e\<^sub>1 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_, en]:usz\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1[(_ :\<^sub>t _) + e\<^sub>2, en]:usz \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[_ + e\<^sub>2, en]:usz\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _)[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leadsto>* _\<close> for num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>2 sz\<^sub>2 en sz num\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>_ with [num\<^sub>2 \<Colon> sz\<^sub>2, en]:usz \<leftarrow> (num\<^sub>3 \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (_ :\<^sub>t _) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> _\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(_ :\<^sub>t _), en]:usz \<leftarrow> (num \<Colon> sz) \<leadsto>* _\<close> for e\<^sub>1 en num sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [_, en]:usz \<leftarrow> (num \<Colon> sz)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(_ :\<^sub>t _) + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2) \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 sz\<^sub>1 en num\<^sub>2 sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [_ + (num\<^sub>1 \<Colon> sz\<^sub>1), en]:usz\<^sub>2 \<leftarrow> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>]\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (low:sz[_ :\<^sub>t _]) \<leadsto>* _\<close> for e\<^sub>1 e\<^sub>2 en sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> low:sz[_]\<close>]\<close>
-
-
-  , solve_exp)
-  |
-  (match conclusion in
-    \<comment> \<open>Reducible Eq\<close>
-    \<open>_ \<turnstile> BinOp (num\<^sub>1 \<Colon> sz) (LOp Eq) (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, (unfold bv_eq_def, simp (no_asm))[1]
-  ) |
-  (match conclusion in
-    \<comment> \<open>Reducible Plus\<close>
-    \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, unfold bv_plus.simps
-  ) |
-  (match conclusion in
-    \<comment> \<open>Reducible Minus\<close>
-    \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>]\<close>, solve_exp, unfold bv_minus.simps
-  ) |
-  (match conclusion in
-    \<open>_ \<turnstile> extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3] \<leadsto>* _\<close> for mem num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 en \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[mem[(num\<^sub>1 \<Colon> sz\<^sub>2) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3]\<close>], solve_exp, unfold bv_plus.simps\<close>
-  \<bar> \<open>_ \<turnstile> extend:sz\<^sub>1[low:sz\<^sub>2[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) + (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]] \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<Rightarrow>  \<open>rule REDUCE[of _ _ \<open>extend:sz\<^sub>1[low:sz\<^sub>2[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)]]\<close>], solve_exp, unfold bv_plus.simps\<close>
-
-   \<comment> \<open>LOAD_STEP_ADDR\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) + (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 num\<^sub>2 en sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1[(num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz\<close>], solve_exp, unfold bv_plus.simps\<close>
-
-
-   \<comment> \<open>LOAD_STEP_MEM\<close>
-   \<comment> \<open>LOAD_BYTE + LOAD_NEXT\<close>
-
-   \<comment> \<open>LOAD_EL\<close>
-
-    \<comment> \<open>Reducible Store\<close>
-  \<bar> \<open>_ \<turnstile> e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) + (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3) \<leadsto>* _\<close> for e\<^sub>1 num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2 en num\<^sub>3 sz\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>e\<^sub>1 with [(num\<^sub>1 \<Colon> sz\<^sub>1) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2), en]:usz\<^sub>3 \<leftarrow> (num\<^sub>3 \<Colon> sz\<^sub>3)\<close>], solve_exp, unfold bv_plus.simps, simp del: dvd_imp_mod_0 mod_less\<close>
-
-    \<comment> \<open>Reducible Concat\<close>
-  \<bar> \<open>_ \<turnstile> (((((((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7)) @ (num\<^sub>8 \<Colon> sz\<^sub>8) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 num\<^sub>8 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 sz\<^sub>5 sz\<^sub>6 sz\<^sub>7 sz\<^sub>8 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7)) @ (num\<^sub>8 \<Colon> sz\<^sub>8)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> ((((((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 num\<^sub>7 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 sz\<^sub>5 sz\<^sub>6 sz\<^sub>7 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)) @ (num\<^sub>7 \<Colon> sz\<^sub>7)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> (((((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 num\<^sub>6 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 sz\<^sub>5 sz\<^sub>6 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)) @ (num\<^sub>6 \<Colon> sz\<^sub>6)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> ((((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 num\<^sub>5 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 sz\<^sub>5 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)) @ (num\<^sub>5 \<Colon> sz\<^sub>5)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> (((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 num\<^sub>4 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)) @ (num\<^sub>4 \<Colon> sz\<^sub>4)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 num\<^sub>3 sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) @ (num\<^sub>3 \<Colon> sz\<^sub>3)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-  \<bar> \<open>_ \<turnstile> (num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2) \<leadsto>* _\<close> for num\<^sub>1 num\<^sub>2 sz\<^sub>1 sz\<^sub>2 \<Rightarrow> \<open>rule REDUCE[of _ _ \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>], solve_exp, unfold bv_concat.simps, simp (no_asm) del: dvd_imp_mod_0 mod_less\<close>
-)),
-  (unfold var_simps)?, solve_exps?  
-)
-
-lemmas REFL_STORE_WORD_IN_MEM = refl_store_word_in_memI
+end
 
 end

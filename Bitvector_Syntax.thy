@@ -1,13 +1,19 @@
 theory Bitvector_Syntax
-  imports Syntax
+  imports Syntax "Typing/Type_Syntax"
 begin
 
-class word_constructor = bool_syntax +
+class word_constructor = bool_syntax + type_syntax +
     fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
-  assumes word_eq[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<longleftrightarrow> nat = nat' \<and> sz = sz'\<close>
+  assumes word_inject[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<longleftrightarrow> nat = nat' \<and> sz = sz'\<close>
       and true_word: \<open>true = (1 \<Colon> 1)\<close>
       and false_word: \<open>false = (0 \<Colon> 1)\<close>
+      and type_wordI: \<open>\<And>num sz. type (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close>
 begin
+
+lemma word_bool_inject[simp]: 
+    \<open>(num \<Colon> sz) = true  \<longleftrightarrow> num = 1 \<and> sz = 1\<close> \<open>true  = (num \<Colon> sz) \<longleftrightarrow> num = 1 \<and> sz = 1\<close>
+    \<open>(num \<Colon> sz) = false \<longleftrightarrow> num = 0 \<and> sz = 1\<close> \<open>false = (num \<Colon> sz) \<longleftrightarrow> num = 0 \<and> sz = 1\<close>
+  unfolding true_word false_word word_inject by safe
 
 lemma word_not_sz_neqI:
   assumes \<open>num \<noteq> num'\<close>
@@ -64,6 +70,8 @@ where
   by auto
 termination by (standard, auto)
 
+declare bv_plus.simps[simp del]
+
 function
   bv_inc :: \<open>'a \<Rightarrow> 'a\<close>  (\<open>++\<^sub>b\<^sub>v _\<close> [81] 80)
 where
@@ -72,6 +80,8 @@ where
   apply blast+
   by auto
 termination by (standard, auto)
+
+declare bv_inc.simps[simp del]
 
 function 
   bv_minus :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>-\<^sub>b\<^sub>v\<close> 56)
@@ -87,6 +97,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_minus.simps[simp del]
+
 function
   bv_times :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>*\<^sub>b\<^sub>v\<close> 56)
 where
@@ -97,6 +109,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_times.simps[simp del]
 
 function 
   bv_divide :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>div\<^sub>b\<^sub>v\<close> 56) (* TODO *)
@@ -109,6 +123,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_divide.simps[simp del]
+
 function
   bv_sdivide :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>div\<^sub>s\<^sub>b\<^sub>v\<close> 56) (* TODO *)
 where
@@ -120,6 +136,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_sdivide.simps[simp del]
+
 function 
   bv_land :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>&\<^sub>b\<^sub>v\<close> 56)
 where
@@ -130,6 +148,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_land.simps[simp del]
 
 lemma land_false[simp]: 
     \<open>true &\<^sub>b\<^sub>v false = false\<close> 
@@ -152,6 +172,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_lor.simps[simp del]
+
 lemma lor_true[simp]: 
     \<open>true |\<^sub>b\<^sub>v false = true\<close> 
     \<open>false |\<^sub>b\<^sub>v true = true\<close> 
@@ -173,6 +195,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_xor.simps[simp del]
+
 function
   bv_mod\<^sub>b\<^sub>v :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>%\<^sub>b\<^sub>v\<close> 56)
 where
@@ -183,6 +207,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_mod\<^sub>b\<^sub>v.simps[simp del]
 
 function
   bv_smod :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>%\<^sub>s\<^sub>b\<^sub>v\<close> 56)
@@ -195,6 +221,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_smod.simps[simp del]
+
 function
   bv_lsl :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><<\<^sub>b\<^sub>v\<close> 56)
 where
@@ -204,6 +232,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_lsl.simps[simp del]
 
 function
   bv_lsr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>>>\<^sub>b\<^sub>v\<close> 56)
@@ -215,6 +245,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_lsr.simps[simp del]
+
 function
   bv_asr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>>>>\<^sub>b\<^sub>v\<close> 56)  
 where
@@ -225,6 +257,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_asr.simps[simp del]
+
 function 
   bv_concat :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<cdot>\<close> 55)
 where
@@ -234,6 +268,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_concat.simps[simp del]
 
 lemma bv_concat_0: \<open>(0 \<Colon> sz\<^sub>1) \<cdot> (0 \<Colon> sz\<^sub>2) = (0 \<Colon> sz\<^sub>1 + sz\<^sub>2)\<close>
   unfolding bv_concat.simps by auto
@@ -248,6 +284,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_uminus.simps[simp del]
+
 function
   bv_negation :: \<open>'a \<Rightarrow> 'a\<close> (\<open>~\<^sub>b\<^sub>v _\<close> [81] 80)
 where
@@ -257,6 +295,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_negation.simps[simp del]
 
 lemma bv_negation_true_false[simp]: \<open>~\<^sub>b\<^sub>v true = false\<close>
   unfolding true_word false_word bv_negation.simps by auto
@@ -275,6 +315,8 @@ where
 
 termination by (standard, auto)
 
+declare bv_le.simps[simp del]
+
 function
   bv_sle :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
 where
@@ -285,6 +327,8 @@ where
   by auto
 
 termination by (standard, auto)
+
+declare bv_sle.simps[simp del]
 
 function
   xtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
@@ -309,6 +353,11 @@ declare xtract.simps[simp del]
 lemma extract_0: \<open>(ext 0 \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = 0 \<Colon> Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
   unfolding xtract.simps by auto
 
+lemma extract_full: 
+  assumes \<open>num < 2 ^ sz\<close> and \<open>sz > 0\<close> shows \<open>(ext num \<Colon> sz \<sim> hi : (sz - 1) \<sim> lo : 0) = (num \<Colon> sz)\<close>
+  using assms unfolding xtract.simps apply auto
+  by (rule take_bit_nat_eq_self)
+  
 lemma extract_concat32:
   assumes \<open>x < 2 ^ 32\<close>
     shows \<open>((((ext x \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24) \<cdot> ext x \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16) \<cdot>
@@ -392,25 +441,80 @@ where
 lemma bv_not_eq[simp]: \<open>(num \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num \<Colon> sz) = false\<close>
   by simp
 
+lemma bv_not_eq_same_sz_true: assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> shows \<open>(num\<^sub>1 \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true\<close>
+  by (simp add: assms bv_eq_def)
+
 abbreviation
   bv_leq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
 where
   \<open>a \<le>\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) |\<^sub>b\<^sub>v (a <\<^sub>b\<^sub>v b)\<close>
+
+lemmas bv_leq_defs = bv_eq_def bv_lor.simps bv_le.simps
+
+lemma bv_leq_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 \<le> num\<^sub>2 then 1 else 0) \<Colon> 1)\<close>
+  unfolding bv_leq_defs apply (split if_splits)+
+  by simp
+
+lemma bv_leq_same_szI: assumes \<open>num\<^sub>1 \<le> num\<^sub>2\<close> shows \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true\<close>
+  using assms unfolding bv_leq_defs by auto
+
+lemma bv_leq_same[simp]: \<open>(num \<Colon> sz) \<le>\<^sub>b\<^sub>v (num \<Colon> sz) = true\<close>
+  apply (rule bv_leq_same_szI)
+  ..
 
 abbreviation
   bv_sleq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>s\<^sub>b\<^sub>v\<close> 56)
 where
   \<open>a \<le>\<^sub>s\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) |\<^sub>b\<^sub>v (a <\<^sub>s\<^sub>b\<^sub>v b)\<close>
 
+function
+  succ :: \<open>'a \<Rightarrow> 'a\<close>
+where
+  succI: \<open>succ (num \<Colon> sz) = (num \<Colon> sz) +\<^sub>b\<^sub>v (1 \<Colon> sz)\<close> |
+  \<open>\<lbrakk>\<forall>num sz. w \<noteq> (num \<Colon> sz)\<rbrakk> \<Longrightarrow> succ w = undefined\<close>
+  subgoal for P x
+    apply (rule word_syntax_exhaust[of x])
+    by blast+    
+  by auto
+termination
+  by (standard, auto)
+
+declare succ.simps[simp del]
+
+lemmas bv_simps = bv_plus.simps bv_minus.simps bv_times.simps bv_divide.simps bv_sdivide.simps
+                  bv_inc.simps bv_land.simps bv_lor.simps bv_xor.simps bv_mod\<^sub>b\<^sub>v.simps bv_smod.simps
+                  bv_lsl.simps bv_lsr.simps bv_asr.simps bv_concat.simps bv_uminus.simps
+                  bv_negation.simps bv_le.simps bv_sle.simps xtract.simps sxtract.simps
+
+
+
+
+text \<open>Type syntax for words\<close>
+
+lemma type_trueI[simp]: \<open>type true = imm\<langle>1\<rangle>\<close> 
+  unfolding true_word by (rule type_wordI)
+
+lemma type_falseI[simp]: \<open>type false = imm\<langle>1\<rangle>\<close> 
+  unfolding false_word by (rule type_wordI)
+
+lemma type_succI[simp]: \<open>type (succ (num \<Colon> sz)) = imm\<langle>sz\<rangle>\<close>
+  unfolding succ.simps bv_plus.simps by (rule type_wordI)
 
 end
 
 class word = word_constructor +
   assumes word_induct: \<open>\<And>w Q. \<lbrakk>\<And>a b. Q (a \<Colon> b)\<rbrakk> \<Longrightarrow> Q w\<close>
       and word_exhaust: \<open>\<And>w Q. \<lbrakk>\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
+begin
 
-datatype word = Word (raw_val: nat) (bits: nat)
+lemma type_succ_recI: 
+  assumes \<open>type w = imm\<langle>sz\<rangle>\<close>
+    shows \<open>type (succ w) = imm\<langle>sz\<rangle>\<close>
+  using assms apply (cases w rule: word_exhaust, safe)
+  by (simp add: type_wordI)
 
+end
 
+datatype word = Word nat nat
 
 end

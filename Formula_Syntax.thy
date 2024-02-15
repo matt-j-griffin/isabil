@@ -36,6 +36,9 @@ lemma in_vars_the_simp:
 lemma var_in_addI[simp]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta> (var \<mapsto> val)\<close>
   unfolding val_var_in_vars.simps by simp
 
+lemma var_in_add_eqI: assumes \<open>val = val'\<close> shows \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta> (var \<mapsto> val')\<close>
+  unfolding assms by simp
+
 lemma var_in_deterministic:
   assumes \<open>(var, val\<^sub>1) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>(var, val\<^sub>2) \<in>\<^sub>\<Delta> \<Delta>\<close>
     shows \<open>val\<^sub>1 = val\<^sub>2\<close>
@@ -48,7 +51,7 @@ lemma var_in_dom_\<Delta>[intro]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta
 text \<open>Attempt to solve a proof of the form (var, val) \<in> \<Delta>\<close>
 
 method solve_in_var = (
-    ((assumption | rule var_in_addI | (rule var_in_dropI))+);
+    ((assumption | rule var_in_addI | (rule var_in_add_eqI, (simp; fail)) | (rule var_in_dropI))+);
     (assumption | (unfold var_syntax_class.var_eq List.list.inject String.char.inject Type.inject, blast)[1])
 )
 

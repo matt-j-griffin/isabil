@@ -34,12 +34,43 @@ lemma true_not_false_val[simp]: \<open>(true::val) \<noteq> false\<close>
   unfolding false_val_def true_val_def
   using not_true_eq_false by (metis val.inject(1))
 
+lemma valI:
+  fixes v :: val
+  assumes imm: \<open>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q\<close>
+      and unk: \<open>\<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q\<close>
+      and mem: \<open>\<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q\<close>
+    shows Q
+  apply (cases v rule: val.exhaust)
+  subgoal for w 
+    apply (cases w rule: word_exhaust)
+    subgoal for num sz apply (rule imm[of num sz])
+      by (simp add: word_constructor_val_def)
+    .
+  subgoal by (rule unk, unfold unknown_constructor_val_def)
+  subgoal by (rule mem, unfold storage_constructor_val_def)
+  .
+
+function
+  type_val :: \<open>val \<Rightarrow> Type\<close>
+where
+  \<open>type_val (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close> |
+  \<open>type_val (unknown[str]: t) = t\<close> |
+  \<open>type_val (mem[(num \<Colon> sz\<^sub>1) \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1, sz\<^sub>2\<rangle>\<close>
+  subgoal for P x 
+    apply (rule valI[of x])
+    prefer 3 subgoal for mem w v' sz 
+      apply (cases w rule: word_exhaust) 
+      by simp
+    by simp_all
+  unfolding storage_constructor_val_def word_constructor_val_def unknown_constructor_val_def
+  by simp_all
+termination by (standard, auto)
+
 instance 
-  apply standard 
+  apply standard
+  apply simp_all
   unfolding storage_constructor_val_def word_constructor_val_def unknown_constructor_val_def
   apply (simp_all add: true_val_def false_val_def)
-  apply (simp add: true_word_def)
-  apply (simp add: false_word_def)
   apply (metis val.exhaust word_exhaust)
   by (metis val.exhaust word_exhaust)
 

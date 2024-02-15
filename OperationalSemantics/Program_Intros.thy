@@ -19,6 +19,12 @@ lemma step_prog_noinsnI:
     using assms(2) by auto
   .
 
+method solve_progI uses decoder = (
+    rule step_progI, 
+    rule decoder,
+    solve_bilI
+)
+
 end
 
 end

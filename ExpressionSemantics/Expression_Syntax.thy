@@ -13,20 +13,7 @@ each type, we avoid duplicating each rule by defining the following metafunction
 context val_syntax
 begin
 
-function
-  type :: \<open>val \<Rightarrow> Type\<close>
-where
-  type_storageI: \<open>type (_[(_ \<Colon> nat') \<leftarrow> _, sz]) = mem\<langle>nat',sz\<rangle>\<close> | 
-  type_wordI: \<open>type (_ \<Colon> nat') = imm\<langle>nat'\<rangle>\<close> | 
-  type_unknownI: \<open>type (unknown[_]: t) = t\<close>
-  subgoal for P x
-    apply (cases x rule: val_exhaust)
-    apply simp_all
-    using word_exhaust by blast
-  by auto
-
-termination by (standard, auto)
-
+(*
 lemma type_storage_not_imm[simp]: \<open>type (mem[w \<leftarrow> v', sz]) \<noteq> imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle>\<close>
   apply (rule notI)
   apply (erule type.elims)
@@ -36,81 +23,20 @@ lemma type_word_not_mem[simp]: \<open>type (num \<Colon> sz) \<noteq> mem\<langl
   apply (rule notI)
   apply (erule type.elims)
   by simp_all
+*)
+
+
 
 end
+
+method solve_typeI = 
+    (assumption | intro type_wordI type_storageI type_unknownI type_trueI type_falseI type_succ_recI 
+           type_storage_addrI)
 
 context word_constructor
 begin
 
-function
-  succ :: \<open>'a \<Rightarrow> 'a\<close>
-where
-  succI: \<open>succ (num \<Colon> sz) = (num \<Colon> sz) +\<^sub>b\<^sub>v (1 \<Colon> sz)\<close> |
-  \<open>\<lbrakk>\<forall>num sz. w \<noteq> (num \<Colon> sz)\<rbrakk> \<Longrightarrow> succ w = undefined\<close>
-  subgoal for P x
-    apply (rule word_syntax_exhaust[of x])
-    by blast+    
-  by auto
-termination
-  by (standard, auto)
-
-declare succ.simps[simp del]
-
 end
-
-
-(* TODO this is all non-standard (additional) semantics *)
-context storage_constructor
-begin
-
-abbreviation 
-  storage16 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
-where
-  \<open>storage16 mem num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>2 \<equiv> (mem
-    [num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> ext num\<^sub>2 \<Colon> 16 \<sim> hi :  7 \<sim> lo :  0, 8]
-    [succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> ext num\<^sub>2 \<Colon> 16 \<sim> hi : 15 \<sim> lo :  8, 8])
-\<close>
-
-abbreviation 
-  storage32 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
-where
-  \<open>storage32 mem num\<^sub>1 num\<^sub>2 \<equiv> (mem
-    [num\<^sub>1 \<Colon> 64 \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi :  7 \<sim> lo :  0, 8]
-    [succ (num\<^sub>1 \<Colon> 64) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 15 \<sim> lo :  8, 8]
-    [succ (succ (num\<^sub>1 \<Colon> 64)) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 23 \<sim> lo : 16, 8]
-    [succ (succ (succ (num\<^sub>1 \<Colon> 64))) \<leftarrow> ext num\<^sub>2 \<Colon> 32 \<sim> hi : 31 \<sim> lo : 24, 8])
-\<close>
-
-abbreviation 
-  storage64 :: \<open>val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close>
-where
-  \<open>storage64 mem num\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num\<^sub>2 \<equiv> (mem
-    [num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi :  7 \<sim> lo :  0, 8]
-    [succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 15 \<sim> lo :  8, 8]
-    [succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 23 \<sim> lo : 16, 8]
-    [succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 31 \<sim> lo : 24, 8]
-    [succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 39 \<sim> lo : 32, 8]
-    [succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 47 \<sim> lo : 40, 8]
-    [succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 55 \<sim> lo : 48, 8]
-    [succ (succ (succ (succ (succ (succ (succ (num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))))))) \<leftarrow> ext num\<^sub>2 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 56, 8])
-\<close>
-
-end
-
-lemma type_storage16: \<open>type (storage16 mem address sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
-
-lemma type_storage32: \<open>type (storage32 mem address val\<^sub>1) = mem\<langle>64, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
-
-lemma type_storage64: \<open>type (storage64 mem address sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
-
-method solve_type_storage = (
-    rule type_storage64 | rule type_storage32 | rule type_storage16 | rule type_storageI
-)
-
-
 
 instantiation exp :: exp
 begin
@@ -118,7 +44,7 @@ begin
 definition 
   var_constructor_exp :: \<open>string \<Rightarrow> Type \<Rightarrow> exp\<close>
 where
-  \<open>(a :\<^sub>t b) \<equiv> Var (a :\<^sub>t b)\<close>
+  \<open>(a :\<^sub>t b) \<equiv> EVar (a :\<^sub>t b)\<close>
 
 definition
   word_constructor_exp :: \<open>nat \<Rightarrow> nat \<Rightarrow> exp\<close>
@@ -243,16 +169,33 @@ where
 lemma true_not_false_exp: \<open>(true::exp) \<noteq> false\<close>
   by (simp add: false_exp_def true_exp_def)
 
+function
+  type_exp :: \<open>exp \<Rightarrow> Type\<close>
+where
+  \<open>type_exp (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close> |
+  \<open>type_exp (unknown[str]: t) = t\<close> |
+  \<open>type_exp (mem[(num \<Colon> sz\<^sub>1) \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1, sz\<^sub>2\<rangle>\<close> |
+  \<open>\<lbrakk>\<forall>num sz. v \<noteq> num \<Colon> sz; \<forall>str t. v \<noteq> unknown[str]: t; \<forall>mem w v' sz. v \<noteq> (mem[w \<leftarrow> v', sz])\<rbrakk> 
+      \<Longrightarrow> type_exp v = undefined\<close>
+  subgoal for P x 
+    by (metis type_word.cases)
+  unfolding storage_constructor_exp_def word_constructor_exp_def unknown_constructor_exp_def
+  by auto
+termination by (standard, auto)
+
 instance 
   apply standard 
+  using true_not_false_exp apply auto
   unfolding storage_constructor_exp_def word_constructor_exp_def unknown_constructor_exp_def 
-            var_constructor_exp_def append_exp_def
-  apply (simp_all add: true_not_false_exp true_exp_def false_exp_def)
-  apply (simp add: true_word)  
-  apply (simp add: false_word)
-  done
+            var_constructor_exp_def append_exp_def true_exp_def false_exp_def
+  by auto
 
 end
+
+lemma plus_binop_inject[simp]: 
+    \<open>e\<^sub>1 + e\<^sub>2 = BinOp e\<^sub>3 bop e\<^sub>4 \<longleftrightarrow> (e\<^sub>3 = e\<^sub>1 \<and> e\<^sub>4 = e\<^sub>2 \<and> bop = AOp Plus)\<close>
+    \<open>BinOp e\<^sub>3 bop e\<^sub>4 = e\<^sub>1 + e\<^sub>2 \<longleftrightarrow> (e\<^sub>3 = e\<^sub>1 \<and> e\<^sub>4 = e\<^sub>2 \<and> bop = AOp Plus)\<close>
+  by auto
 
 lemma exp_def_simps[simp]:
   \<open>\<And>e\<^sub>1 e\<^sub>2 en sz e\<^sub>3 e\<^sub>4. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close>
@@ -278,14 +221,11 @@ lemma storage_not_nested_exp[simp]: \<open>v[num\<^sub>1 \<Colon> sz\<^sub>a\<^s
   unfolding storage_constructor_exp_def by simp
 
 (* TODO add to simpset *)
-lemma Val_simp_word: \<open>Val (a \<Colon> b) = (a \<Colon> b)\<close>
-  by (simp add: word_constructor_exp_def)
+lemmas Val_simp_word = word_constructor_exp_def[symmetric]
 
-lemma Val_simp_storage: \<open>Val (v[a \<leftarrow> v', sz]) = (v[a \<leftarrow> v', sz])\<close>
-  by (simp add: storage_constructor_exp_def)
+lemmas Val_simp_storage = storage_constructor_exp_def[symmetric]
 
-lemma Val_simp_unknown: \<open>Val (unknown[str]: t) = unknown[str]: t\<close>
-  by (simp add: unknown_constructor_exp_def)
+lemmas Val_simp_unknown = unknown_constructor_exp_def[symmetric]
 
 no_notation List.append (infixr "@" 65)
 no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
@@ -326,9 +266,18 @@ lemma exp_exhaust:
 
 locale not_exp_val =
     fixes exp :: exp
-  assumes not_val[simp]: \<open>\<forall>v. exp \<noteq> Val v\<close>
-      and not_true[simp]: \<open>exp \<noteq> true\<close>
-      and not_false[simp]: \<open>exp \<noteq> false\<close>
+  assumes not_val[simp]: \<open>\<And>v. exp \<noteq> Val v\<close>
+begin
+
+lemma not_true[simp]: \<open>exp \<noteq> true\<close>
+  unfolding true_exp_def by (rule not_val)
+
+lemma not_false[simp]: \<open>exp \<noteq> false\<close>
+  unfolding false_exp_def by (rule not_val)
+
+lemma not_bv_concat[simp]: \<open>exp \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
+  unfolding bv_concat.simps unfolding word_constructor_exp_def by (rule not_val)
+end
 
 locale not_exp =
     fixes exp :: exp
@@ -374,11 +323,10 @@ locale not_exp_and_val = not_exp_val + not_exp
 
 interpretation concat: not_exp_and_val \<open>e\<^sub>1 @ e\<^sub>2\<close>
   apply (standard, auto)
-  unfolding true_exp_def false_exp_def append_exp_def by auto
+  unfolding append_exp_def by auto
 
 interpretation var: not_exp_and_val \<open>(id' :\<^sub>t t)\<close>
-  unfolding var_constructor_exp_def apply (standard, auto)
-  unfolding true_exp_def false_exp_def by auto
+  unfolding var_constructor_exp_def by (standard, auto)
 
 interpretation storage: not_exp \<open>(v[w \<leftarrow> v', sz])\<close>
   unfolding storage_constructor_exp_def by (standard, auto)
@@ -395,533 +343,7 @@ interpretation true: not_exp \<open>true\<close>
 interpretation false: not_exp \<open>false\<close>
   unfolding false_exp_def by (standard, auto)
 
-function
-  concat_en :: \<open>val \<Rightarrow> val \<Rightarrow> Endian \<Rightarrow> val\<close>
-where
-  \<open>concat_en (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2) be = ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close> |
-  \<open>concat_en (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2) el = ((num\<^sub>2 \<Colon> sz\<^sub>2) \<cdot> (num\<^sub>1 \<Colon> sz\<^sub>1))\<close> |
-  \<open>concat_en (_ \<Colon> sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t) (unknown[str\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t]: imm\<langle>sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>) _ = unknown[str\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t + sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>\<close> |
-  \<open>concat_en (unknown[str\<^sub>l\<^sub>e\<^sub>f\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t\<rangle>) (_ \<Colon> sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t) _ = unknown[str\<^sub>l\<^sub>e\<^sub>f\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t + sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>\<close> |
-  \<open>concat_en (unknown[str\<^sub>l\<^sub>e\<^sub>f\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t\<rangle>) (unknown[str\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t]: imm\<langle>sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>) be
-    = (unknown[str\<^sub>l\<^sub>e\<^sub>f\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t + sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>)\<close> |
-  \<open>concat_en (unknown[str\<^sub>l\<^sub>e\<^sub>f\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t\<rangle>) (unknown[str\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t]: imm\<langle>sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>) el
-    = (unknown[str\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t]: imm\<langle>sz\<^sub>l\<^sub>e\<^sub>f\<^sub>t + sz\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t\<rangle>)\<close> |
-  \<open>\<lbrakk>type v\<^sub>1 = mem\<langle>_, _\<rangle> \<or> type v\<^sub>2 = mem\<langle>_, _\<rangle>\<rbrakk> \<Longrightarrow> concat_en v\<^sub>1 v\<^sub>2 _ = undefined\<close>
-  subgoal for P x 
-    apply (cases x)
-    apply simp
-    subgoal for v\<^sub>1 v\<^sub>2 en
-      apply (cases en)
-      apply simp_all
-      subgoal
-        apply (cases v\<^sub>1 rule: val_exhaust)
-        apply simp_all
-        subgoal
-          apply (cases v\<^sub>2 rule: val_exhaust)
-          apply simp_all
-          subgoal for str t
-            apply (cases t)
-            apply simp_all
-            by blast
-          subgoal
-            by (metis type.simps(1) word_exhaust)
-          .
-        subgoal for str t
-          apply (cases t)
-          subgoal
-            apply (cases v\<^sub>2 rule: val_exhaust)
-            apply simp_all
-            subgoal for str' t'
-              apply (cases t')
-              apply simp_all
-              by blast
-            by (metis type.elims unknown_storage_neq word_storage_neq)
-          using type.simps(3) by blast
-        by (metis type.elims unknown_storage_neq word_storage_neq)
-      subgoal
-        apply (cases v\<^sub>1 rule: val_exhaust)
-        apply simp_all
-        subgoal
-          apply (cases v\<^sub>2 rule: val_exhaust)
-          apply simp_all
-          subgoal for str t
-            apply (cases t)
-            apply simp_all
-            by blast
-          subgoal
-            by (metis type.simps(1) word_exhaust)
-          .
-        subgoal for str t
-          apply (cases t)
-          subgoal
-            apply (cases v\<^sub>2 rule: val_exhaust)
-            apply simp_all
-            subgoal for str' t'
-              apply (cases t')
-              apply simp_all
-              by blast
-            by (metis type.elims unknown_storage_neq word_storage_neq)
-          using type.simps(3) by blast
-        by (metis type.elims unknown_storage_neq word_storage_neq)
-      .
-    .
-  by auto
-
-termination by (standard, auto)
-
-function
-  load_byte :: \<open>val \<Rightarrow> word \<Rightarrow> val\<close>
-where
-  \<open>\<lbrakk>w\<^sub>m\<^sub>e\<^sub>m = w\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk> \<Longrightarrow> load_byte (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, _]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = v\<^sub>m\<^sub>e\<^sub>m\<close> |
-  \<open>\<lbrakk>w\<^sub>m\<^sub>e\<^sub>m \<noteq> w\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rbrakk> \<Longrightarrow> load_byte (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> _, _]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r = load_byte mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> |
-  \<open>load_byte (unknown[str]: mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) _ = unknown[str]: imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<close> |
-  \<open>type v = imm\<langle>_\<rangle> \<Longrightarrow> load_byte v _ = undefined\<close>
-  subgoal for P x
-    apply (cases x)
-    subgoal for v w
-      apply (cases v rule: val_exhaust)
-      apply auto
-      using type.simps(2) apply blast
-      subgoal for str t
-        apply (cases t, auto)
-        by (metis type.simps(3))
-      by fastforce
-    .
-  apply simp_all
-  apply (metis Type.distinct(1) type.cases type.simps(1) unknown_storage_neq word_storage_neq)
-  by auto
-
-termination 
-  apply (relation \<open>(\<lambda>p. size_class.size (fst p)) <*mlex*> {}\<close>)
-  apply (rule wf_mlex, blast)
-  unfolding storage_constructor_val_def
-  by (rule mlex_less, simp)
-
-function
-  load :: \<open>val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> Endian \<Rightarrow> val\<close>
-where
-  \<open>load (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>v\<^sub>a\<^sub>l]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l _ = (
-      load_byte (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>v\<^sub>a\<^sub>l]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r
-  )\<close> |
-  \<open>\<lbrakk>sz\<^sub>v\<^sub>a\<^sub>l \<noteq> sz\<^sub>m\<^sub>e\<^sub>m; sz\<^sub>m\<^sub>e\<^sub>m = 0\<rbrakk> \<Longrightarrow> load (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en = (
-    undefined     
-  )\<close> |
-  \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> load (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en = (
-    undefined     
-  )\<close> |
-  \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> load (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>v\<^sub>a\<^sub>l en = (
-      let 
-        v\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t = load (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]) (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m) en;
-        v\<^sub>l\<^sub>e\<^sub>f\<^sub>t = load_byte (mem[w\<^sub>m\<^sub>e\<^sub>m \<leftarrow> v\<^sub>m\<^sub>e\<^sub>m, sz\<^sub>m\<^sub>e\<^sub>m]) w\<^sub>a\<^sub>d\<^sub>d\<^sub>r
-      in concat_en v\<^sub>l\<^sub>e\<^sub>f\<^sub>t v\<^sub>r\<^sub>i\<^sub>g\<^sub>h\<^sub>t en
-  )\<close> |
-  \<open>load (unknown[str]: _) _ sz\<^sub>v\<^sub>a\<^sub>l _ = unknown[str]: imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle> \<close> |
-  \<open>load (_ \<Colon> _) _ _ _ = undefined\<close>
-  subgoal for P x
-    apply (cases x, simp)
-    subgoal for v
-      apply (cases v rule: val_exhaust)
-      apply auto
-      by (metis gr0I linorder_less_linear)
-    .
-  by auto
-
-termination
-  apply (relation "(\<lambda>p. size_class.size (fst (snd (snd p)))) <*mlex*> (\<lambda>p. size_class.size (fst p)) <*mlex*> {}")
-  by (simp_all add: wf_mlex mlex_less)
-
-subsubsection \<open>Store\<close>
-
-function
-  store :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> Endian \<Rightarrow> val\<close>
-where
-  \<comment> \<open>Big endian store\<close>
-  \<open>\<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> store mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) be = (
-    case type mem of mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Rightarrow>
-        let 
-          sz\<^sub>v\<^sub>a\<^sub>l' :: nat = (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m);
-          mem' :: val = mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (ext (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>v\<^sub>a\<^sub>l'), sz\<^sub>m\<^sub>e\<^sub>m]
-        in
-          store mem' (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (ext (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l' - 1) \<sim> lo : 0) be
-  )\<close> |
-  \<comment> \<open>Little endian store\<close>
-  \<open>\<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> store mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) el = (
-    case type mem of mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Rightarrow>
-        let 
-          mem' :: val = mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (ext (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) \<sim> hi : (sz\<^sub>m\<^sub>e\<^sub>m - 1) \<sim> lo : 0), sz\<^sub>m\<^sub>e\<^sub>m]
-        in
-          store mem' (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (ext (num \<Colon> sz\<^sub>v\<^sub>a\<^sub>l) \<sim> hi : (sz\<^sub>v\<^sub>a\<^sub>l - 1) \<sim> lo : sz\<^sub>m\<^sub>e\<^sub>m) el
-  )\<close> |
-  \<comment> \<open>Unknown store\<close>
-  \<open>\<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> store mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r (unknown[str]: imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle>) en = (
-    case type mem of mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Rightarrow>
-        let 
-          sz\<^sub>v\<^sub>a\<^sub>l' :: nat = (sz\<^sub>v\<^sub>a\<^sub>l - sz\<^sub>m\<^sub>e\<^sub>m);
-          mem' :: val = mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> (unknown[str]: imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle>), sz\<^sub>m\<^sub>e\<^sub>m] in
-            store mem' (succ w\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (unknown[str]: imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l'\<rangle>) en
-  )\<close> |
-  \<comment> \<open>Byte store\<close>
-  \<open>\<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; type v\<^sub>v\<^sub>a\<^sub>l = imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0\<rbrakk> \<Longrightarrow> store mem w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l _ = (
-    case type v\<^sub>v\<^sub>a\<^sub>l of imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Rightarrow> (mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v\<^sub>v\<^sub>a\<^sub>l, sz\<^sub>m\<^sub>e\<^sub>m])
-  )\<close> |
-  (* Illegal cases *)
-  \<open>\<And>sz\<^sub>m\<^sub>e\<^sub>m. \<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; type v\<^sub>v\<^sub>a\<^sub>l = imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m \<noteq> 0; sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> store mem _ v\<^sub>v\<^sub>a\<^sub>l _ = undefined\<close> |
-  \<open>\<And>sz\<^sub>m\<^sub>e\<^sub>m. \<lbrakk>type mem = mem\<langle>_,sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz\<^sub>m\<^sub>e\<^sub>m = 0\<rbrakk> \<Longrightarrow> store mem _ _ _ = undefined\<close> |
-  \<open>\<lbrakk>type val = mem\<langle>_,_\<rangle>\<rbrakk> \<Longrightarrow> store _ _ val _ = undefined\<close>|
-  \<open>\<lbrakk>type mem = imm\<langle>_\<rangle>\<rbrakk> \<Longrightarrow> store mem _ _ _ = undefined\<close>
-  subgoal
-    for P x
-    apply (cases x, clarify)
-    subgoal for v\<^sub>m\<^sub>e\<^sub>m w\<^sub>a\<^sub>d\<^sub>d\<^sub>r v\<^sub>v\<^sub>a\<^sub>l en
-      apply (cases \<open>type v\<^sub>m\<^sub>e\<^sub>m\<close>, simp_all)
-      apply (cases \<open>type v\<^sub>v\<^sub>a\<^sub>l\<close>, simp_all)
-      subgoal for sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>v\<^sub>a\<^sub>l
-        apply (cases \<open>sz\<^sub>m\<^sub>e\<^sub>m = 0\<close>, simp_all)
-        apply (case_tac \<open>sz\<^sub>v\<^sub>a\<^sub>l < sz\<^sub>m\<^sub>e\<^sub>m\<close>, simp_all)
-        apply (case_tac \<open>sz\<^sub>v\<^sub>a\<^sub>l = sz\<^sub>m\<^sub>e\<^sub>m\<close>, simp_all)
-        apply (rule linorder_neqE_nat, auto)
-        apply (rule val_exhaust[of v\<^sub>m\<^sub>e\<^sub>m], auto)
-        subgoal
-          apply (rule val_exhaust[of v\<^sub>v\<^sub>a\<^sub>l], auto)
-          subgoal by (cases en)
-          .
-        subgoal
-          apply (rule val_exhaust[of v\<^sub>v\<^sub>a\<^sub>l], auto)
-          subgoal by (cases en)
-          .
-        .
-      .
-    .
-  by auto
-termination
-  apply (relation \<open>(\<lambda>(_,_,v\<^sub>v\<^sub>a\<^sub>l,_). case (type v\<^sub>v\<^sub>a\<^sub>l) of imm\<langle>sz\<rangle> \<Rightarrow> size_class.size sz) <*mlex*> {}\<close>)
-  subgoal
-    apply (rule wf_mlex)
-    by blast
-  subgoal
-    apply (rule mlex_less)
-    unfolding case_prod_beta snd_conv fst_conv xtract.simps
-    by simp
-  subgoal
-    apply (rule mlex_less)
-    unfolding case_prod_beta snd_conv fst_conv xtract.simps
-    by simp
-  subgoal
-    apply (rule mlex_less)
-    unfolding case_prod_beta snd_conv fst_conv
-    by simp
-  .
-
-subsubsection \<open>Expression evaluation\<close>
-
-context word_constructor
-begin
-
-primrec 
-  operator_unop :: \<open>UnOp \<Rightarrow> ('a \<Rightarrow> 'a)\<close>
-where
-  \<open>operator_unop Not = bv_negation\<close> |
-  \<open>operator_unop Neg = bv_uminus\<close>
-
-primrec
-  operator_lop :: \<open>LOp \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> 'a)\<close>
-where
-  \<open>operator_lop Eq = (=\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Neq = (\<noteq>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Lt = (<\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Le = (\<le>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Slt = (<\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_lop Sle = (\<le>\<^sub>s\<^sub>b\<^sub>v)\<close>
-
-primrec
-  operator_aop :: \<open>AOp \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> 'a)\<close>
-where
-  \<open>operator_aop Plus = (+\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Minus = (-\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Times = (*\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Divide = (div\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop SDivide = (div\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Mod = (%\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop SMod = (%\<^sub>s\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop And = (&\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Or = (|\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop Xor = (xor\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop LShift = (<<\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop RShift = (>>\<^sub>b\<^sub>v)\<close> |
-  \<open>operator_aop ARShift = (>>>\<^sub>b\<^sub>v)\<close>
-end
-
-context val_syntax
-begin
-
-function 
-  eval_unop :: \<open>UnOp \<Rightarrow> 'a \<Rightarrow> 'a\<close>
-where
-  \<open>eval_unop _ (unknown[str]: t) = unknown[str]: t\<close> |
-  \<open>eval_unop uop (num \<Colon> sz) = (operator_unop uop) ((num \<Colon> sz))\<close> |
-  \<open>\<lbrakk>(\<forall>str t. v \<noteq> unknown[str]: t); (\<forall>num sz. v \<noteq> (num \<Colon> sz))\<rbrakk> \<Longrightarrow> eval_unop _ v = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for uop v
-      apply (rule val_syntax_exhaust[of v])
-      by force+
-    .
-  by auto
-termination by (standard, auto)
-
-function 
-  eval_binop :: \<open>BinOp \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>
-where
-  \<open>eval_binop (AOp _) (unknown[str]: t) _ = unknown[str]: t\<close> |
-  \<open>eval_binop (LOp _) (unknown[str]: _) _ = unknown[str]: imm\<langle>1\<rangle>\<close> |
-  \<open>\<lbrakk>\<forall>str t. v \<noteq> unknown[str]: t\<rbrakk> \<Longrightarrow> eval_binop (AOp _) v (unknown[str]: t) = unknown[str]: t\<close> |
-  \<open>\<lbrakk>\<forall>str t. v \<noteq> unknown[str]: t\<rbrakk> \<Longrightarrow> eval_binop (LOp _) v (unknown[str]: _) = unknown[str]: imm\<langle>1\<rangle>\<close> |
-  \<open>eval_binop (AOp aop) (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2)
-      = (operator_aop aop (num\<^sub>1 \<Colon> sz\<^sub>1) ((num\<^sub>2 \<Colon> sz\<^sub>2)))\<close> |
-  \<open>eval_binop (LOp lop) (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2)
-      = (operator_lop lop (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2))\<close> |
-  \<open>\<lbrakk>(\<forall>str t. v\<^sub>1 \<noteq> unknown[str]: t); (\<forall>str t. v\<^sub>2 \<noteq> unknown[str]: t);
-    (\<forall>num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2. v\<^sub>1 \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1) \<or> v\<^sub>2 \<noteq> (num\<^sub>2 \<Colon> sz\<^sub>2))
-   \<rbrakk> \<Longrightarrow> eval_binop _ v\<^sub>1 v\<^sub>2 = undefined\<close>
-  subgoal for P x
-    apply (cases x)
-    subgoal for binop v\<^sub>1 v\<^sub>2
-      apply (cases binop)
-      subgoal for aop
-        apply (rule val_syntax_exhaust[of v\<^sub>1])
-        apply (rule val_syntax_exhaust[of v\<^sub>2])
-        by force+
-      subgoal for lop
-        apply (rule val_syntax_exhaust[of v\<^sub>1])
-        apply (rule val_syntax_exhaust[of v\<^sub>2])
-        by force+
-      .
-    .
-  by auto
-
-termination by (standard, auto)
-
-end
-
-
-function 
-  eval_cast :: \<open>Cast \<Rightarrow> nat \<Rightarrow> val \<Rightarrow> val\<close>
-where 
-  \<open>eval_cast _ sz (unknown[str]: _) = unknown[str]: imm\<langle>sz\<rangle>\<close> |
-  \<open>eval_cast low sz' (num \<Colon> sz) = ext (num \<Colon> sz) \<sim> hi : (sz' - 1) \<sim> lo : 0\<close> |
-  \<open>eval_cast high sz' (num \<Colon> sz) = ext (num \<Colon> sz) \<sim> hi : (sz - 1) \<sim> lo : (sz - sz')\<close> |
-  \<open>eval_cast extend sz' (num \<Colon> sz) = exts (num \<Colon> sz) \<sim> hi : (sz' - 1) \<sim> lo : 0\<close> |
-  \<open>eval_cast pad sz' (num \<Colon> sz) = ext (num \<Colon> sz) \<sim> hi : (sz' - 1) \<sim> lo : 0\<close> |
-  \<open>\<lbrakk>(\<forall>str t. v \<noteq> unknown[str]: t); (\<forall>num sz. v \<noteq> (num \<Colon> sz))\<rbrakk> \<Longrightarrow> eval_cast _ _ v = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for cast sz' v
-      apply (cases v rule: val_exhaust)
-      subgoal for num sz
-        apply (cases cast)
-        by force+
-      apply force
-      by fastforce
-    .
-  by auto
-
-termination by (standard, auto)
-
-function 
-  eval_if :: \<open>val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> val\<close>
-where 
-  \<open>eval_if (unknown[str]: _) v _ = unknown[str]: (type v)\<close> |
-  \<open>eval_if true v _ = v\<close> |
-  \<open>eval_if false _ v = v\<close> |
-  \<open>\<lbrakk>(\<forall>str t. v \<noteq> unknown[str]: t); v \<noteq> true; v \<noteq> false\<rbrakk> \<Longrightarrow> eval_if v _ _ = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for v\<^sub>1 v\<^sub>2 v\<^sub>3
-      apply (cases v\<^sub>1 rule: val_exhaust)
-      by blast+
-    .
-  by auto
-
-termination by (standard, auto)
-
-function 
-  eval_extract :: \<open>nat \<Rightarrow> nat \<Rightarrow> val \<Rightarrow> val\<close>
-where
-  \<open>eval_extract sz\<^sub>1 sz\<^sub>2 (unknown[str]: t) = unknown[str]:imm\<langle>(sz\<^sub>1 - sz\<^sub>2) + 1\<rangle>\<close> |
-  \<open>eval_extract sz\<^sub>1 sz\<^sub>2 (num \<Colon> sz) = ext (num \<Colon> sz) \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2\<close> |
-  \<open>\<lbrakk>(\<forall>str t. v \<noteq> unknown[str]: t); (\<forall>num sz. v \<noteq> (num \<Colon> sz))\<rbrakk> \<Longrightarrow> eval_extract _ _ v = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for sz\<^sub>1 sz\<^sub>2 v
-      apply (cases v rule: val_exhaust)
-      by force+
-    .
-  by auto
-termination by (standard, auto)
-
-function 
-  eval_concat :: \<open>val \<Rightarrow> val \<Rightarrow> val\<close>
-where
-  \<open>eval_concat (unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) (_ \<Colon> sz\<^sub>2) = unknown[str]:imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close> |
-  \<open>eval_concat (unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) (unknown[_]: imm\<langle>sz\<^sub>2\<rangle>) = unknown[str]:imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close> |
-  \<open>eval_concat (_ \<Colon> sz\<^sub>1) (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) = unknown[str]:imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close> |
-  \<open>eval_concat (num\<^sub>1 \<Colon> sz\<^sub>1) (num\<^sub>2 \<Colon> sz\<^sub>2) = (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close> |
-  \<open>\<lbrakk>type v\<^sub>1 = mem\<langle>_,_\<rangle> \<or> type v\<^sub>2 = mem\<langle>_,_\<rangle>\<rbrakk> \<Longrightarrow> eval_concat v\<^sub>1 v\<^sub>2 = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for v\<^sub>1 v\<^sub>2
-      apply (cases v\<^sub>1 rule: val_exhaust)
-      subgoal
-        apply (cases v\<^sub>2 rule: val_exhaust)
-        apply force
-        subgoal for _ t
-          apply (cases t)
-          apply blast
-          by (metis type.simps(3))
-        subgoal for _ w
-          apply (cases w rule: word_exhaust)
-          by (metis type.simps(1))
-        .
-      subgoal for _ t
-        apply (cases t)
-        subgoal
-          apply (cases v\<^sub>2 rule: val_exhaust)
-          apply blast
-          subgoal for _ t'
-            apply (cases t')
-            apply blast
-            apply clarsimp
-            by blast
-          by (metis type.simps(1) word_exhaust)        
-        by (metis type.simps(3))
-      by (metis type.simps(1) word_exhaust)
-    .
-  by auto
-termination by (standard, auto)
-
-lemma concat_en_be: \<open>concat_en v1 v2 be = eval_concat v1 v2\<close>
-  by (induct v1 v2 rule: eval_concat.induct, auto)
-
-lemma concat_en_el: \<open>concat_en v2 v1 el = eval_concat v1 v2\<close>
-  apply (induct v1 v2 rule: eval_concat.induct, auto)
-  using concat_en.simps(7) by blast+
-
-function 
-  eval_load :: \<open>val \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> Endian \<Rightarrow> val\<close>
-where
-  \<open>eval_load _ (unknown[str]: imm\<langle>_\<rangle>) sz\<^sub>v\<^sub>a\<^sub>l _ = unknown[str]: imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle>\<close> |
-  \<open>eval_load v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) sz\<^sub>v\<^sub>a\<^sub>l en = load v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) sz\<^sub>v\<^sub>a\<^sub>l en\<close> |
-  \<open>\<lbrakk>type v\<^sub>2 = mem\<langle>_,_\<rangle>\<rbrakk> \<Longrightarrow> eval_load _ v\<^sub>2 _ _ = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for _ v\<^sub>2
-      apply (cases v\<^sub>2 rule: val_exhaust)
-      apply blast
-      subgoal for _ t
-        apply (cases t)
-        apply blast
-        using type.simps(3) by blast
-      by (metis storage_constructor_val_def type.elims unknown_constructor_val_def val.distinct(5))
-    .
-  by auto
-termination by (standard, auto)
-
-function 
-  eval_store :: \<open>val \<Rightarrow> val \<Rightarrow> Endian \<Rightarrow> val \<Rightarrow> val\<close>
-where
-  \<open>eval_store v\<^sub>1 (unknown[str]: imm\<langle>_\<rangle>) _ _ = unknown[str]: (type v\<^sub>1)\<close> |
-  \<open>eval_store v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) en v\<^sub>3 = store v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) v\<^sub>3 en\<close> |
-  \<open>\<lbrakk>type v\<^sub>2 = mem\<langle>_,_\<rangle>\<rbrakk> \<Longrightarrow> eval_store _ v\<^sub>2 _ _ = undefined\<close>
-  subgoal for P x
-    apply (cases x, clarify)
-    subgoal for _ v\<^sub>2
-      apply (cases v\<^sub>2 rule: val_exhaust, safe)
-      apply blast
-      subgoal for _ t
-        apply (cases t, safe)
-        apply blast
-        by (metis type.simps(3))
-      apply auto
-      by (metis type.elims unknown_storage_neq word_storage_neq)
-    .
-  by auto
-termination by (standard, auto)
-
-function
-  eval_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> val\<close>
-where
-  \<open>eval_exp _ (Val v) = v\<close> |
-  \<open>eval_exp \<Delta> (name' :\<^sub>t t) = (if (name' :\<^sub>t t) \<in> dom \<Delta> then (the (\<Delta> (name' :\<^sub>t t))) else (unknown[[]]: t))\<close> | (* TODO a string method to describe ids*)
-  \<open>eval_exp \<Delta> (UnOp uop e) = eval_unop uop (eval_exp \<Delta> e)\<close> |
-  \<open>eval_exp \<Delta> (BinOp e\<^sub>1 binop e\<^sub>2) = eval_binop binop (eval_exp \<Delta> e\<^sub>1) (eval_exp \<Delta> e\<^sub>2)\<close> |
-  \<open>eval_exp \<Delta> (Cast cast sz e) = eval_cast cast sz (eval_exp \<Delta> e)\<close> |
-  \<open>eval_exp \<Delta> (Let var e\<^sub>1 e\<^sub>2) = (eval_exp (\<Delta> (var \<mapsto> (eval_exp \<Delta> e\<^sub>1))) e\<^sub>2)\<close> |
-  \<open>eval_exp \<Delta> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = eval_if (eval_exp \<Delta> e\<^sub>1) (eval_exp \<Delta> e\<^sub>2) (eval_exp \<Delta> e\<^sub>3)\<close> |
-  \<open>eval_exp \<Delta> (extract:sz\<^sub>1:sz\<^sub>2[e]) = (eval_extract sz\<^sub>1 sz\<^sub>2 (eval_exp \<Delta> e))\<close> |
-  \<open>eval_exp \<Delta> (e\<^sub>1 @ e\<^sub>2) = eval_concat (eval_exp \<Delta> e\<^sub>1) (eval_exp \<Delta> e\<^sub>2)\<close> |
-  \<open>eval_exp \<Delta> (e\<^sub>1[e\<^sub>2, en]:usz\<^sub>v\<^sub>a\<^sub>l) = eval_load (eval_exp \<Delta> e\<^sub>1) (eval_exp \<Delta> e\<^sub>2) sz\<^sub>v\<^sub>a\<^sub>l en\<close> |
-  \<open>eval_exp \<Delta> (e\<^sub>1 with [e\<^sub>2, en]:usz\<^sub>v\<^sub>a\<^sub>l \<leftarrow>  e\<^sub>3) = eval_store (eval_exp \<Delta> e\<^sub>1) (eval_exp \<Delta> e\<^sub>2) en (eval_exp \<Delta> e\<^sub>3)\<close>
-  subgoal for P x
-    apply (cases x)
-    subgoal for \<Delta> e
-      apply (rule exp_exhaust[of e])
-      apply auto
-      apply (simp add: word_constructor_exp_def)
-      apply (simp add: unknown_constructor_exp_def)
-      by (simp add: storage_constructor_exp_def)
-    .
-  unfolding var_constructor_exp_def append_exp_def by auto
-termination
-  apply standard
-  unfolding append_exp_def
-  apply (relation \<open>(\<lambda>p. size_class.size (snd p)) <*mlex*> {}\<close>)
-  apply (rule wf_mlex, blast)
-  apply (rule mlex_less, force)+
-  done
-
-declare eval_exp.simps[simp del]
-
-lemma eval_exp_true[simp]: \<open>eval_exp \<Delta> true = true\<close>
-  by (simp add: true_exp_def eval_exp.simps)
-
-lemma eval_exp_false[simp]: \<open>eval_exp \<Delta> false = false\<close>
-  by (simp add: false_exp_def eval_exp.simps)
-
-lemma eval_exp_word[simp]: \<open>eval_exp \<Delta> (num \<Colon> sz) = (num \<Colon> sz)\<close>
-  by (simp add: word_constructor_exp_def eval_exp.simps)
-
-lemma eval_exp_unknown[simp]: \<open>eval_exp \<Delta> (unknown[str]: t) = (unknown[str]: t)\<close>
-  by (simp add: unknown_constructor_exp_def eval_exp.simps)
-
-lemma eval_exp_storage[simp]: \<open>eval_exp \<Delta> (v[w \<leftarrow> v', sz]) = (v[w \<leftarrow> v', sz])\<close>
-  by (simp add: storage_constructor_exp_def eval_exp.simps)
-
-lemma eval_exp_val: \<open>v' = eval_exp \<Delta> (Val v) \<Longrightarrow> v = v'\<close>
-  unfolding eval_exp.simps by simp
-
-function
-  step_pred_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> exp \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<leadsto> _\<close> 401)
-where
-  \<open>(_ \<turnstile> (Val v) \<leadsto> _) = False\<close> |
-  \<open>\<lbrakk>\<forall>v. e \<noteq> (Val v)\<rbrakk> \<Longrightarrow> (\<Delta> \<turnstile> e \<leadsto> e') = (
-    e \<noteq> e' \<and>
-    eval_exp \<Delta> e = eval_exp \<Delta> e'
-  )\<close>
-  subgoal for P x
-    apply (cases x)
-    subgoal for \<Delta> e\<^sub>1 e\<^sub>2
-      apply (cases \<open>\<exists>v. e\<^sub>1 = (Val v)\<close>)
-      by blast+
-    .
-  by auto
-termination by (standard, auto)
-
-lemmas var_simps = Immediate_simp Val_simp_word Val_simp_storage Val_simp_unknown
-
-
-fun
-  eval_exps_pred_exp :: \<open>variables \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> bool\<close> (\<open>_ \<turnstile> _ \<leadsto>* _\<close>)
-where
-  \<open>(\<Delta> \<turnstile> e \<leadsto>* v) = (v = eval_exp \<Delta> e)\<close>
+interpretation concat_bv: not_exp \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
+  unfolding bv_concat.simps by (standard, auto)
 
 end

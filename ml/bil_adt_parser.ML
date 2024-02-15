@@ -1,173 +1,3 @@
-
-structure BILADTParser : BIL_PARSER =
-struct
-
-(**
- parse_adt_cons [TODO: separate into ADT parser and then parse each]
- ----------------------
- Parses the given substring as an ADT constructor
-
- example - parse_adt_cons "Example(1, Example(2))" \<Rightarrow> ("Example", ["1", "Example(2)"])
- **)
-val parse_adt_cons = splitlr is_lbracket is_rbracket 
-  ##> fst
-  ##> remove_outer 
-  ##> Substring.string 
-  ##> splitXX
-
-(**
- parse_adt_cons
- ----------------------
- Parses the given substring as an ADT constructor
-
- example - parse_adt_cons "Example(1, Example(2))" \<Rightarrow> ("Example", ["1", "Example(2)"])
- **)
-fun parse_typ str =
-  let
-    val (name, args) = parse_adt_cons str
-    (*val _ = tracing ("Parsing typ '" ^ Substring.string str ^ "'")*)
-  in
-    if Substring.string name = "Imm" then     
-      Imm (intfromString_forced (Substring.string (List.nth (args, 0))))
-    else if Substring.string name = "Mem" then
-      Mem (intfromString_forced (Substring.string (List.nth (args, 0))), intfromString_forced (Substring.string (List.nth (args, 1))))
-    else raise Fail ("Parser Error. Encountered invalid string '" ^ Substring.string str ^ "' when parsing type. Should be 'Imm' or 'Mem'")
-  end
-
-fun parse_var str: var =
-  let
-    val (name, args) = parse_adt_cons str
-    (*val _ = tracing ("Parsing var '" ^ Substring.string str ^ "'")*)
-  in
-    if Substring.string name = "Var" then
-      (Substring.string (remove_outer (List.nth (args, 0))), parse_typ (List.nth (args, 1)))
-    else raise Fail ("Parser Error. Encountered invalid string '" ^ Substring.string str ^ "' when parsing var, should be 'Var'")
-  end
-
-fun parse_en str =
-  if Substring.string str = "LittleEndian()" then EL
-  else if Substring.string str = "BigEndian()" then BE
-  else raise Fail ("Parser Error. Encountered invalid string '" ^ Substring.string str ^ "' when parsing endian, should be 'Little/BigEndian()'")
-
-fun parse_exp str =
-  let
-    val (name, args) = parse_adt_cons str
-    (*val _ = tracing ("Parsing exp '" ^ Substring.string str ^ "'")*)
-  in
-    if Substring.string name = "Store" then
-      Store (parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)), 
-             parse_exp (List.nth (args, 2)), parse_en (List.nth (args, 3)), 
-             intfromString_forced (Substring.string (List.nth (args, 4))))
-    else if Substring.string name = "Load" then
-      Load (parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)), 
-            parse_en (List.nth (args, 2)), 
-            intfromString_forced (Substring.string (List.nth (args, 3))))
-
-    else if Substring.string name = "Var" then
-      Var (parse_var str)
-
-    else if Substring.string name = "Let" then
-      Let (parse_var (List.nth (args, 0)), parse_exp (List.nth (args, 1)), parse_exp (List.nth (args, 2)))
-
-    else if Substring.string name = "Int" then
-      Int ((intfromString_forced (Substring.string (List.nth (args, 0)))), (intfromString_forced (Substring.string (List.nth (args, 1)))))
-
-    else if Substring.string name = "Unknown" then
-      Unknown (Substring.string (remove_outer (List.nth (args, 0))), parse_typ (List.nth (args, 1)))
-
-    else if Substring.string name = "NOT" then
-      UnOp (NOT, parse_exp (List.nth (args, 0)))
-    else if Substring.string name = "NEG" then
-      UnOp (NEG, parse_exp (List.nth (args, 0)))
-
-    else if Substring.string name = "SLE" then
-      BinOp (SLE, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "SLT" then
-      BinOp (SLT, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "MINUS" then
-      BinOp (MINUS, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "TIMES" then
-      BinOp (TIMES, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "DIVIDE" then
-      BinOp (DIVIDE, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "XOR" then
-      BinOp (XOR, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "OR" then
-      BinOp (OR, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "AND" then
-      BinOp (AND, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "LT" then
-      BinOp (LT, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "LE" then
-      BinOp (LE, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "NEQ" then
-      BinOp (NEQ, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "PLUS" then
-      BinOp (PLUS, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "EQ" then
-      BinOp (EQ, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "RSHIFT" then
-      BinOp (RSHIFT, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "ARSHIFT" then
-      BinOp (ARSHIFT, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "LSHIFT" then
-      BinOp (LSHIFT, parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "LOW" then
-      Cast (LOW, intfromString_forced (Substring.string (List.nth (args, 0))), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "HIGH" then
-      Cast (HIGH, intfromString_forced (Substring.string (List.nth (args, 0))), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "UNSIGNED" then
-      Cast (UNSIGNED, intfromString_forced (Substring.string (List.nth (args, 0))), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "SIGNED" then
-      Cast (SIGNED, intfromString_forced (Substring.string (List.nth (args, 0))), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "Ite" then
-      Ite (parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)), parse_exp (List.nth (args, 2)))
-    else if Substring.string name = "Concat" then
-      Concat (parse_exp (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "Extract" then
-      Extract (intfromString_forced (Substring.string (List.nth (args, 0))), 
-               intfromString_forced (Substring.string (List.nth (args, 1))), 
-               parse_exp (List.nth (args, 2)))
-
-    else raise Fail ("Parser Error. Encountered invalid string '" ^ Substring.string name ^ "' when parsing exp.")
-  end
-
-(**
- parse_stmt
- ----------------------
- Parse a BIL statement read from a BIL listing. 
- arg{0} - the statement (as a string) to parse
- ret - a parsed BIL statement (stmt)
- **)
-fun parse_stmt str = 
-  let
-    val (name, args) = parse_adt_cons str
-    (*val _ = tracing ("Parsing stmt '" ^ Substring.string str ^ "'")*)
-  in
-    if Substring.string name = "Move" then
-      Move (parse_var (List.nth (args, 0)), parse_exp (List.nth (args, 1)))
-    else if Substring.string name = "Jmp" then
-      Jmp (parse_exp (List.nth (args, 0)))
-    else if Substring.string name = "CpuExn" then
-      CpuExn (intfromString_forced (Substring.string (List.nth (args, 0))))
-    else if Substring.string name = "If" then
-      If (parse_exp (List.nth (args, 0)), parse_bil (List.nth (args, 1)), parse_bil (List.nth (args, 2)))
-    else if Substring.string name = "Special" then
-      Special (Substring.string (remove_outer (List.nth (args, 0))))
-    else raise Fail ("Parser Error. Encountered invalid string '" ^ Substring.string name ^ "' when parsing stmt.")
-  end
-(**
- parse_bil
- ----------------------
- Parses a list of BIL statements read from a BIL listing, terminates when encountering '}'. 
- arg{0} - the lines of statements to parse
- ret - a list of the parsed BIL statements
- **)
-and parse_bil str = str |> parse_adt_cons |> snd |> map parse_stmt
-
-end;
-
-
 (**
  parse_bilput_for
  ----------------------
@@ -182,7 +12,7 @@ fun parse_bilput_for tid [] _ = raise Fail ("Parser Error. Expected '" ^ Int.toS
   | parse_bilput_for tid (ln::lns) cnt =
     let 
       val (tid_str,_)   = Substring.splitl is_colon (trim ln)
-      (*val _ = tracing ("Parsing block with tid: " ^ Int.toString tid ^ " line: " ^ Substring.string ln)*)
+      val _ = tracing ("Parsing block with tid: " ^ Int.toString tid ^ " line: " ^ Substring.string ln)
     in
     case intFromHexString tid_str of
          SOME tid' =>
@@ -190,7 +20,7 @@ fun parse_bilput_for tid [] _ = raise Fail ("Parser Error. Expected '" ^ Int.toS
              parse_bilput_for tid lns (cnt + 1)
            else
              raise Fail ("Parser Error. Expected tid: '" ^ Int.fmt StringCvt.HEX tid ^ "' but found tid: '" ^ Int.fmt StringCvt.HEX tid')
-       | NONE => BILADTParser.parse_bil ln
+       | NONE => or_raise (AstParser.parse_ast (Substring.string ln))
     end
 
 fun parse_header ln =
@@ -236,7 +66,7 @@ fun parse_bil_listing_blk [] = raise Fail("Parser Error: Encountered empty BIL b
  **)
 val parse_bil_listing_blks = List.map parse_bil_listing_blk
 
-datatype insn = Insn of LargeInt.int * LargeInt.int * bil
+datatype insn = Insn of LargeInt.int * LargeInt.int * AstParser.stmt list
 
 fun fix_insn_size [] = []
   | fix_insn_size [(tid, bil)] = [Insn (tid, 1, bil)]
@@ -261,13 +91,13 @@ val parse_bil_listing = group_insns
   ##> fix_insn_size
 
 fun mk_prog addr = 
-  HOLogic.mk_prod (@{term "\<Delta>::variables"}, HOLogic.mk_prod (IsaBIL.mk_word addr 64, @{term "mem::var"}))
+  HOLogic.mk_prod (@{term "\<Delta>::variables"}, HOLogic.mk_prod (IsaBIL.mk_word_of_int addr 64, @{term "mem::var"}))
 
 
 fun mk_symbol_table lst =
   let 
     val term_lst = lst
-      |> List.map (fn (label, tid) => (HOLogic.mk_string label, IsaBIL.mk_word tid 64)) 
+      |> List.map (fn (label, tid) => (HOLogic.mk_string label, IsaBIL.mk_word_of_int tid 64)) 
       |> List.map HOLogic.mk_prod 
       |> HOLogic.mk_list @{typ "(string \<times> word)"}
   in
@@ -305,9 +135,9 @@ fun bil_parser_lines localename assembly lthy =
         mk_assume asm_name (HOLogic.Trueprop $ decode_term, [])
       end
 
-    fun mk_prog_addrs insns = 
+    fun mk_addr_set insns = 
       let 
-        val addrs = insns |> List.map (fn (Insn (w,_,_)) => IsaBIL.mk_word w 64)
+        val addrs = insns |> List.map (fn (Insn (w,_,_)) => IsaBIL.mk_word_of_int w 64)
       in
         HOLogic.mk_set (@{typ "word"}) addrs
       end
@@ -336,8 +166,8 @@ fun bil_parser_lines localename assembly lthy =
 
     val loc_elems = [fixes_decode, Element.Assumes (List.map mk_decode_equality_assume insns)]
     val (_,lthy) = Expression.add_locale loc_bindings loc_bindings [] ([],[]) loc_elems thy
-    val (_,lthy) = (make_const_def (Binding.name "symbol_table", symbol_table)) lthy
-    val (_,lthy) = (make_const_def (Binding.name "prog_addrs", mk_prog_addrs insns)) lthy
+    val (_,lthy) = (make_const_def (Binding.name "sym_table", symbol_table)) lthy
+    val (_,lthy) = (make_const_def (Binding.name "addr_set", mk_addr_set insns)) lthy
 
     val _ = tracing ("Added locale: " ^ localename ^ " with a decode predicate for " ^ Int.toString (length assembly) ^ " instructions. To get started, execute:\n\ncontext " ^ localename ^ "\nbegin\n   find_theorems decode\nend\n")
   in

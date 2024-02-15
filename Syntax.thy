@@ -33,6 +33,22 @@ class bil_ops = plus + minus + modulo + times + divide + uminus + bool_syntax +
       and le :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>le\<close> 65)
       and slt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>slt\<close> 65)
       and sle :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>sle\<close> 65)
+  assumes inject[simp]: 
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>1 + e\<^sub>2 = e\<^sub>3 + e\<^sub>4 \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close> 
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>1 - e\<^sub>2 = e\<^sub>3 - e\<^sub>4 \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close> 
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>1 mod e\<^sub>2 = e\<^sub>3 mod e\<^sub>4 \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close> 
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 >> e\<^sub>2 = e\<^sub>3 >> e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>   
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 << e\<^sub>2 = e\<^sub>3 << e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 >>> e\<^sub>2 = e\<^sub>3 >>> e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close> 
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 && e\<^sub>2 = e\<^sub>3 && e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 || e\<^sub>2 = e\<^sub>3 || e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>   
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 xor e\<^sub>2 = e\<^sub>3 xor e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 sdiv e\<^sub>2 = e\<^sub>3 sdiv e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>   
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 smod e\<^sub>2 = e\<^sub>3 smod e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 lt e\<^sub>2 = e\<^sub>3 lt e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>   
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 le e\<^sub>2 = e\<^sub>3 le e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 slt e\<^sub>2 = e\<^sub>3 slt e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>   
+      \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. (e\<^sub>1 sle e\<^sub>2 = e\<^sub>3 sle e\<^sub>4) \<longleftrightarrow> (e\<^sub>1 = e\<^sub>3 \<and> e\<^sub>2 = e\<^sub>4)\<close>
 
 abbreviation (input)
   ge  (infix \<open>ge\<close> 50)

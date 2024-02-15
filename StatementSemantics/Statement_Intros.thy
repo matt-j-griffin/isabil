@@ -1,10 +1,14 @@
 theory Statement_Intros
   imports Statement_Syntax
-          "../ExpressionSemantics/Expression_Intros"
+          "../ExpressionSemantics/Expressions_Intros"
 begin
 
-lemma step_bil_emptyI[intro!]: \<open>\<Delta>,w \<turnstile> ([]::bil) \<leadsto> \<Delta>,w\<close>
-  unfolding step_syntax_list_def by (rule Empty)
+subsection \<open>Sequences\<close>
+
+lemmas step_bil_emptyI[simp] = Empty[unfolded step_syntax_list_def[symmetric]]
+
+lemma step_bil_empty_eqI[intro!]: assumes \<open>\<Delta>' = \<Delta>\<close> and \<open>w' = w\<close> shows \<open>\<Delta>,w \<turnstile> ([]::bil) \<leadsto> \<Delta>',w'\<close>
+  unfolding assms by (rule step_bil_emptyI)
 
 lemma step_bil_seqI[intro]:
   fixes s :: stmt
@@ -18,6 +22,9 @@ lemma step_bil_singleI[intro]:
     shows \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> [s] \<leadsto> \<Delta>\<^sub>2,w\<^sub>2\<close>
   using assms apply (rule step_bil_seqI)
   by (rule step_bil_emptyI)
+
+
+subsection \<open>Statements\<close>
 
 lemma step_stmt_whileI[intro]:
   assumes \<open>\<Delta>\<^sub>1 \<turnstile> e \<leadsto>* true\<close> and \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> seq \<leadsto> \<Delta>\<^sub>2,w\<^sub>2\<close>
@@ -42,27 +49,170 @@ lemma step_stmt_if_falseI:
     shows \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>\<^sub>2,w\<^sub>2\<close>
   using assms unfolding step_syntax_stmt_def step_syntax_list_def by (rule IfFalse)
 
-lemma step_stmt_jmpI:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* (num \<Colon> sz)\<close>
-    shows \<open>\<Delta>,w \<turnstile> jmp e \<leadsto> \<Delta>,(num \<Colon> sz)\<close>
-  using assms unfolding step_syntax_stmt_def step_syntax_list_def by (rule Jmp)
-
-lemma step_stmt_moveI:
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* v\<close>
-    shows \<open>\<Delta>,w \<turnstile> (var := e) \<leadsto> (\<Delta>(var \<mapsto> v)),w\<close>
-  using assms unfolding step_syntax_stmt_def step_syntax_list_def by (rule Move)
-
-lemma step_stmt_cpuexnI: "\<Delta>,w \<turnstile> (cpuexn code) \<leadsto> \<Delta>,w"
-   unfolding step_syntax_stmt_def step_syntax_list_def by (rule CpuExn)
-
-lemma step_stmt_specialI: "\<Delta>,w \<turnstile> (special[str]) \<leadsto> \<Delta>,w"
-   unfolding step_syntax_stmt_def step_syntax_list_def by (rule Special)
+lemma step_stmt_if_else_trueI:
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto>* true\<close>
+    shows \<open>\<Delta>,w \<turnstile> (If e [] seq\<^sub>2) \<leadsto> \<Delta>, w\<close>
+  using assms apply (rule step_stmt_if_trueI)
+  by (rule step_bil_emptyI)
 
 lemma step_stmt_if_then_falseI:
   assumes \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>
     shows \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>, w\<close>
   using assms apply (rule step_stmt_if_falseI)
   by (rule step_bil_emptyI)
+
+
+lemma step_stmt_if_emptyI: \<open>\<Delta>,w \<turnstile> (If e [] []) \<leadsto> \<Delta>,w\<close> (* TODO *)
+  apply (cases \<open>\<Delta> \<turnstile> e \<leadsto>* true\<close>)
+  subgoal by (intro step_stmt_if_else_trueI)
+  apply (cases \<open>\<Delta> \<turnstile> e \<leadsto>* false\<close>)
+  subgoal by (intro step_stmt_if_then_falseI)
+  subgoal oops
+
+
+lemmas step_stmt_jmpI = Jmp[unfolded step_syntax_stmt_def[symmetric]]
+interpretation step_stmt_jmpI: exp_val_word_sz_is_word_syntax \<open>\<lambda>e' _ w' _. (\<And>\<Delta> e w. (\<Delta> \<turnstile> e \<leadsto>* e') \<Longrightarrow> (\<Delta>,w \<turnstile> jmp e \<leadsto> \<Delta>,w'))\<close>
+  by (standard, rule step_stmt_jmpI)
+
+
+lemmas step_stmt_moveI = Move[unfolded step_syntax_stmt_def[symmetric]]
+interpretation step_stmt_moveI: exp_val_syntax \<open>\<lambda>e' v. (\<And>\<Delta> e w var. \<Delta> \<turnstile> e \<leadsto>* e' \<Longrightarrow> \<Delta>,w \<turnstile> (var := e) \<leadsto> (\<Delta>(var \<mapsto> v)),w)\<close>
+  by (standard, rule step_stmt_moveI)
+
+lemmas step_stmt_cpuexnI = CpuExn[unfolded step_syntax_stmt_def[symmetric]]
+lemmas step_stmt_specialI = Special[unfolded step_syntax_stmt_def[symmetric]]
+
+
+
+
+
+
+(* TODO 
+
+lemma stmt_ifI:
+  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> ((\<Delta> \<turnstile> e \<leadsto>* false) \<and> (\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w'))\<close>
+    shows \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
+  using assms apply (elim disjE conjE)
+  subgoal by (rule step_stmt_if_trueI)
+  subgoal by (rule step_stmt_if_falseI)
+  .
+
+lemma stmt_if_thenI:
+  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> (\<Delta> \<turnstile> e \<leadsto>* false \<and> \<Delta>' = \<Delta> \<and> w' = w)\<close>
+    shows \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>',w'\<close>
+  using assms apply (elim disjE conjE)
+  subgoal by (rule IF_TRUE)
+  subgoal by (clarify, rule IFTHEN_FALSE)
+  .
+*)
+(* TODO *)
+(*
+method solve_stmtI = (
+  (intro step_stmt_cpuexnI step_stmt_specialI) |
+
+  (rule step_stmt_moveI.bv_plus, solve_expsI) |
+  (rule step_stmt_moveI.storage, solve_expsI) |
+  (rule step_stmt_moveI.unknown, solve_expsI) |
+  (rule step_stmt_moveI.succ, solve_expsI) |
+  (rule step_stmt_moveI.succ2, solve_expsI) |
+  (rule step_stmt_moveI.succ3, solve_expsI) |
+  (rule step_stmt_moveI.succ4, solve_expsI) |
+  (rule step_stmt_moveI.succ5, solve_expsI) |
+  (rule step_stmt_moveI.succ6, solve_expsI) |
+  (rule step_stmt_moveI.succ7, solve_expsI) |
+  (rule step_stmt_moveI.xtract2, solve_expsI) |
+  (rule step_stmt_moveI.xtract, solve_expsI) |
+  (rule step_stmt_moveI.false, solve_expsI) |
+  (rule step_stmt_moveI.true, solve_expsI) |
+  (rule step_stmt_moveI.word, solve_expsI) |
+  (rule step_stmt_moveI, (solve_expsI | succeed)) |
+
+  (rule step_stmt_jmpI, (solve_expsI | succeed)) |
+
+  \<comment> \<open>More complicated - requires a choice\<close>
+  (rule step_stmt_if_then_falseI, solve_expsI) |
+  (rule step_stmt_if_else_trueI, solve_expsI) |
+
+  (rule step_stmt_if_trueI, solve_expsI, (solve_stmtI | succeed)) |
+  (rule step_stmt_if_falseI, solve_expsI, (solve_stmtI | succeed)) |
+
+  (rule step_stmt_while_falseI, solve_expsI) |
+
+  \<comment> \<open>Even more complicated - need mutually recursive solve method\<close>
+  (rule step_stmt_whileI, solve_expsI, (solve_stmtI | succeed))
+)
+
+subsection \<open>Eisbach Sequences\<close>
+
+method solve_bilI = (
+  rule step_bil_emptyI | 
+  (rule step_bil_singleI, (solve_stmtI | succeed)) | 
+  (rule step_bil_seqI, (solve_stmtI | succeed), (solve_bilI | succeed))
+)
+*)
+
+method solve_bilI = (
+  (intro step_stmt_cpuexnI step_stmt_specialI) |
+
+  \<comment> \<open>Specific states may be irrecoverable so fail these\<close>
+  (rule step_stmt_moveI.bv_leq, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.bv_plus, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.storage, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.unknown, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ2, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ3, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ4, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ5, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ6, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.succ7, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.xtract2, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.xtract, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.false, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.true, (solve_expsI; fail)) |
+  (rule step_stmt_moveI.word, (solve_expsI; fail)) |
+  (rule step_stmt_moveI, (solve_expsI | succeed)) |
+
+  \<comment> \<open>Specific states may be irrecoverable so fail these\<close>
+  (rule step_stmt_jmpI.bv_leq, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.bv_plus, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ2, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ3, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ4, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ5, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ6, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.succ7, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.xtract2, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.xtract, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.false, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.true, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI.word, (solve_expsI; fail)) |
+  (rule step_stmt_jmpI, (solve_expsI | succeed)) |
+
+  \<comment> \<open>More complicated - requires a choice\<close>
+  (rule step_stmt_if_then_falseI, solve_expsI) |
+  (rule step_stmt_if_else_trueI, solve_expsI) |
+
+  (rule step_stmt_if_trueI, solve_expsI, (solve_bilI | succeed)) |
+  (rule step_stmt_if_falseI, solve_expsI, (solve_bilI | succeed)) |
+
+  (rule step_stmt_while_falseI, solve_expsI) |
+
+  \<comment> \<open>Even more complicated - need mutually recursive solve method\<close>
+  (rule step_stmt_whileI, solve_expsI, (solve_bilI | succeed)) |
+
+  rule step_bil_emptyI | 
+  (rule step_bil_empty_eqI; (simp; fail)) |
+
+  (rule step_bil_singleI, (solve_bilI | succeed)) | 
+  (rule step_bil_seqI, (solve_bilI | succeed), (solve_bilI | succeed))
+
+)
+
+
+
+
 
 (* Old names  *)
 lemmas SEQ_NIL = step_bil_emptyI

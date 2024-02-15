@@ -16,21 +16,6 @@ no_notation List.append (infixr "@" 65)
 declare eval_exps_pred_exp.simps[simp del]
 declare step_pred_exp.simps[simp del]
 
-lemma stmt_ifI:
-  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> ((\<Delta> \<turnstile> e \<leadsto>* false) \<and> (\<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w'))\<close>
-    shows \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
-  using assms apply (elim disjE conjE)
-  subgoal by (rule IF_TRUE)
-  subgoal by (rule IF_FALSE)
-  .
-
-lemma stmt_if_thenI:
-  assumes \<open>((\<Delta> \<turnstile> e \<leadsto>* true) \<and> (\<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w')) \<or> (\<Delta> \<turnstile> e \<leadsto>* false \<and> \<Delta>' = \<Delta> \<and> w' = w)\<close>
-    shows \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>',w'\<close>
-  using assms apply (elim disjE conjE)
-  subgoal by (rule IF_TRUE)
-  subgoal by (clarify, rule IFTHEN_FALSE)
-  .
 
 
 (* Can't use match conclusion as it will not instantiate schematic variables *)
