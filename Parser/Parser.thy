@@ -1,32 +1,8 @@
-theory ADT_Lexer
-  imports Main "../OperationalSemantics/Program_Model" Result AST_Prelims
-    (*"HOL-Library.Code_Abstract_Char"*) "HOL-Library.Code_Target_Numeral" 
+theory Parser   
+  imports "../OperationalSemantics/Program_Model" Lexer
+
 begin
 
-abbreviation \<open>isnt_lbracket x \<equiv> (x \<noteq> CHR ''('')\<close>
-
-function
-  lexer :: \<open>string \<Rightarrow> AST\<close>
-where
-  \<open>lexer str = (
-    let 
-      tstr = trim str;
-      name = takeWhile isnt_lbracket tstr;
-      bargstr = dropWhile isnt_lbracket tstr;
-      argstr = butlast (tl bargstr)
-    in
-      Node name (map lexer (split argstr))
-  )\<close>
-  by auto
-termination apply standard
-  apply (rule wf_mlex[of \<open>{}\<close> length])
-  apply (auto simp del: split.simps)
-  apply (rule mlex_less)
-  subgoal for str xd
-    apply (cases str, simp)
-    apply (drule length_split, auto)
-    by (smt (verit, ccfv_SIG) One_nat_def diff_Suc_eq_diff_pred diff_is_0_eq' diff_less leD leI le_trans length_append_singleton length_dropWhile_le length_rev linordered_nonzero_semiring_class.zero_le_one zero_less_Suc)
-  .
 
 fun
   parse_nat :: \<open>AST \<Rightarrow> nat parser_result\<close>
@@ -300,5 +276,18 @@ where
 termination by lexicographic_order
 
 definition \<open>parse_string = (parse_bil o lexer)\<close>
+(*
+record adt_trans = 
+  addr :: word
+  size :: word
+  code :: bil
+
+consts parse_adt_trans :: \<open>string \<Rightarrow> adt_trans\<close>
+
+lemma \<open>
+parse_adt_trans ''10450: auipc t3, 2 
+(Move(Var("X28",Imm(64)),Int(66642,64)))'' = x\<close>
+*)
+
 
 end

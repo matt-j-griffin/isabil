@@ -1,7 +1,8 @@
-theory ADT_Lexer_Code
-  imports ADT_Lexer
+theory Parser_Code
+  imports Parser 
+    Lexer_Code 
+    "HOL-Library.Code_Target_Numeral"
 begin
-
 text \<open>Code Generation for ADT_Lexer\<close>
 
 definition \<open>parse_ast str = parse_string (String.explode str)\<close> 
@@ -326,6 +327,5 @@ code_reflect AstParser
         and result = Value | Error
   functions parse_ast integer_of_int integer_of_nat nat_of_integer int_of_integer integer_of_char
 
-ML_file \<open>isabil2.ml\<close>
 
 end
