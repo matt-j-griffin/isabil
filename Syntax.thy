@@ -1,5 +1,5 @@
 theory Syntax
-  imports Prelims
+  imports "Prelims/Prelims"
 begin
 
 class bool_syntax =

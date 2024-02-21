@@ -71,7 +71,7 @@ lemma step_stmt_if_emptyI: \<open>\<Delta>,w \<turnstile> (If e [] []) \<leadsto
 
 
 lemmas step_stmt_jmpI = Jmp[unfolded step_syntax_stmt_def[symmetric]]
-interpretation step_stmt_jmpI: exp_val_word_sz_is_word_syntax \<open>\<lambda>e' _ w' _. (\<And>\<Delta> e w. (\<Delta> \<turnstile> e \<leadsto>* e') \<Longrightarrow> (\<Delta>,w \<turnstile> jmp e \<leadsto> \<Delta>,w'))\<close>
+interpretation step_stmt_jmpI: exp_val_word_sz_syntax \<open>\<lambda>e' _ w' _. (\<And>\<Delta> e w. (\<Delta> \<turnstile> e \<leadsto>* e') \<Longrightarrow> (\<Delta>,w \<turnstile> jmp e \<leadsto> \<Delta>,w'))\<close>
   by (standard, rule step_stmt_jmpI)
 
 

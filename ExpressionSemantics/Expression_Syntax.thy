@@ -29,9 +29,12 @@ lemma type_word_not_mem[simp]: \<open>type (num \<Colon> sz) \<noteq> mem\<langl
 
 end
 
-method solve_typeI = 
-    (assumption | intro type_wordI type_storageI type_unknownI type_trueI type_falseI type_succ_recI 
-           type_storage_addrI)
+method solve_typeI = (
+  assumption | 
+  rule type_wordI | rule type_storageI | rule type_unknownI | rule type_trueI | rule type_falseI |
+  (rule type_succ_recI, solve_typeI) |
+  (rule type_storage_addrI, solve_typeI) 
+) 
 
 context word_constructor
 begin

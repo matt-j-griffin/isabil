@@ -42,12 +42,11 @@ subsubsection \<open>SD\<close>
 lemma step_sd:
   assumes decode_sd: \<open>\<And>\<Delta> var. (\<Delta>, (address \<Colon> 64), var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l \<lparr> addr = (address \<Colon> 64), size = (2 \<Colon> 64), code = [mem := (mem with [(rs1 :\<^sub>t imm\<langle>64\<rangle>) + (imm \<Colon> 64), el]:u64 \<leftarrow> (rs2 :\<^sub>t imm\<langle>64\<rangle>))]\<rparr>\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), mem_addr \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), val \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>(mem, mem') \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>type mem' = mem\<langle>64, 8\<rangle>\<close>
-    shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage64 mem' ((mem_addr + imm) mod 2 ^ 64) 64 val), (address \<Colon> 64) +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, (address \<Colon> 64), var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage_el64 mem' ((mem_addr \<Colon> 64) +\<^sub>b\<^sub>v (imm \<Colon> 64)) (val \<Colon> 64)), (address \<Colon> 64) +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
   apply (insert assms(2-))
   apply (solve_progI decoder: decode_sd)
-  apply (rule step_exps_store_memI.bv_plus.word)
-  apply solve_expI
-  oops (* storage 64 *)
+  unfolding Val_simp_storage
+  by (rule step_exps_store_word64_elI.val.bv_plus.word, standard, solve_typeI)
 
 subsection \<open>AUIPC\<close>
 
@@ -195,26 +194,19 @@ lemma step_bge_false:
 
 subsection \<open>RISC V auto solver\<close>
 
-method solve_risc_v uses decoder = (
+method solve_riscvI uses decoder = (
     (rule step_ld, rule decoder, (solve_in_var, solve_in_var)?)
   | (rule step_beqz, rule decoder, solve_in_var?)
   | (rule step_lw, rule decoder, (solve_in_var, solve_in_var)?)
   | (rule step_mv, rule decoder, solve_in_var?)
   | (rule step_jal, rule decoder)
   | (rule step_auipc, rule decoder) \<comment> \<open>step_li\<close>
-(*  | (rule step_sd, rule decoder, (solve_in_var, solve_in_var, solve_in_var)?)*)
+  | (rule step_sd, rule decoder, (solve_in_var, solve_in_var, solve_in_var)?)
   | (rule step_addi, rule decoder, solve_in_var?)
   | (rule step_j, rule decoder)
   | (rule step_sextw, rule decoder)
-
-  \<comment> \<open>If all else fails, use the conventional solver\<close>    
-  | solve_progI decoder: decoder
 )
 
 end
-
-
-
-
 
 end

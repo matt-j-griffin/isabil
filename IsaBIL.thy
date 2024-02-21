@@ -1,6 +1,6 @@
 theory IsaBIL
   imports Operational_Semantics
-          BIL_Parse
+          "Parser/Parse"
 begin
 
 

@@ -93,6 +93,23 @@ lemma concat_take_drop_bit_nat_eq_self:
 lemma concat_bit_drop_bit: \<open>concat_bit a x (concat_bit b (drop_bit a x) z) = concat_bit (a + b) x z\<close>
   using add.commute bits_ident concat_bit_assoc concat_bit_eq by (metis )
 
+lemma concat_bit_take_bit_drop_bit: \<open>concat_bit n (take_bit n x) (take_bit m (drop_bit n x)) = take_bit (m + n) x\<close>
+  unfolding concat_bit_eq 
+  unfolding take_bit_take_bit min.idem
+  unfolding push_bit_take_bit add.commute[of \<open>take_bit n _\<close>]
+  apply (subst take_bit_plus_push_bit_drop_bit[of m n \<open>x\<close>])
+  unfolding add.commute[of m] ..
+
+lemma nat_concat_bit_take_bit_drop_bit: \<open>nat (concat_bit n (int (take_bit n x)) (int (take_bit m (drop_bit n x)))) = take_bit (m + n) x\<close>
+  unfolding concat_bit_eq take_bit_of_nat push_bit_of_nat nat_int_add concat_bit_take_bit_drop_bit 
+            take_bit_take_bit min.idem push_bit_take_bit add.commute[of \<open>take_bit n _\<close>]
+  apply (subst take_bit_plus_push_bit_drop_bit[of m n \<open>x\<close>])
+  unfolding add.commute[of m] ..
+
+lemmas nat_concat_bit_take_bit_drop_bit2 = 
+  nat_concat_bit_take_bit_drop_bit[of _ \<open>drop_bit _ _\<close> _, unfolded drop_bit_drop_bit]
+
+
 lemma notin_unionI:
   assumes \<open>x \<notin> A\<close> and \<open>x \<notin> B\<close>
     shows \<open>x \<notin> A \<union> B\<close>

@@ -333,7 +333,7 @@ declare bv_sle.simps[simp del]
 function
   xtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
 where
-  \<open>(ext (nat\<^sub>1 \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
+  \<open>(ext (nat\<^sub>1 \<Colon> _) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> (ext w \<sim> hi : _ \<sim> lo : _) = undefined\<close>
   subgoal for P x
     apply (cases x)

@@ -260,7 +260,7 @@ lemma step_exp_not_val[simp]: \<open>\<not>(\<Delta> \<turnstile> (Val v) \<lead
   using step_exp_val_no_step_intermediary by blast
 
 
-interpretation step_exp_not_val: exp_syntax \<open>\<lambda>e. (\<And>\<Delta> e'. \<not>(\<Delta> \<turnstile> e \<leadsto> e'))\<close>
+interpretation step_exp_not_val: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e'. \<not>(\<Delta> \<turnstile> e \<leadsto> e'))\<close>
   by (standard, rule step_exp_not_val)
 
 (* TODO *)
