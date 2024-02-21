@@ -20,10 +20,10 @@ lemma [code]: \<open>parse_en (Node en ast) = (
 
 lemma [code]: \<open>parse_typ (Node typ ast) = (
   if typ = ''Imm'' then
-    if (length ast = 1) then map_result_value Imm (parse_nat (ast ! 0))
+    if (length ast = 1) then map_result_value Imm (parse_nat_dec (ast ! 0))
     else Error ''Expecting 1 argument for type "Imm", got many.''
   else if typ = ''Mem'' then
-    if (length ast = 2) then  map_result_value2 Mem (parse_nat (ast ! 0)) (parse_nat (ast ! 1))
+    if (length ast = 2) then  map_result_value2 Mem (parse_nat_dec (ast ! 0)) (parse_nat_dec (ast ! 1))
     else Error ''Expecting 2 arguments for type "Mem", got many.''
   else Error (List.append ''Expecting either Imm or Mem but received: '' typ)
   )\<close>
@@ -63,10 +63,10 @@ where
 lemma [code]: \<open>parse_exp (Node e ast) = (
   if e = ''Var'' then map_result_value EVar (parse_var (Node ''Var'' ast))
   else if e = ''Store'' then
-    if (length ast = 5) then map_result_value5 Store (parse_exp (ast ! 0)) (parse_exp (ast ! 1)) (parse_en (ast ! 3)) (parse_nat (ast ! 4)) (parse_exp (ast ! 2))
+    if (length ast = 5) then map_result_value5 Store (parse_exp (ast ! 0)) (parse_exp (ast ! 1)) (parse_en (ast ! 3)) (parse_nat_dec (ast ! 4)) (parse_exp (ast ! 2))
     else Error ''Expecting 5 arguments for type "Store", got many.''
   else if e = ''Load'' then
-    if (length ast = 4) then map_result_value4 Load (parse_exp (ast ! 0)) (parse_exp (ast ! 1)) (parse_en (ast ! 2)) (parse_nat (ast ! 3))
+    if (length ast = 4) then map_result_value4 Load (parse_exp (ast ! 0)) (parse_exp (ast ! 1)) (parse_en (ast ! 2)) (parse_nat_dec (ast ! 3))
     else Error ''Expecting 4 arguments for type "Load", got many.''
   else if e = ''Let'' then
     if (length ast = 3) then map_result_value3 Let (parse_var (ast ! 0)) (parse_exp (ast ! 1)) (parse_exp (ast ! 2))
@@ -75,10 +75,10 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
     if (length ast = 3) then map_result_value3 Ite (parse_exp (ast ! 0)) (parse_exp (ast ! 1)) (parse_exp (ast ! 2))
     else Error ''Expecting 3 arguments for type "Ite", got many.''
   else if e = ''Extract'' then
-    if (length ast = 3) then map_result_value3 Extract (parse_nat (ast ! 0)) (parse_nat (ast ! 1)) (parse_exp (ast ! 2))
+    if (length ast = 3) then map_result_value3 Extract (parse_nat_dec (ast ! 0)) (parse_nat_dec (ast ! 1)) (parse_exp (ast ! 2))
     else Error ''Expecting 3 arguments for type "Extract", got many.''
   else if e = ''Int'' then
-    if (length ast = 2) then map_result_value Val (map_result_value Immediate (map_result_value2 Word (parse_nat (ast ! 0)) (parse_nat (ast ! 1))))
+    if (length ast = 2) then map_result_value Val (map_result_value Immediate (map_result_value2 Word (parse_nat_dec (ast ! 0)) (parse_nat_dec (ast ! 1))))
     else Error ''Expecting 2 arguments for type "Int", got many.''
   else if e = ''Unknown'' then
     if (length ast = 2) then map_result_value Val (map_result_value2 CUnknown (map_result_value String.implode (parse_str (ast ! 0))) (parse_typ (ast ! 1)))
@@ -132,16 +132,16 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
     if (length ast = 2) then map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp LShift) e\<^sub>2) (parse_exp (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "LSHIFT", got many.''
   else if e = ''LOW'' then
-    if (length ast = 2) then map_result_value2 (Cast Low) (parse_nat (ast ! 0)) (parse_exp (ast ! 1))
+    if (length ast = 2) then map_result_value2 (Cast Low) (parse_nat_dec (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "LOW", got many.''
   else if e = ''HIGH'' then
-    if (length ast = 2) then map_result_value2 (Cast High) (parse_nat (ast ! 0)) (parse_exp (ast ! 1))
+    if (length ast = 2) then map_result_value2 (Cast High) (parse_nat_dec (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "HIGH", got many.''
   else if e = ''UNSIGNED'' then
-    if (length ast = 2) then map_result_value2 (Cast Unsigned) (parse_nat (ast ! 0)) (parse_exp (ast ! 1))
+    if (length ast = 2) then map_result_value2 (Cast Unsigned) (parse_nat_dec (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "UNSIGNED", got many.''
   else if e = ''SIGNED'' then
-    if (length ast = 2) then map_result_value2 (Cast Signed) (parse_nat (ast ! 0)) (parse_exp (ast ! 1))
+    if (length ast = 2) then map_result_value2 (Cast Signed) (parse_nat_dec (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "SIGNED", got many.''
   else if e = ''Concat'' then
     if (length ast = 2) then map_result_value2 Concat (parse_exp (ast ! 0)) (parse_exp (ast ! 1))

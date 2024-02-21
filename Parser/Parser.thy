@@ -277,6 +277,8 @@ where
   by auto
 termination by lexicographic_order
 
+definition \<open>parse_string = parse_bil o lexer\<close>
+
 record adt_insn = 
   adti_addr :: nat
   adti_code :: bil
@@ -499,7 +501,7 @@ lemma \<open>parse_adt_section
   (Word 66664 64)))],
               adti_orig = ''jalr t1, t3''\<rparr>]\<rparr>] \<rparr>\<close>
   unfolding Let_def by auto
-
+(* TODO
 fun 
   parse_adt_program :: \<open>string \<Rightarrow> adt_section list parser_result\<close>
 where
@@ -602,6 +604,6 @@ Disassembly of section .text
   (Word 66664 64)))],
               adti_orig = ''jalr t1, t3''\<rparr>]\<rparr>] \<rparr>\<close>
   unfolding Let_def by auto
-
+*)
 
 end
