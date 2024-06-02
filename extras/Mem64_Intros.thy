@@ -129,4 +129,10 @@ method solve_exps_64I = (
   (rule step_exps_load_word64_beI)
 )
 
+method inv methods FF = (
+  FF
+)
+
+
+
 end

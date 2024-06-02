@@ -5,7 +5,7 @@ theory Parser_Code
 begin
 text \<open>Code Generation for ADT_Lexer\<close>
 
-definition \<open>parse_ast str = parse_string (String.explode str)\<close> 
+definition \<open>parse_ast str = parse_adt_program (map String.explode str)\<close> 
 
 lemma [code]: \<open>parse_en (Node en ast) = (
   if en = ''LittleEndian'' then
@@ -303,7 +303,7 @@ lemma [code]: \<open>parse_stmt (Node stmt ast) = (
 
 code_datatype CSpecial CpuExn While Move Jmp stmt.If
 
-export_code parse_ast in SML
+export_code parse_ast get_symbol_table get_original_insn get_prog_addrs get_insns in SML
   module_name AstParser file_prefix "ast-parser"
 
 text \<open>Reflect the AST parser into the current Isabelle/HOL session\<close>
@@ -325,7 +325,9 @@ code_reflect AstParser
         and word = Word
         and var = CVar
         and result = Value | Error
+        and insn_ext = insn_ext
   functions parse_ast integer_of_int integer_of_nat nat_of_integer int_of_integer integer_of_char
+            get_original_insn get_symbol_table get_prog_addrs get_insns String.implode
 
 
 end

@@ -19,11 +19,14 @@ lemma step_prog_noinsnI:
     using assms(2) by auto
   .
 
-method solve_progI uses decoder = (
-    rule step_progI, 
-    rule decoder,
-    solve_bilI
-)
+method solve_prog_intI methods m uses simp decoder = (
+  ((unfold simp)?), (
+  m |
+  (rule step_prog_noinsnI, rule decoder, solve_bil_intI m simp: simp) |
+  (rule step_progI, rule decoder, solve_bil_intI m simp: simp)
+))
+
+method solve_progI uses decoder = solve_prog_intI assumption decoder: decoder
 
 end
 

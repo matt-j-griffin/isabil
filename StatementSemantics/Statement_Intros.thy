@@ -151,66 +151,68 @@ method solve_bilI = (
 )
 *)
 
-method solve_bilI = (
+method solve_bil_intI methods m uses simp = (
+  ((unfold simp)?), (
+  m |
   (intro step_stmt_cpuexnI step_stmt_specialI) |
 
   \<comment> \<open>Specific states may be irrecoverable so fail these\<close>
-  (rule step_stmt_moveI.bv_leq, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.bv_plus, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.storage, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.unknown, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ2, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ3, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ4, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ5, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ6, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.succ7, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.xtract2, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.xtract, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.false, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.true, (solve_expsI; fail)) |
-  (rule step_stmt_moveI.word, (solve_expsI; fail)) |
-  (rule step_stmt_moveI, (solve_expsI | succeed)) |
+  (rule step_stmt_moveI.bv_leq, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.bv_plus, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.storage, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.unknown, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ2, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ3, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ4, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ5, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ6, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.succ7, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.xtract2, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.xtract, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.false, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.true, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI.word, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_moveI, (solve_exps_intI m simp: simp | succeed)) |
 
   \<comment> \<open>Specific states may be irrecoverable so fail these\<close>
-  (rule step_stmt_jmpI.bv_leq, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.bv_plus, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ2, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ3, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ4, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ5, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ6, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.succ7, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.xtract2, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.xtract, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.false, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.true, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI.word, (solve_expsI; fail)) |
-  (rule step_stmt_jmpI, (solve_expsI | succeed)) |
+  (rule step_stmt_jmpI.bv_leq, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.bv_plus, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ2, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ3, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ4, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ5, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ6, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.succ7, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.xtract2, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.xtract, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.false, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.true, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI.word, (solve_exps_intI m simp: simp; fail)) |
+  (rule step_stmt_jmpI, (solve_exps_intI m simp: simp | succeed)) |
 
   \<comment> \<open>More complicated - requires a choice\<close>
-  (rule step_stmt_if_then_falseI, solve_expsI) |
-  (rule step_stmt_if_else_trueI, solve_expsI) |
+  (rule step_stmt_if_then_falseI, solve_exps_intI m simp: simp) |
+  (rule step_stmt_if_else_trueI, solve_exps_intI m simp: simp) |
 
-  (rule step_stmt_if_trueI, solve_expsI, (solve_bilI | succeed)) |
-  (rule step_stmt_if_falseI, solve_expsI, (solve_bilI | succeed)) |
+  (rule step_stmt_if_trueI, solve_exps_intI m simp: simp, (solve_bil_intI m simp: simp | succeed)) |
+  (rule step_stmt_if_falseI, solve_exps_intI m simp: simp, (solve_bil_intI m simp: simp | succeed)) |
 
-  (rule step_stmt_while_falseI, solve_expsI) |
+  (rule step_stmt_while_falseI, solve_exps_intI m simp: simp) |
 
   \<comment> \<open>Even more complicated - need mutually recursive solve method\<close>
-  (rule step_stmt_whileI, solve_expsI, (solve_bilI | succeed)) |
+  (rule step_stmt_whileI, solve_exps_intI m simp: simp, (solve_bil_intI m simp: simp | succeed)) |
 
   rule step_bil_emptyI | 
   (rule step_bil_empty_eqI; (simp; fail)) |
 
-  (rule step_bil_singleI, (solve_bilI | succeed)) | 
-  (rule step_bil_seqI, (solve_bilI | succeed), (solve_bilI | succeed))
-
+  (rule step_bil_singleI, (solve_bil_intI m simp: simp | succeed)) | 
+  (rule step_bil_seqI, (solve_bil_intI m simp: simp | succeed), (solve_bil_intI m simp: simp | succeed))
+)
 )
 
-
+method solve_bilI = solve_bil_intI assumption
 
 
 

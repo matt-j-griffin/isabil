@@ -1,4 +1,4 @@
-(**
+(*(**
  parse_bilput_for
  ----------------------
  Parses a BIL input file for the given tid read from a BIL listing, terminates when encounters a 
@@ -89,19 +89,31 @@ val parse_bil_listing = group_insns
   #>> List.filter (fn (label_opt, _) => is_some label_opt)
   #>> List.map (fn tid_label => tid_label |>> the)
   ##> fix_insn_size
-
+*)
 fun mk_prog addr = 
-  HOLogic.mk_prod (@{term "\<Delta>::variables"}, HOLogic.mk_prod (IsaBIL.mk_word_of_int addr 64, @{term "mem::var"}))
+  HOLogic.mk_prod (@{term "\<Delta>::variables"}, HOLogic.mk_prod (IsaBIL.mk_word addr, @{term "mem::var"}))
 
 
 fun mk_symbol_table lst =
   let 
     val term_lst = lst
+      |> List.map (fn (label, tid) => (AstParser.implode label, AstParser.integer_of_nat tid)) 
       |> List.map (fn (label, tid) => (HOLogic.mk_string label, IsaBIL.mk_word_of_int tid 64)) 
       |> List.map HOLogic.mk_prod 
       |> HOLogic.mk_list @{typ "(string \<times> word)"}
   in
     Const ("Map.map_of", @{typ "(string \<times> word) list \<Rightarrow> string \<Rightarrow> word option"}) $ term_lst
+  end
+
+fun mk_original_table lst =
+  let 
+    val term_lst = lst
+      |> List.map (fn (tid, label) => (AstParser.integer_of_nat tid, AstParser.implode label)) 
+      |> List.map (fn (tid, label) => (IsaBIL.mk_word_of_int tid 64, HOLogic.mk_string label)) 
+      |> List.map HOLogic.mk_prod 
+      |> HOLogic.mk_list @{typ "(word \<times> string)"}
+  in
+    Const ("Map.map_of", @{typ "(word \<times> string) list \<Rightarrow> word \<Rightarrow> string option"}) $ term_lst
   end
 
 fun make_const_def (binding, trm) lthy = 
@@ -112,6 +124,25 @@ fun make_const_def (binding, trm) lthy =
   in
     (thm, Local_Theory.end_nested lthy'')
   end
+(*
+fun mk_addr_set insns = 
+  let 
+    val addrs = insns |> List.map (fn (Insn (w,_,_)) => IsaBIL.mk_word_of_int w 64)
+  in
+    HOLogic.mk_set (@{typ "word"}) addrs
+  end
+*)
+
+
+fun mk_addr_set words = 
+  let 
+    val addrs = map IsaBIL.mk_word words 
+  in
+    HOLogic.mk_set (@{typ "word"}) addrs
+  end
+
+
+fun mk_decode_name (AstParser.Word (num, _)) = "decode_" ^ LargeInt.fmt StringCvt.HEX (AstParser.integer_of_nat num)
 
 fun bil_parser_lines localename assembly lthy =
   let   
@@ -128,23 +159,32 @@ fun bil_parser_lines localename assembly lthy =
     fun mk_assume thm_name term = ((Binding.name thm_name, [simp_attrib]), [term]); (* string -> term -> (binding * Token.src list) * term list*)
     
     val mk_decode = Free ("decode", @{typ "program \<Rightarrow> insn \<Rightarrow> bool"})
-    fun mk_decode_equality_assume (Insn (tid,sz,bil)) =
-      let val asm_name = "decode_" ^ LargeInt.fmt StringCvt.HEX tid
-          val decode_term = (mk_decode $ (mk_prog tid) $ (IsaBIL.mk_insn tid sz bil))
+    fun mk_decode_equality_assume (insn as AstParser.Insn_ext (tid,_,_,_)) =
+      let val asm_name = mk_decode_name tid
+          val decode_term = (mk_decode $ (mk_prog tid) $ (IsaBIL.mk_insn insn))
       in
         mk_assume asm_name (HOLogic.Trueprop $ decode_term, [])
       end
 
-    fun mk_addr_set insns = 
-      let 
-        val addrs = insns |> List.map (fn (Insn (w,_,_)) => IsaBIL.mk_word_of_int w 64)
-      in
-        HOLogic.mk_set (@{typ "word"}) addrs
-      end
-  
 
-  val parse_as_locale = parse_bil_listing
-    #>> mk_symbol_table
+    (* Parse AST using the code-generator *)
+    val ast = assembly 
+      |> AstParser.parse_ast
+      |> or_raise
+
+    (* Architecture size, currently fixed *)
+    val arch_sz = (AstParser.nat_of_integer 64)
+    (* Grab the original instructions *)
+    val insns = AstParser.get_insns arch_sz ast
+    (* Grab the original instructions *)
+    val orig_insns = AstParser.get_original_insn ast
+    (* Grab the symbol table *)
+    val symbol_table = AstParser.get_symbol_table ast
+    (* Grab the program addresses *)
+    val addrs = AstParser.get_prog_addrs arch_sz ast
+
+
+(*  val parse_as_locale = parse_bil_listing*)
 
   val assembly = assembly 
     |> List.filter (Substring.full 
@@ -162,12 +202,13 @@ fun bil_parser_lines localename assembly lthy =
      instruction *)
   val loc_bindings = Binding.name localename
     
-    val (symbol_table, insns) = parse_as_locale assembly
+    (*val (_, insns) = parse_as_locale assembly*)
 
     val loc_elems = [fixes_decode, Element.Assumes (List.map mk_decode_equality_assume insns)]
     val (_,lthy) = Expression.add_locale loc_bindings loc_bindings [] ([],[]) loc_elems thy
-    val (_,lthy) = (make_const_def (Binding.name "sym_table", symbol_table)) lthy
-    val (_,lthy) = (make_const_def (Binding.name "addr_set", mk_addr_set insns)) lthy
+    val (_,lthy) = (make_const_def (Binding.name "sym_table", mk_symbol_table symbol_table)) lthy
+    val (_,lthy) = (make_const_def (Binding.name "addr_set", mk_addr_set addrs)) lthy
+    val (_,lthy) = (make_const_def (Binding.name "orig_table", mk_original_table orig_insns)) lthy
 
     val _ = tracing ("Added locale: " ^ localename ^ " with a decode predicate for " ^ Int.toString (length assembly) ^ " instructions. To get started, execute:\n\ncontext " ^ localename ^ "\nbegin\n   find_theorems decode\nend\n")
   in

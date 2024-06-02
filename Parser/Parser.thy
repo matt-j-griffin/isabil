@@ -1,6 +1,7 @@
 theory Parser   
-  imports "../OperationalSemantics/Program_Model" Lexer
-
+  imports "../OperationalSemantics/Program_Model" 
+          Lexer
+          "HOL-Library.Sublist"
 begin
 
 
@@ -279,13 +280,12 @@ termination by lexicographic_order
 
 definition \<open>parse_string = parse_bil o lexer\<close>
 
-record adt_insn = 
-  adti_addr :: nat
-  adti_code :: bil
-  adti_orig :: string
+datatype AdtInsn = AdtInsn nat bil string
+
+abbreviation \<open>join lst \<equiv> fold (\<lambda>a b. List.append a (List.append '', '' b)) lst []\<close>
 
 fun 
-  parse_adt_insn' :: \<open>string list \<Rightarrow> adt_insn parser_result\<close>
+  parse_adt_insn' :: \<open>string list \<Rightarrow> AdtInsn parser_result\<close>
 where
   \<open>parse_adt_insn' lines = (
     if (length lines = 2 \<or> length lines = 3) then
@@ -293,30 +293,24 @@ where
         lines' = if length lines = 3 then drop 1 lines else lines;
         headers = map trim (split (CHR '':'') (lines' ! 0))
       in 
-        map_result_value2 (\<lambda>addr bil. \<lparr> adti_addr = addr, adti_code = bil, adti_orig = (headers ! 1) \<rparr>) (nat_of_hex_string (headers ! 0)) ((parse_bil o lexer)(lines' ! 1))
+        map_result_value2 (\<lambda>addr bil. AdtInsn addr bil (headers ! 1)) (nat_of_hex_string (headers ! 0)) ((parse_bil o lexer)(lines' ! 1))
     else 
-      Error (List.append ''Expecting adt insn translation to contain two or three lines'' '''')
+      Error (List.append ''Expecting adt insn translation to contain two or three lines: ['' (List.append (join lines) '']''))
   )\<close>
-
+(*
 fun 
-  parse_adt_insn :: \<open>string \<Rightarrow> adt_insn parser_result\<close>
+  parse_adt_insn :: \<open>string \<Rightarrow> AdtInsn parser_result\<close>
 where
   \<open>parse_adt_insn str = parse_adt_insn' (map trim (split LF str))\<close>
 
 lemma \<open>
 parse_adt_insn ''10450: auipc t3, 2
 (Move(Var("X28",Imm(64)),Int(66642,64)))'' 
-= Value \<lparr> 
-  adti_addr = 66640, 
-  adti_code = [Move (Var ''X28'' (Imm 64)) (Val (Immediate (Word 66642 64)))],
-  adti_orig = ''auipc t3, 2''
-\<rparr>\<close>
+= Value (AdtInsn 66640 [Move (Var ''X28'' (Imm 64)) (Val (Immediate (Word 66642 64)))]  ''auipc t3, 2'')
+\<close>
   by auto
-
-record adt_function = 
-  adtf_addr :: nat
-  adtf_name :: string
-  adtf_insn :: \<open>adt_insn list\<close>
+*)
+datatype AdtFunction = AdtFunction nat string \<open>AdtInsn list\<close>
 
 fun
   split_list :: \<open>nat \<Rightarrow> 'a list \<Rightarrow> 'a list list\<close>
@@ -332,9 +326,9 @@ where
 
 
 fun 
-  parse_adt_function' :: \<open>string list \<Rightarrow> adt_function parser_result\<close>
+  parse_adt_function :: \<open>string list \<Rightarrow> AdtFunction parser_result\<close>
 where
-  \<open>parse_adt_function' lines = (
+  \<open>parse_adt_function lines = (
       if (length lines > 2) then
         let 
           headers = map trim (split (CHR '':'') (lines ! 0));
@@ -345,19 +339,19 @@ where
           insn_results = map parse_adt_insn' insn_grouped_lines;
           insns = flatten_error insn_results
         in
-          map_result_value2 (\<lambda>addr insn. \<lparr>adtf_addr = addr, adtf_name = name, adtf_insn = insn\<rparr>) addr_result insns
+          map_result_value2 (\<lambda>addr insn. AdtFunction addr name insn) addr_result insns
       else 
         Error (List.append ''Expecting adt function to contain at least two lines: '' '''')
   )\<close>
-
+(*
 fun 
-  parse_adt_function :: \<open>string \<Rightarrow> adt_function parser_result\<close>
+  parse_AdtFunction :: \<open>string \<Rightarrow> AdtFunction parser_result\<close>
 where
-  \<open>parse_adt_function str = parse_adt_function' (map trim (split LF str))\<close>
+  \<open>parse_AdtFunction str = parse_adt_function (map trim (split LF str))\<close>
 
 
 lemma \<open>
-parse_adt_function 
+parse_AdtFunction 
 ''10460: <setlocale>
 10460:
 10460: auipc t3, 2
@@ -365,24 +359,13 @@ parse_adt_function
 10461:
 10461: auipc t3, 2
 (Move(Var("X28",Imm(64)),Int(66658,64)))''
-= Value \<lparr>
-  adtf_addr = 66656, 
-  adtf_name = ''setlocale'',
-  adtf_insn = [\<lparr> 
-    adti_addr = 66656, 
-    adti_code = [Move (Var ''X28'' imm\<langle>64\<rangle>) (Val (Immediate (Word 66658 64)))],
-    adti_orig = ''auipc t3, 2''
-  \<rparr>, \<lparr> 
-    adti_addr = 66657, 
-    adti_code = [Move (Var ''X28'' imm\<langle>64\<rangle>) (Val (Immediate (Word 66658 64)))],
-    adti_orig = ''auipc t3, 2''
-  \<rparr>]
-\<rparr>\<close>
+= Value (AdtFunction 66656 ''setlocale'' [
+    AdtInsn 66656 [Move (Var ''X28'' imm\<langle>64\<rangle>) (Val (Immediate (Word 66658 64)))] ''auipc t3, 2'', 
+    AdtInsn 66657 [Move (Var ''X28'' imm\<langle>64\<rangle>) (Val (Immediate (Word 66658 64)))] ''auipc t3, 2''
+  ]
+)\<close>
   by auto
-
-
-lemma \<open>tl (butlast (''<setlocale>'')) = ''setlocale''\<close>
-  by auto
+*)
 
 
 (*
@@ -393,30 +376,28 @@ lemma \<open>tl (butlast (''<setlocale>'')) = ''setlocale''\<close>
 (Move(Var("X6",Imm(64)),Int(66668,64)), Jmp(PLUS(Var("X28",Imm(64)),Int(66664,64))))
 *)
 
-record adt_section = 
-  adts_name :: string
-  adts_func :: \<open>adt_function list\<close>
+datatype AdtSection = AdtSection string \<open>AdtFunction list\<close>
 
 abbreviation \<open>section_preamble \<equiv> length ''Disassembly of section''\<close>
 
 
 fun 
-  parse_adt_section' :: \<open>string list \<Rightarrow> adt_section parser_result\<close>
+  parse_adt_section :: \<open>string list \<Rightarrow> AdtSection parser_result\<close>
 where
-  \<open>parse_adt_section' lines = (
+  \<open>parse_adt_section lines = (
     let 
       section_name = trim (drop section_preamble (lines ! 0));
       function_lines = split [] (drop 2 lines);
-      function_results = map parse_adt_function' function_lines;
+      function_results = map parse_adt_function function_lines;
       functions = flatten_error function_results
     in
-      map_result_value (\<lambda>fs. \<lparr> adts_name = section_name, adts_func = fs \<rparr>) functions
+      map_result_value (\<lambda>fs. (AdtSection section_name fs)) functions
   )\<close>
-
+(*
 fun
-  parse_adt_section :: \<open>string \<Rightarrow> adt_section parser_result\<close>
+  parse_adt_section' :: \<open>string \<Rightarrow> AdtSection parser_result\<close>
 where
-  \<open>parse_adt_section str = parse_adt_section' (map trim (split LF str))\<close>
+  \<open>parse_adt_section' str = parse_adt_section (map trim (split LF str))\<close>
 
 lemma \<open>parse_adt_section
 ''Disassembly of section .plt
@@ -441,84 +422,60 @@ lemma \<open>parse_adt_section
 (Move(Var("X28",Imm(64)),Load(Var("mem",Mem(64,8)),PLUS(Var("X28",Imm(64)),Int(18446744073709550520,64)),LittleEndian(),64)))
 10468: jalr t1, t3
 (Move(Var("X6",Imm(64)),Int(66668,64)), Jmp(PLUS(Var("X28",Imm(64)),Int(66664,64))))
-'' = Value \<lparr> adts_name = ''.plt'', adts_func = [\<lparr>adtf_addr = 66640,
-        adtf_name = ''__libc_start_main'',
-        adtf_insn =
-          [\<lparr>adti_addr = 66640,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66642 64))],
-              adti_orig = ''auipc t3, 2''\<rparr>,
-           \<lparr>adti_addr = 66644,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 EVar
-                  (Var ''mem''
-                    mem\<langle>64, 8\<rangle>)[BinOp
-      (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus)
-      (Val (Immediate
+'' = Value (
+  AdtSection ''.plt'' [
+    AdtFunction 66640 ''__libc_start_main'' [
+      AdtInsn 66640 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66642 64))] ''auipc t3, 2'',
+      AdtInsn 66644 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate
              (Word 18446744073709550528
-               64))), el]:u64],
-              adti_orig = ''ld t3, -1088(t3)''\<rparr>,
-           \<lparr>adti_addr = 66648,
-              adti_code =
+               64))), el]:u64] ''ld t3, -1088(t3)'',
+      AdtInsn 66648
                 [Var ''X6'' imm\<langle>64\<rangle> :=
                  Val (Immediate (Word 66652 64)),
                  jmp BinOp
                       (EVar (Var ''X28'' imm\<langle>64\<rangle>))
                       (AOp Plus)
-                      (Val (Immediate
-  (Word 66648 64)))],
-              adti_orig = ''jalr t1, t3''\<rparr>,
-           \<lparr>adti_addr = 66652, adti_code = [],
-              adti_orig = ''nop''\<rparr>]\<rparr>,
-     \<lparr>adtf_addr = 66656, adtf_name = ''setlocale'',
-        adtf_insn =
-          [\<lparr>adti_addr = 66656,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66658 64))],
-              adti_orig = ''auipc t3, 2''\<rparr>,
-           \<lparr>adti_addr = 66660,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 EVar
-                  (Var ''mem''
-                    mem\<langle>64, 8\<rangle>)[BinOp
-      (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus)
-      (Val (Immediate
-             (Word 18446744073709550520
-               64))), el]:u64],
-              adti_orig = ''ld t3, -1096(t3)''\<rparr>,
-           \<lparr>adti_addr = 66664,
-              adti_code =
-                [Var ''X6'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66668 64)),
-                 jmp BinOp
-                      (EVar (Var ''X28'' imm\<langle>64\<rangle>))
-                      (AOp Plus)
-                      (Val (Immediate
-  (Word 66664 64)))],
-              adti_orig = ''jalr t1, t3''\<rparr>]\<rparr>] \<rparr>\<close>
+                      (Val (Immediate (Word 66648 64)))] ''jalr t1, t3'',
+      AdtInsn 66652 [] ''nop''],
+    AdtFunction 66656 ''setlocale'' [
+      AdtInsn 66656 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66658 64))] ''auipc t3, 2'',
+      AdtInsn 66660 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64] ''ld t3, -1096(t3)'',
+      AdtInsn 66664 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64)))] ''jalr t1, t3'']] )\<close>
   unfolding Let_def by auto
-(* TODO
-fun 
-  parse_adt_program :: \<open>string \<Rightarrow> adt_section list parser_result\<close>
-where
-  \<open>parse_adt_program str = (
-    let 
-      lines = map trim (split LF str);
-      section_lines = splitWhile (\<lambda>s. s = ''Disassembly of section'') lines
-      section_name = trim (drop section_preamble (lines ! 0));
-      function_lines = split [] (drop 2 lines);
-      function_results = map parse_adt_function' function_lines;
-      functions = flatten_error function_results;
-      y = map_result_value (\<lambda>fs. \<lparr> adts_name = section_name, adts_func = fs \<rparr>) functions
-    in
-      Value []
-  )\<close>
+*)
 
-lemma \<open>parse_adt_program
+function
+  splitOn :: \<open>('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a list list\<close>
+where
+  splitOn_Cons: \<open>splitOn P (x # xs) = (
+      case dropWhile (\<lambda>y. \<not>P y) (x # xs) of
+        (y # ys) \<Rightarrow> (y # takeWhile (\<lambda>y. \<not>P y) ys) # splitOn P ys |
+        [] \<Rightarrow> []
+  )\<close> |
+  splitOn_Nil: \<open>splitOn _ [] = []\<close>
+  by (pat_completeness, auto)
+termination apply (standard)
+  apply (rule wf_mlex[of \<open>measure (\<lambda>a. length (snd a))\<close> \<open>\<lambda>s. length (snd s)\<close>])
+   apply auto
+  apply (rule mlex_leq)
+  apply auto
+  subgoal for P x
+  apply (cases "P x", auto)
+  by (metis Suc_leD Suc_length_conv le_SucI length_dropWhile_le)
+  by (metis length_Cons length_dropWhile_le less_Suc_eq less_eq_Suc_le)
+
+fun 
+  parse_adt_program :: \<open>string list \<Rightarrow> AdtSection list parser_result\<close>
+where
+  \<open>parse_adt_program lines = (
+    let 
+      section_lines = splitOn (prefix ''Disassembly of section'') lines;
+      section_results = map parse_adt_section section_lines
+    in
+      flatten_error section_results
+  )\<close>
+(*
+lemma [simp]: \<open>parse_adt_program
 ''
 Disassembly of section .plt
 
@@ -544,66 +501,219 @@ Disassembly of section .text
 (Move(Var("X28",Imm(64)),Load(Var("mem",Mem(64,8)),PLUS(Var("X28",Imm(64)),Int(18446744073709550520,64)),LittleEndian(),64)))
 10468: jalr t1, t3
 (Move(Var("X6",Imm(64)),Int(66668,64)), Jmp(PLUS(Var("X28",Imm(64)),Int(66664,64))))
-'' = Value \<lparr> adts_name = ''.plt'', adts_func = [\<lparr>adtf_addr = 66640,
-        adtf_name = ''__libc_start_main'',
-        adtf_insn =
-          [\<lparr>adti_addr = 66640,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66642 64))],
-              adti_orig = ''auipc t3, 2''\<rparr>,
-           \<lparr>adti_addr = 66644,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 EVar
-                  (Var ''mem''
-                    mem\<langle>64, 8\<rangle>)[BinOp
-      (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus)
-      (Val (Immediate
-             (Word 18446744073709550528
-               64))), el]:u64],
-              adti_orig = ''ld t3, -1088(t3)''\<rparr>,
-           \<lparr>adti_addr = 66648,
-              adti_code =
-                [Var ''X6'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66652 64)),
-                 jmp BinOp
-                      (EVar (Var ''X28'' imm\<langle>64\<rangle>))
-                      (AOp Plus)
-                      (Val (Immediate
-  (Word 66648 64)))],
-              adti_orig = ''jalr t1, t3''\<rparr>,
-           \<lparr>adti_addr = 66652, adti_code = [],
-              adti_orig = ''nop''\<rparr>]\<rparr>,
-     \<lparr>adtf_addr = 66656, adtf_name = ''setlocale'',
-        adtf_insn =
-          [\<lparr>adti_addr = 66656,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66658 64))],
-              adti_orig = ''auipc t3, 2''\<rparr>,
-           \<lparr>adti_addr = 66660,
-              adti_code =
-                [Var ''X28'' imm\<langle>64\<rangle> :=
-                 EVar
-                  (Var ''mem''
-                    mem\<langle>64, 8\<rangle>)[BinOp
-      (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus)
-      (Val (Immediate
-             (Word 18446744073709550520
-               64))), el]:u64],
-              adti_orig = ''ld t3, -1096(t3)''\<rparr>,
-           \<lparr>adti_addr = 66664,
-              adti_code =
-                [Var ''X6'' imm\<langle>64\<rangle> :=
-                 Val (Immediate (Word 66668 64)),
-                 jmp BinOp
-                      (EVar (Var ''X28'' imm\<langle>64\<rangle>))
-                      (AOp Plus)
-                      (Val (Immediate
-  (Word 66664 64)))],
-              adti_orig = ''jalr t1, t3''\<rparr>]\<rparr>] \<rparr>\<close>
+'' = Value [
+AdtSection ''.plt'' [
+  AdtFunction 66640 ''__libc_start_main'' [
+    AdtInsn 66640 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66642 64))] ''auipc t3, 2'',
+    AdtInsn 66644 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64] ''ld t3, -1088(t3)''),
+    AdtInsn 66648 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64)))] ''jalr t1, t3'',
+                 (adti_addr = 66652,
+                    adti_code = [],
+                    adti_orig = ''nop'')])]),
+     (adts_name = ''.text'',
+        adts_func =
+          [(adtf_addr = 66656,
+              adtf_name = ''setlocale'',
+              adtf_insn =
+                [(adti_addr = 66656,
+                    adti_code =
+                      [Var ''X28'' imm\<langle>64\<rangle> :=
+                       Val (Immediate
+    (Word 66658 64))],
+                    adti_orig = ''auipc t3, 2''),
+                 (adti_addr = 66660,
+                    adti_code =
+                      [Var ''X28'' imm\<langle>64\<rangle> :=
+                       EVar
+                        (Var ''mem''
+ mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>))
+              (AOp Plus)
+              (Val (Immediate
+                     (Word 18446744073709550520
+                       64))), el]:u64],
+                    adti_orig =
+                      ''ld t3, -1096(t3)''),
+                 (adti_addr = 66664,
+                    adti_code =
+                      [Var ''X6'' imm\<langle>64\<rangle> :=
+                       Val (Immediate
+    (Word 66668 64)),
+                       jmp BinOp
+   (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus)
+   (Val (Immediate (Word 66664 64)))],
+                    adti_orig =
+                      ''jalr t1, t3'')])])]\<close>
   unfolding Let_def by auto
 *)
+(* Most of these should be sets/maps but those are real nasty in code generation so use lists instead temporarily*)
+fun
+  symbol_table_function :: \<open>AdtFunction \<Rightarrow> string \<times> nat\<close>
+where
+  \<open>symbol_table_function (AdtFunction address label _) = (label, address)\<close>
+
+fun
+  symbol_table_section :: \<open>AdtSection \<Rightarrow> (string \<times> nat) list\<close>
+where
+  \<open>symbol_table_section (AdtSection _ funs) = (map symbol_table_function funs)\<close>
+
+fun
+  get_symbol_table :: \<open>AdtSection list \<Rightarrow> (string \<times> nat) list\<close>
+where
+  \<open>get_symbol_table ast = fold (List.append) (map symbol_table_section ast) []\<close>
+(*
+lemma \<open>get_symbol_table [
+AdtSection ''.plt'' [
+  AdtFunction 66640 ''__libc_start_main'' [
+    AdtInsn 66640 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66642 64))] ''auipc t3, 2'',
+    AdtInsn 66644 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64] ''ld t3, -1088(t3)'',
+    AdtInsn 66648 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64)))] ''jalr t1, t3'', 
+    AdtInsn 66652 [] ''nop''
+  ]
+],
+AdtSection ''.text'' [
+  AdtFunction 66656 ''setlocale'' [
+    AdtInsn 66656 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66658 64))] ''auipc t3, 2'',
+    AdtInsn 66660 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64] ''ld t3, -1096(t3)'',
+    AdtInsn 66664 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64)))] ''jalr t1, t3''
+  ]
+]
+] = [''__libc_start_main'' \<mapsto> 66640, ''setlocale'' \<mapsto> 66656] \<close>
+  by auto
+*)
+
+fun 
+  get_prog_addr :: \<open>nat \<Rightarrow> AdtInsn \<Rightarrow> word\<close>
+where
+  \<open>get_prog_addr sz (AdtInsn num _ _) = Word num sz\<close>
+
+fun 
+  get_prog_addrs_function :: \<open>nat \<Rightarrow> AdtFunction \<Rightarrow> word list\<close>
+where
+  \<open>get_prog_addrs_function sz (AdtFunction _ _ bil) = map (get_prog_addr sz) bil\<close>
+
+fun 
+  get_prog_addrs_section :: \<open>nat \<Rightarrow> AdtSection \<Rightarrow> word list\<close>
+where
+  \<open>get_prog_addrs_section sz (AdtSection _ funs) = fold (List.append) (map (get_prog_addrs_function sz) funs) []\<close>
+
+
+fun
+  get_original_insn_insn :: \<open>AdtInsn \<Rightarrow> nat \<times> string\<close>
+where
+  \<open>get_original_insn_insn(AdtInsn num _ str) = (num, str)\<close>
+
+fun
+  get_original_insn_function :: \<open>AdtFunction \<Rightarrow> (nat \<times> string) list\<close>
+where
+  \<open>get_original_insn_function (AdtFunction _ _ ast) = (map get_original_insn_insn ast)\<close>
+
+fun
+  get_original_insn_section :: \<open>AdtSection \<Rightarrow> (nat \<times> string) list\<close>
+where
+  \<open>get_original_insn_section (AdtSection _ ast) = fold (List.append) (map get_original_insn_function ast) []\<close>
+
+fun
+  get_original_insn :: \<open>AdtSection list \<Rightarrow> (nat \<times> string) list\<close>
+where
+  \<open>get_original_insn ast = fold (List.append) (map get_original_insn_section ast) []\<close>
+(*
+lemma \<open>get_original_insn [
+AdtSection ''.plt'' [
+  AdtFunction 66640 ''__libc_start_main'' [
+    AdtInsn 66640 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66642 64))] ''auipc t3, 2'',
+    AdtInsn 66644 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64] ''ld t3, -1088(t3)'',
+    AdtInsn 66648 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64)))] ''jalr t1, t3'', 
+    AdtInsn 66652 [] ''nop''
+  ]
+],
+AdtSection ''.text'' [
+  AdtFunction 66656 ''setlocale'' [
+    AdtInsn 66656 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66658 64))] ''auipc t3, 2'',
+    AdtInsn 66660 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64] ''ld t3, -1096(t3)'',
+    AdtInsn 66664 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64)))] ''jalr t1, t3''
+  ]
+]
+] = [66664 \<mapsto> ''jalr t1, t3'', 66660 \<mapsto> ''ld t3, -1096(t3)'', 66656 \<mapsto> ''auipc t3, 2'', 66652 \<mapsto> ''nop'', 66648 \<mapsto> ''jalr t1, t3'', 66644 \<mapsto> ''ld t3, -1088(t3)'', 66640 \<mapsto> ''auipc t3, 2'']\<close>
+  by auto
+*)
+fun 
+  get_prog_addrs :: \<open>nat \<Rightarrow> AdtSection list \<Rightarrow> word list\<close>
+where
+  \<open>get_prog_addrs sz ast = fold (List.append) (map (get_prog_addrs_section sz) ast) []\<close>
+(*
+lemma \<open>get_prog_addrs [
+AdtSection ''.plt'' [
+  AdtFunction 66640 ''__libc_start_main'' [
+    AdtInsn 66640 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66642 64))] ''auipc t3, 2'',
+    AdtInsn 66644 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64] ''ld t3, -1088(t3)'',
+    AdtInsn 66648 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64)))] ''jalr t1, t3'', 
+    AdtInsn 66652 [] ''nop''
+  ]
+],
+AdtSection ''.text'' [
+  AdtFunction 66656 ''setlocale'' [
+    AdtInsn 66656 [Var ''X28'' imm\<langle>64\<rangle> := Val (Immediate (Word 66658 64))] ''auipc t3, 2'',
+    AdtInsn 66660 [Var ''X28'' imm\<langle>64\<rangle> := EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64] ''ld t3, -1096(t3)'',
+    AdtInsn 66664 [Var ''X6'' imm\<langle>64\<rangle> := Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64)))] ''jalr t1, t3''
+  ]
+]
+] = [66656, 66660, 66664, 66640, 66644, 66648, 66652]\<close>
+  by auto
+*)
+fun
+  get_insn :: \<open>nat \<Rightarrow> AdtInsn \<Rightarrow> nat \<Rightarrow> insn\<close>
+where
+  \<open>get_insn sza (AdtInsn num bil _) sz = \<lparr> addr = Word num sza, size = Word sz sza, code = bil \<rparr>\<close>
+
+
+fun
+  get_insns_function :: \<open>nat \<Rightarrow> AdtFunction \<Rightarrow> insn list\<close>
+where
+  \<open>get_insns_function sza (AdtFunction _ _ ast) = (
+    let 
+      words = (map (get_prog_addr sza) ast);
+      addrs = (map (\<lambda>a. case a of Word _ sz \<Rightarrow> sz) words);
+      szs = map (\<lambda>(a,b). b - a) (zip addrs (List.append (tl addrs) [0]))
+    in
+      map (\<lambda>(insn, sz). get_insn sza  insn sz) (zip ast szs)
+  )\<close>
+
+fun
+  get_insns_section :: \<open>nat \<Rightarrow> AdtSection \<Rightarrow> insn list\<close>
+where
+  \<open>get_insns_section sz (AdtSection _ ast) = fold (List.append) (map (get_insns_function sz) ast) []\<close>
+
+fun
+  get_insns :: \<open>nat \<Rightarrow> AdtSection list \<Rightarrow> insn list\<close>
+where
+  \<open>get_insns sz ast = fold (List.append) (map (get_insns_section sz) ast) []\<close>
+
+lemma \<open>get_insns 64 [
+AdtSection ''.plt'' [
+  AdtFunction 66640 ''__libc_start_main'' [
+    AdtInsn 66640 [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66642 64)))] ''auipc t3, 2'',
+    AdtInsn 66644 [(Var ''X28'' imm\<langle>64\<rangle>) := ((EVar (Var ''mem'' mem\<langle>64, 8\<rangle>))[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64)] ''ld t3, -1088(t3)'',
+    AdtInsn 66648 [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66652 64))), (jmp (BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64)))))] ''jalr t1, t3'', 
+    AdtInsn 66652 [] ''nop''
+  ]
+],
+AdtSection ''.text'' [
+  AdtFunction 66656 ''setlocale'' [
+    AdtInsn 66656 [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66658 64)))] ''auipc t3, 2'',
+    AdtInsn 66660 [(Var ''X28'' imm\<langle>64\<rangle>) := ((EVar (Var ''mem'' mem\<langle>64, 8\<rangle>))[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64)] ''ld t3, -1096(t3)'',
+    AdtInsn 66664 [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66668 64))), (jmp (BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64)))))] ''jalr t1, t3''
+  ]
+]
+] = z\<close>
+  apply auto
+  oops
+(*
+[\<lparr>addr = Word 66656 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66658 64)))]\<rparr>,
+     \<lparr>addr = Word 66660 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64)]\<rparr>,
+     \<lparr>addr = Word 66664 64, size = Word 0 64, code = [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64))))]\<rparr>,
+     \<lparr>addr = Word 66640 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66642 64)))]\<rparr>,
+     \<lparr>addr = Word 66644 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64)]\<rparr>,
+     \<lparr>addr = Word 66648 64, size = Word 0 64, code = [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64))))]\<rparr>,
+     \<lparr>addr = Word 66652 64, size = Word 0 64, code = []\<rparr>]*)
 
 end

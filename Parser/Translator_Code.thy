@@ -18,5 +18,4 @@ lemmas syntax_simps = plus_exp.simps[symmetric]   minus_exp.simps[symmetric]
 
 ML_file \<open>ml/isabil.ml\<close>
 
-
 end

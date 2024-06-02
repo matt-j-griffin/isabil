@@ -20,7 +20,7 @@ sig
   val mk_exp: AstParser.exp -> term
   val mk_stmt: AstParser.stmt -> term
   val mk_bil: AstParser.stmt list -> term
-  val mk_insn: int -> int -> AstParser.stmt list -> term
+  val mk_insn: 'a AstParser.insn_ext -> term
 
 end;
 
@@ -175,7 +175,7 @@ and mk_stmt (AstParser.CpuExn i) = @{term "CpuExn"} $ mk_numeral_int i
   | mk_stmt (AstParser.If (e, bil1, bil2)) = @{term "If"} $ mk_exp e $ mk_bil bil1 $ mk_bil bil2
   | mk_stmt (AstParser.Move (var, e)) = @{term "Move"} $ mk_var var $ mk_exp e
 
-fun mk_insn addr sz bil = Const ("Instruction_Syntax.insn.make", @{typ "word \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> insn"}) $ (mk_word_of_int addr 64) $ (mk_word_of_int sz 64) $ mk_bil bil
+fun mk_insn (AstParser.Insn_ext (addr, sz, bil, _)) = Const ("Instruction_Syntax.insn.make", @{typ "word \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> insn"}) $ (mk_word addr) $ (mk_word sz) $ mk_bil bil
 
 
 end;
