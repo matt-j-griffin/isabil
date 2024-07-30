@@ -1,0 +1,25 @@
+theory Reproducible
+  imports Main
+begin
+
+locale Example1 = 
+  fixes x 
+begin
+
+lemma Lemma1: <<
+
+end
+
+
+locale Example2 = 
+  fixes x 
+
+
+
+context Example1
+
+
+
+
+
+end

@@ -5,6 +5,9 @@ begin
 
 text \<open>Lemmas which tidy the mess left by the translator\<close>
 
+lemma bool_simps: \<open>Immediate false = false\<close> \<open>Immediate true = true\<close> \<open>Val false = false\<close> \<open>Val true = true\<close>
+  unfolding true_word false_word word_constructor_exp_def by auto
+
 lemmas syntax_simps = plus_exp.simps[symmetric]   minus_exp.simps[symmetric]  
     divide_exp.simps[symmetric]  modulo_exp.simps[symmetric] times_exp.simps[symmetric]
     lsr_exp.simps[symmetric]     lsl_exp.simps[symmetric]    asr_exp.simps[symmetric] 
@@ -15,7 +18,8 @@ lemmas syntax_simps = plus_exp.simps[symmetric]   minus_exp.simps[symmetric]
     BIL_Syntax.not_exp.simps[symmetric] Word_simp insn.defs
     var_constructor_var_def[symmetric] var_constructor_exp_def[symmetric]
     Immediate_simp Val_simp_word Val_simp_storage Val_simp_unknown
+    false_word[symmetric] true_word[symmetric] bool_simps
 
-ML_file \<open>ml/isabil.ml\<close>
+ML_file \<open>ml/isabil.ML\<close>
 
 end

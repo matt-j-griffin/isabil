@@ -9,37 +9,17 @@ begin
 text \<open>Some evaluation rules depend on the type of a value. Since there are two canonical forms for
 each type, we avoid duplicating each rule by defining the following metafunction:\<close>
 
-
-context val_syntax
-begin
-
-(*
-lemma type_storage_not_imm[simp]: \<open>type (mem[w \<leftarrow> v', sz]) \<noteq> imm\<langle>sz\<^sub>v\<^sub>a\<^sub>l\<rangle>\<close>
-  apply (rule notI)
-  apply (erule type.elims)
-  by simp_all
-
-lemma type_word_not_mem[simp]: \<open>type (num \<Colon> sz) \<noteq> mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
-  apply (rule notI)
-  apply (erule type.elims)
-  by simp_all
-*)
-
-
-
-end
-
-method solve_typeI = (
+method solve_typeI_scaffold methods recurs = (
   assumption | 
-  rule type_wordI | rule type_storageI | rule type_unknownI | rule type_trueI | rule type_falseI |
-  (rule type_succ_recI, solve_typeI) |
-  (rule type_storage_addrI, solve_typeI) 
+  rule type_wordI type_storageI type_unknownI type_trueI type_falseI type_plusI |
+  (rule type_succ_recI, recurs) |
+  (rule type_storage_addrI, recurs) 
 ) 
 
-context word_constructor
-begin
+method solve_typeI = (
+  solve_typeI_scaffold solve_typeI
+) 
 
-end
 
 instantiation exp :: exp
 begin
@@ -108,7 +88,7 @@ fun
   negation_exp :: \<open>exp \<Rightarrow> exp\<close>
 where
   \<open>negation_exp e1 = (UnOp Not e1)\<close>
-
+(*
 definition 
   true_exp :: exp
 where
@@ -118,7 +98,7 @@ definition
   false_exp :: exp
 where
   \<open>false_exp = (Val false)\<close>
-
+*)
 fun 
   lt_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close>
 where
@@ -168,10 +148,10 @@ fun
   divide_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close>
 where
   \<open>divide_exp e1 e2 = (BinOp e1 (AOp Divide) e2)\<close>
-
+(*
 lemma true_not_false_exp: \<open>(true::exp) \<noteq> false\<close>
   by (simp add: false_exp_def true_exp_def)
-
+*)
 function
   type_exp :: \<open>exp \<Rightarrow> Type\<close>
 where
@@ -188,9 +168,9 @@ termination by (standard, auto)
 
 instance 
   apply standard 
-  using true_not_false_exp apply auto
+  (*using true_not_false_exp*) apply auto
   unfolding storage_constructor_exp_def word_constructor_exp_def unknown_constructor_exp_def 
-            var_constructor_exp_def append_exp_def true_exp_def false_exp_def
+            var_constructor_exp_def append_exp_def true_word false_word
   by auto
 
 end
@@ -273,10 +253,10 @@ locale not_exp_val =
 begin
 
 lemma not_true[simp]: \<open>exp \<noteq> true\<close>
-  unfolding true_exp_def by (rule not_val)
+  unfolding true_word word_constructor_exp_def by (rule not_val)
 
 lemma not_false[simp]: \<open>exp \<noteq> false\<close>
-  unfolding false_exp_def by (rule not_val)
+  unfolding false_word word_constructor_exp_def by (rule not_val)
 
 lemma not_bv_concat[simp]: \<open>exp \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   unfolding bv_concat.simps unfolding word_constructor_exp_def by (rule not_val)
@@ -341,10 +321,10 @@ interpretation unknown: not_exp \<open>(unknown[str]: t)\<close>
   unfolding unknown_constructor_exp_def by (standard, auto)
 
 interpretation true: not_exp \<open>true\<close>
-  unfolding true_exp_def by (standard, auto)
+  unfolding true_word by (standard, auto)
 
 interpretation false: not_exp \<open>false\<close>
-  unfolding false_exp_def by (standard, auto)
+  unfolding false_word by (standard, auto)
 
 interpretation concat_bv: not_exp \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   unfolding bv_concat.simps by (standard, auto)

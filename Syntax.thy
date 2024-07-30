@@ -1,7 +1,7 @@
 theory Syntax
   imports "Prelims/Prelims"
 begin
-
+(*
 class bool_syntax =
     fixes true :: 'a and false :: 'a
   assumes true_neq_false[simp]: \<open>true \<noteq> false\<close>
@@ -18,8 +18,8 @@ end
 
 lemma not_true_eq_false[simp]: \<open>\<not> false = true\<close>
   using true_neq_false by metis
-
-class bil_ops = plus + minus + modulo + times + divide + uminus + bool_syntax +
+*)
+class bil_ops = plus + minus + modulo + times + divide + uminus + (*bool_syntax +*)
     fixes lsr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open>>>\<close> 65)
       and lsl :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open><<\<close> 65)
       and asr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open>>>>\<close> 64)

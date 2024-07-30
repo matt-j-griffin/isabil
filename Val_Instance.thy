@@ -19,7 +19,7 @@ definition
   storage_constructor_val :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> val\<close>
 where
   \<open>(v[a \<leftarrow> v', sz]) = Storage v a v' sz\<close>
-
+(*
 definition 
   true_val :: val
 where
@@ -33,7 +33,7 @@ where
 lemma true_not_false_val[simp]: \<open>(true::val) \<noteq> false\<close>
   unfolding false_val_def true_val_def
   using not_true_eq_false by (metis val.inject(1))
-
+*)
 lemma valI:
   fixes v :: val
   assumes imm: \<open>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q\<close>
@@ -70,7 +70,7 @@ instance
   apply standard
   apply simp_all
   unfolding storage_constructor_val_def word_constructor_val_def unknown_constructor_val_def
-  apply (simp_all add: true_val_def false_val_def)
+  apply (simp_all (*add: true_val_def false_val_def*))
   apply (metis val.exhaust word_exhaust)
   by (metis val.exhaust word_exhaust)
 

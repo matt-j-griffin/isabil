@@ -6,7 +6,7 @@ Locale expressions and user interface layer of locales.
 
 signature ISABIL =
 sig
-
+  val mk_numeral_nat: AstParser.nat -> term
   val mk_typ: AstParser.typea -> term
   val mk_en: AstParser.endian -> term
   val mk_cast: AstParser.cast -> term
@@ -175,7 +175,11 @@ and mk_stmt (AstParser.CpuExn i) = @{term "CpuExn"} $ mk_numeral_int i
   | mk_stmt (AstParser.If (e, bil1, bil2)) = @{term "If"} $ mk_exp e $ mk_bil bil1 $ mk_bil bil2
   | mk_stmt (AstParser.Move (var, e)) = @{term "Move"} $ mk_var var $ mk_exp e
 
-fun mk_insn (AstParser.Insn_ext (addr, sz, bil, _)) = Const ("Instruction_Syntax.insn.make", @{typ "word \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> insn"}) $ (mk_word addr) $ (mk_word sz) $ mk_bil bil
+fun mk_insn (AstParser.Insn_ext (addr, sz, bil, _)) = 
+  Const ("Instruction_Syntax.insn.make", @{typ "word \<Rightarrow> word \<Rightarrow> bil \<Rightarrow> insn"}) $ 
+    (mk_word addr) $ 
+    (mk_word sz) $ 
+    mk_bil bil
 
 
 end;

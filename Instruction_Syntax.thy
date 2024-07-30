@@ -2,7 +2,7 @@ theory Instruction_Syntax
   imports Formula_Syntax Bitvector_Instance
 begin
 
-record insn = 
+record insn =
   addr :: word
   size :: word
   code :: bil

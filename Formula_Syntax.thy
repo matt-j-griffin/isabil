@@ -1,6 +1,5 @@
 theory Formula_Syntax
   imports BIL_Syntax 
-          "HOL-Eisbach.Eisbach"
 begin
 
 type_synonym variables = \<open>var \<rightharpoonup> val\<close>
@@ -50,9 +49,10 @@ lemma var_in_dom_\<Delta>[intro]: \<open>(var, val) \<in>\<^sub>\<Delta> \<Delta
 
 text \<open>Attempt to solve a proof of the form (var, val) \<in> \<Delta>\<close>
 
-method solve_in_var = (
-    ((assumption | rule var_in_addI | (rule var_in_add_eqI, (simp; fail)) | (rule var_in_dropI))+);
+method solve_in_var uses add = (
+    ((assumption | rule var_in_addI | (rule var_in_add_eqI, (simp (no_asm) only: add; fail)) | (rule var_in_dropI))+);
     (assumption | (unfold var_syntax_class.var_eq List.list.inject String.char.inject Type.inject, blast)[1])
 )
+
 
 end

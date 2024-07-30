@@ -127,6 +127,12 @@ where
   \<open>parse_exp (Node ''AND'' [e\<^sub>1, e\<^sub>2]) = map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp And) e\<^sub>2) (parse_exp e\<^sub>1) (parse_exp e\<^sub>2)\<close> |
   \<open>\<lbrakk>length ast \<noteq> 2\<rbrakk> \<Longrightarrow> parse_exp (Node ''AND'' ast) = Error ''Expecting 2 arguments for type "AND", got many.''\<close> |
 
+  \<open>parse_exp (Node ''MOD'' [e\<^sub>1, e\<^sub>2]) = map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp Mod) e\<^sub>2) (parse_exp e\<^sub>1) (parse_exp e\<^sub>2)\<close> |
+  \<open>\<lbrakk>length ast \<noteq> 2\<rbrakk> \<Longrightarrow> parse_exp (Node ''MOD'' ast) = Error ''Expecting 2 arguments for type "MOD", got many.''\<close> |
+
+  \<open>parse_exp (Node ''SMOD'' [e\<^sub>1, e\<^sub>2]) = map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp SMod) e\<^sub>2) (parse_exp e\<^sub>1) (parse_exp e\<^sub>2)\<close> |
+  \<open>\<lbrakk>length ast \<noteq> 2\<rbrakk> \<Longrightarrow> parse_exp (Node ''SMOD'' ast) = Error ''Expecting 2 arguments for type "SMOD", got many.''\<close> |
+
   \<open>parse_exp (Node ''LT'' [e\<^sub>1, e\<^sub>2]) = map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (LOp Lt) e\<^sub>2) (parse_exp e\<^sub>1) (parse_exp e\<^sub>2)\<close> |
   \<open>\<lbrakk>length ast \<noteq> 2\<rbrakk> \<Longrightarrow> parse_exp (Node ''LT'' ast) = Error ''Expecting 2 arguments for type "LT", got many.''\<close> |
 
@@ -175,19 +181,20 @@ where
   \<open>\<lbrakk>e \<noteq> ''Store''; e \<noteq> ''Load''; e \<noteq> ''Var''; e \<noteq> ''Let''; e \<noteq> ''Int'';
     e \<noteq> ''Unknown''; e \<noteq> ''NOT''; e \<noteq> ''NEG''; e \<noteq> ''SLE''; e \<noteq> ''SLT''; 
     e \<noteq> ''MINUS''; e \<noteq> ''TIMES''; e \<noteq> ''DIVIDE''; e \<noteq> ''XOR''; e \<noteq> ''OR''; 
-    e \<noteq> ''AND''; e \<noteq> ''LT''; e \<noteq> ''LE''; e \<noteq> ''NEQ''; e \<noteq> ''PLUS''; e \<noteq> ''EQ''; 
+    e \<noteq> ''AND''; e \<noteq> ''MOD''; e \<noteq> ''SMOD''; e \<noteq> ''LT''; e \<noteq> ''LE''; e \<noteq> ''NEQ''; e \<noteq> ''PLUS''; e \<noteq> ''EQ''; 
     e \<noteq> ''RSHIFT''; e \<noteq> ''ARSHIFT''; e \<noteq> ''LSHIFT''; e \<noteq> ''LOW''; e \<noteq> ''HIGH''; 
     e \<noteq> ''UNSIGNED''; e \<noteq> ''SIGNED''; e \<noteq> ''Ite''; e \<noteq> ''Concat''; e \<noteq> ''Extract''
    \<rbrakk> \<Longrightarrow> parse_exp (Node e _) = Error (List.append ''Expecting either "Store", "Load", "Var", "Let",
            "Int", "Unknown", "NOT", "NEG", "SLE", "SLT", "MINUS", "TIMES", "DIVIDE", "XOR", "OR",
-           "AND", "LT", "LE", "NEQ", "PLUS", "EQ", "RSHIFT", "ARSHIFT", "LSHIFT", "LOW", "HIGH",
+           "AND", "LT", "LE", "NEQ", "PLUS", "MOD", "SMOD", "EQ", "RSHIFT", "ARSHIFT", "LSHIFT", "LOW", "HIGH",
            "UNSIGNED", "SIGNED", "Ite", "Concat", "Extract" but received: '' e)\<close>
   subgoal for P x
     apply (cases x, safe) subgoal for str ast
     unfolding AST.simps apply (cases \<open>str = ''Store'' \<or> str = ''Load'' \<or> str = ''Var'' \<or> 
         str = ''Let'' \<or> str = ''Int'' \<or> str = ''Unknown'' \<or> str = ''NOT'' \<or> str = ''NEG'' \<or> 
         str = ''SLE'' \<or> str = ''SLT'' \<or> str = ''MINUS'' \<or> str = ''TIMES'' \<or> str = ''DIVIDE'' \<or> 
-        str = ''XOR'' \<or> str = ''OR'' \<or> str = ''AND'' \<or> str = ''LT'' \<or> str = ''LE'' \<or> str = ''NEQ'' \<or> 
+        str = ''XOR'' \<or> str = ''OR'' \<or> str = ''AND'' \<or> str = ''MOD'' \<or> str = ''SMOD'' \<or> 
+        str = ''LT'' \<or> str = ''LE'' \<or> str = ''NEQ'' \<or> 
         str = ''PLUS'' \<or> str = ''EQ'' \<or> str = ''RSHIFT'' \<or> str = ''ARSHIFT'' \<or> str = ''LSHIFT'' \<or> 
         str = ''LOW'' \<or> str = ''HIGH'' \<or> str = ''UNSIGNED'' \<or> str = ''SIGNED'' \<or> str = ''Ite'' \<or> 
         str = ''Concat'' \<or> str = ''Extract''\<close>)
@@ -220,13 +227,15 @@ where
     apply (cases ast rule: length2_cases, auto)
     apply (cases ast rule: length2_cases, auto)
     apply (cases ast rule: length2_cases, auto)
+    apply (cases ast rule: length2_cases, auto)
+    apply (cases ast rule: length2_cases, auto)
     apply (cases ast rule: length3_cases, auto)
     apply (cases ast rule: length2_cases, auto)
     apply (cases ast rule: length3_cases, auto)
     done
   .
   apply simp_all
-  by auto
+  by auto (* Takes a long time *)
 termination by lexicographic_order
 
 function
@@ -393,6 +402,7 @@ where
     in
       map_result_value (\<lambda>fs. (AdtSection section_name fs)) functions
   )\<close>
+
 (*
 fun
   parse_adt_section' :: \<open>string \<Rightarrow> AdtSection parser_result\<close>
@@ -463,6 +473,7 @@ termination apply (standard)
   apply (cases "P x", auto)
   by (metis Suc_leD Suc_length_conv le_SucI length_dropWhile_le)
   by (metis length_Cons length_dropWhile_le less_Suc_eq less_eq_Suc_le)
+
 
 fun 
   parse_adt_program :: \<open>string list \<Rightarrow> AdtSection list parser_result\<close>
@@ -672,10 +683,10 @@ where
   \<open>get_insns_function sza (AdtFunction _ _ ast) = (
     let 
       words = (map (get_prog_addr sza) ast);
-      addrs = (map (\<lambda>a. case a of Word _ sz \<Rightarrow> sz) words);
+      addrs = (map (\<lambda>a. case a of Word sz _ \<Rightarrow> sz) words);
       szs = map (\<lambda>(a,b). b - a) (zip addrs (List.append (tl addrs) [0]))
     in
-      map (\<lambda>(insn, sz). get_insn sza  insn sz) (zip ast szs)
+      map (\<lambda>(insn, sz). get_insn sza insn sz) (zip ast szs)
   )\<close>
 
 fun
@@ -707,13 +718,38 @@ AdtSection ''.text'' [
 ] = z\<close>
   apply auto
   oops
-(*
-[\<lparr>addr = Word 66656 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66658 64)))]\<rparr>,
-     \<lparr>addr = Word 66660 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550520 64))), el]:u64)]\<rparr>,
-     \<lparr>addr = Word 66664 64, size = Word 0 64, code = [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66668 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66664 64))))]\<rparr>,
-     \<lparr>addr = Word 66640 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66642 64)))]\<rparr>,
-     \<lparr>addr = Word 66644 64, size = Word 0 64, code = [(Var ''X28'' imm\<langle>64\<rangle>) := (EVar (Var ''mem'' mem\<langle>64, 8\<rangle>)[BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 18446744073709550528 64))), el]:u64)]\<rparr>,
-     \<lparr>addr = Word 66648 64, size = Word 0 64, code = [(Var ''X6'' imm\<langle>64\<rangle>) := (Val (Immediate (Word 66652 64)), jmp BinOp (EVar (Var ''X28'' imm\<langle>64\<rangle>)) (AOp Plus) (Val (Immediate (Word 66648 64))))]\<rparr>,
-     \<lparr>addr = Word 66652 64, size = Word 0 64, code = []\<rparr>]*)
+
+fun 
+  is_sub_in_list :: \<open>string list \<Rightarrow> AdtFunction \<Rightarrow> bool\<close>
+where
+  \<open>is_sub_in_list lst (AdtFunction _ name _) = (name \<in> set lst)\<close>
+
+fun 
+  filter_subroutines_section :: \<open>string list \<Rightarrow> AdtSection \<Rightarrow> AdtSection\<close>
+where
+  \<open>filter_subroutines_section lst (AdtSection name ast) = (AdtSection name (filter (is_sub_in_list lst) ast))\<close>
+
+fun 
+  filter_subroutines :: \<open>string list \<Rightarrow> AdtSection list \<Rightarrow> AdtSection list\<close>
+where
+  \<open>filter_subroutines lst adt = map (filter_subroutines_section lst) adt\<close>
+
+
+fun 
+  get_subroutine_addrs_function :: \<open>AdtFunction \<Rightarrow> (string \<times> word list)\<close>
+where
+  \<open>get_subroutine_addrs_function (AdtFunction _ name ast) = (name, map (get_prog_addr 64) ast)\<close>
+
+fun 
+  get_subroutine_addrs_section :: \<open>AdtSection \<Rightarrow> (string \<times> word list) list\<close>
+where
+  \<open>get_subroutine_addrs_section (AdtSection _ ast) = map get_subroutine_addrs_function ast\<close>
+
+
+fun 
+  get_subroutine_addrs :: \<open>AdtSection list \<Rightarrow> (string \<times> word list) list\<close>
+where
+  \<open>get_subroutine_addrs ast = fold List.append (map get_subroutine_addrs_section ast) []\<close>
+
 
 end

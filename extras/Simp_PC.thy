@@ -68,8 +68,7 @@ val _ =
 
 
 lemma "(\<Delta>, (12::nat) mod 9, mem) = (\<Delta>, z, mem)"
-  apply simp_pc
-  using [[simp_trace_new]] apply simp
+  by simp_pc
 
 
 end

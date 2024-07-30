@@ -2,18 +2,30 @@ theory Bitvector_Syntax
   imports Syntax "Typing/Type_Syntax"
 begin
 
-class word_constructor = bool_syntax + type_syntax +
-    fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
-  assumes word_inject[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<longleftrightarrow> nat = nat' \<and> sz = sz'\<close>
-      and true_word: \<open>true = (1 \<Colon> 1)\<close>
-      and false_word: \<open>false = (0 \<Colon> 1)\<close>
+class word_constructor = (*bool_syntax +*) type_syntax +
+  fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
+  assumes word_inject[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<equiv> nat = nat' \<and> sz = sz'\<close>
       and type_wordI: \<open>\<And>num sz. type (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close>
 begin
+
+(* TODO = Isabelleism \<rightarrow> 1 = Suc 0*)
+definition
+  true :: 'a
+where 
+  \<open>true \<equiv> (1 \<Colon> 1)\<close>
+
+definition
+  false :: 'a
+where 
+  \<open>false \<equiv> (0 \<Colon> 1)\<close>
+
+lemmas true_word = true_def
+lemmas false_word = false_def
 
 lemma word_bool_inject[simp]: 
     \<open>(num \<Colon> sz) = true  \<longleftrightarrow> num = 1 \<and> sz = 1\<close> \<open>true  = (num \<Colon> sz) \<longleftrightarrow> num = 1 \<and> sz = 1\<close>
     \<open>(num \<Colon> sz) = false \<longleftrightarrow> num = 0 \<and> sz = 1\<close> \<open>false = (num \<Colon> sz) \<longleftrightarrow> num = 0 \<and> sz = 1\<close>
-  unfolding true_word false_word word_inject by safe
+  unfolding word_inject true_word false_word by auto
 
 lemma word_not_sz_neqI:
   assumes \<open>num \<noteq> num'\<close>
@@ -86,7 +98,7 @@ declare bv_inc.simps[simp del]
 function 
   bv_minus :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>-\<^sub>b\<^sub>v\<close> 56)
 where 
-  \<open>(nat\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = ((((if (nat\<^sub>1 < nat\<^sub>2) then 2 ^ sz else 0) + nat\<^sub>1) - nat\<^sub>2) \<Colon> sz)\<close> |
+  \<open>(nat\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = ((if (nat\<^sub>1 < nat\<^sub>2) then 2 ^ sz + nat\<^sub>1 - nat\<^sub>2 else (nat\<^sub>1 - nat\<^sub>2)) \<Colon> sz)\<close> |
   \<open>\<lbrakk>sz\<^sub>1 \<noteq> sz\<^sub>2\<rbrakk> \<Longrightarrow> (_ \<Colon> sz\<^sub>1) -\<^sub>b\<^sub>v (_ \<Colon> sz\<^sub>2) = undefined\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w\<^sub>1 \<noteq> (nat \<Colon> sz)) \<or> (\<forall>nat sz. w\<^sub>2 \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> w\<^sub>1 -\<^sub>b\<^sub>v w\<^sub>2 = undefined\<close>
   subgoal for P x 
@@ -155,11 +167,11 @@ lemma land_false[simp]:
     \<open>true &\<^sub>b\<^sub>v false = false\<close> 
     \<open>false &\<^sub>b\<^sub>v true = false\<close> 
     \<open>false &\<^sub>b\<^sub>v false = false\<close>
-  unfolding true_word false_word bv_land.simps and_zero_eq zero_and_eq by safe
+  unfolding true_word false_word bv_land.simps and_zero_eq zero_and_eq by auto
 
 lemma land_true[simp]:
     \<open>true &\<^sub>b\<^sub>v true = true\<close>
-  unfolding true_word bv_land.simps and.idem by clarify
+  unfolding true_word bv_land.simps and.idem by auto
 
 function
   bv_lor :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>|\<^sub>b\<^sub>v\<close> 56)
@@ -305,7 +317,7 @@ lemma bv_negation_false_true[simp]: \<open>~\<^sub>b\<^sub>v false = true\<close
   unfolding true_word false_word bv_negation.simps by auto
 
 function
-  bv_le :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>b\<^sub>v\<close> 55)
+  bv_lt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>b\<^sub>v\<close> 55)
 where
   \<open>(nat\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = (if nat\<^sub>1 < nat\<^sub>2 then true else false)\<close> |
   \<open>\<lbrakk>sz\<^sub>1 \<noteq> sz\<^sub>2\<rbrakk> \<Longrightarrow> (_ \<Colon> sz\<^sub>1) <\<^sub>b\<^sub>v (_ \<Colon> sz\<^sub>2) = undefined\<close> |
@@ -315,7 +327,17 @@ where
 
 termination by (standard, auto)
 
-declare bv_le.simps[simp del]
+lemma bv_lt_true: \<open>nat\<^sub>1 < nat\<^sub>2 \<Longrightarrow> (nat\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = true\<close>
+  by auto
+
+lemma bv_lt_false: \<open>nat\<^sub>1 \<ge> nat\<^sub>2 \<Longrightarrow> (nat\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = false\<close>
+  by auto
+
+lemma bv_lt_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 < num\<^sub>2 then 1 else 0) \<Colon> 1)\<close>
+  unfolding bv_lt.simps apply (split if_splits)+
+  by simp
+
+declare bv_lt.simps[simp del]
 
 function
   bv_sle :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
@@ -353,10 +375,15 @@ declare xtract.simps[simp del]
 lemma extract_0: \<open>(ext 0 \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = 0 \<Colon> Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
   unfolding xtract.simps by auto
 
-lemma extract_full: 
+lemma extract_to_sz: 
+  assumes \<open>sz > 0\<close> and \<open>y < 2 ^ sz\<close> 
+    shows \<open>(ext y \<Colon> sz' \<sim> hi : sz - 1 \<sim> lo : 0) = y \<Colon> sz\<close>
+  using assms 
+  by (metis Suc_pred add.commute diff_Suc_eq_diff_pred drop_bit_0 id_apply plus_1_eq_Suc take_bit_nat_eq_self_iff xtract.simps(1))
+
+lemma extract_full:
   assumes \<open>num < 2 ^ sz\<close> and \<open>sz > 0\<close> shows \<open>(ext num \<Colon> sz \<sim> hi : (sz - 1) \<sim> lo : 0) = (num \<Colon> sz)\<close>
-  using assms unfolding xtract.simps apply auto
-  by (rule take_bit_nat_eq_self)
+  using assms extract_to_sz by blast
   
 lemma extract_concat32:
   assumes \<open>x < 2 ^ 32\<close>
@@ -379,13 +406,6 @@ lemma extract_concat64:
   unfolding concat_bit_take_bit_eq
   apply (unfold concat_bit_drop_bit, simp)+
   by (metis add_One_commute assms concat_take_drop_bit_nat_eq_self numeral_plus_numeral semiring_norm(2) semiring_norm(4) semiring_norm(6))
-
-lemma extract_low: 
-  assumes \<open>val < 2 ^ 32\<close>
-    shows \<open>(ext val \<Colon> sz \<sim> hi : 32 - 1 \<sim> lo : 0) = (val \<Colon> 32)\<close>
-  unfolding xtract.simps apply simp
-  apply (rule take_bit_nat_eq_self)
-  using assms by assumption
 
 function (* TODO maintain sign*)
   sxtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)
@@ -423,14 +443,18 @@ definition
 where
   \<open>a =\<^sub>b\<^sub>v b \<equiv> if a = b then true else false\<close>  
 
-lemma bv_eq[simp]: \<open>(num \<Colon> sz) =\<^sub>b\<^sub>v (num \<Colon> sz) = true\<close>
+lemma bv_eq[simp]: \<open>a =\<^sub>b\<^sub>v a = true\<close>
   unfolding bv_eq_def by simp
 
+lemma bv_not_eq: \<open>a \<noteq> b \<Longrightarrow> a =\<^sub>b\<^sub>v b = false\<close>
+  unfolding bv_eq_def by simp
+
+
 lemma and_eq_true[simp]: \<open>((num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) &\<^sub>b\<^sub>v true = (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-  using bv_land.simps  bv_eq_def local.false_word local.true_word by fastforce  
+  using bv_land.simps  bv_eq_def (*local.false_word local.true_word*) by fastforce  
 
 lemma and_eq_false[simp]: \<open>((num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) &\<^sub>b\<^sub>v false = false\<close>
-using bv_land.simps bv_eq_def local.false_word local.true_word by fastforce    
+using bv_land.simps bv_eq_def (*local.false_word local.true_word*) by fastforce    
 
 
 abbreviation 
@@ -438,18 +462,27 @@ abbreviation
 where
   \<open>a \<noteq>\<^sub>b\<^sub>v b \<equiv> ~\<^sub>b\<^sub>v (a =\<^sub>b\<^sub>v b)\<close>
 
-lemma bv_not_eq[simp]: \<open>(num \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num \<Colon> sz) = false\<close>
-  by simp
+lemma bv_eq_neq[simp]: \<open>(num \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num \<Colon> sz) = false\<close>
+  unfolding bv_eq bv_negation_true_false ..
+
+lemma bv_neq_true: \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> (num\<^sub>2 \<Colon> sz\<^sub>2) \<Longrightarrow> (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2) = true\<close>
+  using bv_negation_false_true bv_not_eq by presburger
+
+lemma bv_neq_true_false[simp]: \<open>true \<noteq>\<^sub>b\<^sub>v false = true\<close>
+  using bv_negation_false_true bv_not_eq true_word by simp
+
+lemma bv_neq_false_true[simp]: \<open>false \<noteq>\<^sub>b\<^sub>v true  = true\<close>
+  using bv_negation_false_true bv_not_eq by (simp add: bv_eq_def)
 
 lemma bv_not_eq_same_sz_true: assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> shows \<open>(num\<^sub>1 \<Colon> sz) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = true\<close>
-  by (simp add: assms bv_eq_def)
+  using assms bv_neq_true by simp
 
 abbreviation
   bv_leq :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>\<le>\<^sub>b\<^sub>v\<close> 56)
 where
   \<open>a \<le>\<^sub>b\<^sub>v b \<equiv> (a =\<^sub>b\<^sub>v b) |\<^sub>b\<^sub>v (a <\<^sub>b\<^sub>v b)\<close>
 
-lemmas bv_leq_defs = bv_eq_def bv_lor.simps bv_le.simps
+lemmas bv_leq_defs = bv_eq_def bv_lor.simps bv_lt.simps
 
 lemma bv_leq_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 \<le> num\<^sub>2 then 1 else 0) \<Colon> 1)\<close>
   unfolding bv_leq_defs apply (split if_splits)+
@@ -481,24 +514,33 @@ termination
 
 declare succ.simps[simp del]
 
+lemma succ_plus: \<open>succ ((x \<Colon> sz) +\<^sub>b\<^sub>v (y \<Colon> sz)) = ((x \<Colon> sz) +\<^sub>b\<^sub>v (Suc y \<Colon> sz))\<close>
+  unfolding succ.simps bv_plus.simps mod_simps by auto
+
+
 lemmas bv_simps = bv_plus.simps bv_minus.simps bv_times.simps bv_divide.simps bv_sdivide.simps
                   bv_inc.simps bv_land.simps bv_lor.simps bv_xor.simps bv_mod\<^sub>b\<^sub>v.simps bv_smod.simps
                   bv_lsl.simps bv_lsr.simps bv_asr.simps bv_concat.simps bv_uminus.simps
-                  bv_negation.simps bv_le.simps bv_sle.simps xtract.simps sxtract.simps
+                  bv_negation.simps bv_lt.simps bv_sle.simps xtract.simps sxtract.simps
 
 
 
 
 text \<open>Type syntax for words\<close>
+(* TODO use syntax locales *)
 
-lemma type_trueI[simp]: \<open>type true = imm\<langle>1\<rangle>\<close> 
+lemma type_trueI[simp]: \<open>type true = imm\<langle>1\<rangle>\<close>
   unfolding true_word by (rule type_wordI)
 
 lemma type_falseI[simp]: \<open>type false = imm\<langle>1\<rangle>\<close> 
   unfolding false_word by (rule type_wordI)
 
+lemma type_plusI[simp]: \<open>type ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) = imm\<langle>sz\<rangle>\<close>
+  unfolding bv_plus.simps by (rule type_wordI)
+
 lemma type_succI[simp]: \<open>type (succ (num \<Colon> sz)) = imm\<langle>sz\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_wordI)
+  unfolding succ.simps by (rule type_plusI)
+
 
 end
 

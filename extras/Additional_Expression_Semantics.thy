@@ -21,62 +21,6 @@ text \<open>Succinct representation of big and little endian storage\<close>
 context storage_constructor
 begin
 (*
-lemma mod_Suc_neqI:
-  assumes \<open>num\<^sub>1 mod sz\<^sub>1 \<noteq> num\<^sub>2 mod sz\<^sub>1\<close>
-    shows \<open>Suc num\<^sub>1 mod sz\<^sub>1 \<noteq> Suc num\<^sub>2 mod sz\<^sub>1\<close>
-  using assms mod_Suc by auto
-
-lemma mod_lt_neqI:
-  fixes num\<^sub>1 :: nat
-  assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> and \<open>num\<^sub>1 < sz\<^sub>1\<close> and \<open>num\<^sub>2 < sz\<^sub>1\<close>
-    shows \<open>num\<^sub>1 mod sz\<^sub>1 \<noteq> num\<^sub>2 mod sz\<^sub>1\<close>
-  using assms mod_Suc by auto
-
-lemma succ_lt_neqI: 
-  assumes \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) \<noteq> num\<^sub>2 \<Colon> sz\<^sub>2\<close> and \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>num\<^sub>2 < 2 ^ sz\<^sub>1\<close>
-    shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
-  unfolding succ.simps bv_plus.simps apply auto
-  using assms mod_Suc_neqI mod_lt_neqI by force
-
-lemma succ_left_neqI: 
-    fixes w :: word
-  assumes \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> and \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close>
-    shows \<open>succ (succ w) \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
-  show ?thesis 
-    using w assms apply safe
-    unfolding succ.simps bv_plus.simps apply auto
-    using mod_Suc_neqI by auto
-qed
-
-lemma succ_right_neqI: 
-    fixes w :: word
-  assumes \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ w\<close> and \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close>
-    shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (succ w)\<close>
-proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
-  show ?thesis 
-    using w assms apply safe
-    unfolding succ.simps bv_plus.simps apply auto
-    using mod_Suc_neqI by auto
-qed
-
-lemma succ_succ_neqI: 
-    fixes w :: word
-  assumes \<open>succ w \<noteq> succ w'\<close>
-    shows \<open>succ (succ w) \<noteq> succ (succ w')\<close>
-proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
-  show ?thesis 
-    proof (cases w' rule: word_exhaust)
-      case w': (1 num\<^sub>2 sz\<^sub>2)
-      show ?thesis 
-        using w w' assms apply safe
-        unfolding succ.simps bv_plus.simps apply auto
-        using mod_Suc_neqI by auto
-    qed
-qed
 
 lemma refl8_load_storage_skip64I:
   assumes \<open>\<Delta> \<turnstile> v\<^sub>1[w\<^sub>1 \<leftarrow> v\<^sub>2, 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<^sub>4\<close> 
@@ -154,33 +98,10 @@ next
     unfolding Val_simp_storage by blast+
 qed
 
-method solve_succ_neq = 
-  match conclusion in \<open>succ (succ _) \<noteq> succ (succ _)\<close> \<Rightarrow> \<open>rule succ_succ_neqI, solve_succ_neq\<close>
-                    \<bar> \<open>succ (succ _) \<noteq> succ _\<close> \<Rightarrow> \<open>rule succ_left_neqI, assumption, assumption\<close>
-                    \<bar> \<open>succ _ \<noteq> succ (succ _)\<close> \<Rightarrow> \<open>rule succ_right_neqI, assumption, assumption\<close>
-                    \<bar> \<open>succ _ \<noteq> succ _\<close> \<Rightarrow> \<open>rule succ_lt_neqI, assumption, assumption, assumption\<close>
-                    \<bar> \<open>succ _ \<noteq> (_ \<Colon> _)\<close> \<Rightarrow> \<open>assumption\<close>
-                    \<bar> \<open>(_ \<Colon> _) \<noteq> succ _\<close> \<Rightarrow> \<open>assumption\<close>
-                    \<bar> \<open>(_ \<Colon> _) \<noteq> (_ \<Colon> _)\<close> \<Rightarrow> \<open>assumption\<close>
+
 
 text \<open>64bit read skipping a 32bit word\<close>
 
-abbreviation 
-  no_address_overlap_64_32 :: \<open>nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool\<close>
-where 
-  \<open>no_address_overlap_64_32 num\<^sub>1 num\<^sub>2 sz \<equiv> (
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (num\<^sub>2 \<Colon> sz) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (num\<^sub>2 \<Colon> sz)) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (num\<^sub>2 \<Colon> sz))) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (succ (num\<^sub>2 \<Colon> sz)))) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (succ (succ (num\<^sub>2 \<Colon> sz))))) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (succ (succ (succ (num\<^sub>2 \<Colon> sz)))))) \<and>
-    ((num\<^sub>1 \<Colon> sz)::word) \<noteq> succ (succ (succ (succ (succ (succ (succ (num\<^sub>2 \<Colon> sz))))))) \<and>
-    succ ((num\<^sub>1 \<Colon> sz)::word) \<noteq> (num\<^sub>2 \<Colon> sz) \<and> 
-    succ (succ ((num\<^sub>1 \<Colon> sz)::word)) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
-    succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))) \<noteq>(num\<^sub>2 \<Colon> sz)
-)\<close>
 
 lemma refl32_load_rev_cut64I:
   assumes \<open>\<Delta> \<turnstile> mem[w' \<leftarrow> v', 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<close>
@@ -241,16 +162,7 @@ lemma refl32_load_all_rev_cut32I:
 
 text \<open>64bit read skipping a 64bit word\<close>
 
-abbreviation 
-  no_address_overlap_64_64 :: \<open>nat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> bool\<close>
-where 
-  \<open>no_address_overlap_64_64 num\<^sub>1 num\<^sub>2 sz \<equiv> (
-    no_address_overlap_64_32 num\<^sub>1 num\<^sub>2 sz \<and>
-    succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word)))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
-    succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
-    succ (succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word)))))) \<noteq> (num\<^sub>2 \<Colon> sz) \<and>
-    succ (succ (succ (succ (succ (succ (succ ((num\<^sub>1 \<Colon> sz)::word))))))) \<noteq> (num\<^sub>2 \<Colon> sz)
-)\<close>
+
 
 lemma refl64_load_rev_cut64I:
   assumes \<open>\<Delta> \<turnstile> mem[w' \<leftarrow> v', 8][num\<^sub>3 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:u64 \<leadsto>* v\<close>

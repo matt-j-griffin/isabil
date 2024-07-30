@@ -1,6 +1,17 @@
 theory Prelims
-  imports Main
+  imports Main 
+          "../extras/Match_Inline" 
 begin
+
+
+method solve_set_inI uses add =
+  (solves \<open>rule add\<close>) |
+  (rule singletonI insertI1) |
+  (rule insertI2, solve_set_inI) |
+  (rule UnI1, solve_set_inI add: add) |
+  (rule UnI2, solve_set_inI add: add) |
+  \<comment> \<open>Without the guard this will loop indefinitely\<close>
+  (match_inline add in subset: \<open>_ \<subseteq> _\<close> \<Rightarrow> \<open>(rule set_mp, solves \<open>rule subset\<close>, solve_set_inI add: add)\<close>)
 
 lemma mod_Suc_neq: \<open>1 < y \<Longrightarrow> Suc x mod y \<noteq> x mod y\<close>
   unfolding mod_Suc by simp
@@ -8,25 +19,36 @@ lemma mod_Suc_neq: \<open>1 < y \<Longrightarrow> Suc x mod y \<noteq> x mod y\<
 lemma not_dvd_plus_mod_neq: fixes z :: \<open>'a::semiring_modulo\<close> shows \<open>\<not>(y dvd z) \<Longrightarrow> (z + x) mod y \<noteq> x\<close>
   by (metis add.commute add_left_cancel dvd_triv_left mod_mult_div_eq)
 
+lemma mod_between_neq: fixes w :: nat shows "w < y \<Longrightarrow> 0 < w \<Longrightarrow> x \<noteq> (w + x) mod y"
+  by (metis (no_types, opaque_lifting) add.assoc antisym_conv3 canonically_ordered_monoid_add_class.lessE less_nat_zero_code mod_add_left_eq mod_add_self2 mod_less mod_less_divisor mod_self)
+
+lemmas mod_between_neq' = mod_between_neq[symmetric]
+
 lemma not_dvd_Suc_Suc_mod_neq: \<open>y \<noteq> 1 \<Longrightarrow> y \<noteq> 2 \<Longrightarrow> Suc (Suc x) mod y \<noteq> x\<close>
-  by (metis One_nat_def Suc_1 Suc_lessD lessI less_irrefl_nat mod_Suc mod_mod_trivial)
+  apply (cases "y = 0", simp)
+  unfolding add_2_eq_Suc[symmetric] apply (rule mod_between_neq')
+  by auto
 
 lemma not_dvd_Suc_mod_neq: \<open>y \<noteq> 1 \<Longrightarrow> (Suc x) mod y \<noteq> x\<close>
   by (metis One_nat_def mod_Suc mod_Suc_eq n_not_Suc_n)
 
 
-lemma YYY: fixes w :: nat shows "w < y \<Longrightarrow> 0 < w \<Longrightarrow> x \<noteq> (w + x) mod y"
-  by (metis (no_types, opaque_lifting) add.assoc antisym_conv3 canonically_ordered_monoid_add_class.lessE less_nat_zero_code mod_add_left_eq mod_add_self2 mod_less mod_less_divisor mod_self)
 
 lemma Suc_mod_neq: \<open>a mod y \<noteq> b mod y \<Longrightarrow> Suc a mod y \<noteq> Suc b mod y\<close>
   by (simp add: mod_Suc)
+
+lemma mod_lt_neqI:
+  fixes num\<^sub>1 :: nat
+  assumes \<open>num\<^sub>1 \<noteq> num\<^sub>2\<close> and \<open>num\<^sub>1 < sz\<^sub>1\<close> and \<open>num\<^sub>2 < sz\<^sub>1\<close>
+    shows \<open>num\<^sub>1 mod sz\<^sub>1 \<noteq> num\<^sub>2 mod sz\<^sub>1\<close>
+  using assms mod_Suc by auto
 
 lemma plus_mod_neq: fixes y :: nat shows "z < y \<Longrightarrow> w < y \<Longrightarrow> z \<noteq> w \<Longrightarrow> (z + x) mod y \<noteq> (w + x) mod y"
 proof (induct z)
   case 0
   thus ?case 
     apply simp
-    using YYY[of w y \<open>x mod y\<close>] unfolding mod_add_right_eq by simp
+    using mod_between_neq'[of w y \<open>x mod y\<close>] unfolding mod_add_right_eq by simp
 next
   case (Suc z)
   thus ?case 
@@ -36,7 +58,7 @@ next
     apply simp
     apply (induct w)
     apply simp
-    using YYY[of \<open>Suc z\<close> y \<open>x mod y\<close>, symmetric] unfolding mod_add_right_eq
+    using mod_between_neq'[of \<open>Suc z\<close> y \<open>x mod y\<close>, symmetric] unfolding mod_add_right_eq
     apply simp
     apply simp
     subgoal for w
@@ -46,8 +68,10 @@ next
       by (metis (no_types, opaque_lifting) Suc_lessD Suc_lessE ab_semigroup_add_class.add_ac(1) mod_add_left_eq mod_less mod_mult_self2 mult.commute mult_Suc_right)
     .
 qed
-  
-  
+
+lemma plus_mod_neq_lhs: fixes y :: nat shows "z < y \<Longrightarrow> w < y \<Longrightarrow> z \<noteq> w \<Longrightarrow> (x + z) mod y \<noteq> (x + w) mod y"
+  using plus_mod_neq by presburger
+
 lemma plus_Suc_right_mod_neq:"z < y \<Longrightarrow> 1 < y \<Longrightarrow> z \<noteq> 1 \<Longrightarrow> (z + x) mod y \<noteq> Suc x mod y"
   unfolding plus_1_eq_Suc[symmetric] by (rule plus_mod_neq)
 

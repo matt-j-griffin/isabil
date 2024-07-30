@@ -210,7 +210,7 @@ next
 next
   case (LessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
   then show ?case 
-    unfolding bv_eq_def bv_lor.simps bv_le.simps by simp
+    unfolding bv_eq_def bv_lor.simps bv_lt.simps by simp
 next
   case (SignedLessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
   then show ?case 
@@ -261,7 +261,7 @@ lemma step_exp_not_val[simp]: \<open>\<not>(\<Delta> \<turnstile> (Val v) \<lead
 
 
 interpretation step_exp_not_val: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e'. \<not>(\<Delta> \<turnstile> e \<leadsto> e'))\<close>
-  by (standard, rule step_exp_not_val)
+  by (standard, simp)
 
 (* TODO *)
 lemma step_exp_not_plus[simp]: \<open>\<not>(\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) \<leadsto> e)\<close>

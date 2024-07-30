@@ -247,14 +247,10 @@ class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
   assumes var_not_word_neq[simp]: \<open>\<And>id t num sz'. (id :\<^sub>t t) \<noteq> (num \<Colon> sz')\<close>
       and var_not_unknown_neq[simp]: \<open>\<And>id t str t'. (id :\<^sub>t t) \<noteq> unknown[str]: t'\<close>
       and var_not_storage_neq[simp]: \<open>\<And>id t v w v' sz. (id :\<^sub>t t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
-      and var_not_true[simp]: \<open>\<And>id t. (id :\<^sub>t t) \<noteq> true\<close>
-      and var_not_false[simp]: \<open>\<And>id t. (id :\<^sub>t t) \<noteq> false\<close>
       and var_not_concat[simp]: \<open>\<And>id t e\<^sub>1 e\<^sub>2. (id :\<^sub>t t) \<noteq> e\<^sub>1 @ e\<^sub>2\<close>
       and concat_not_word_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 num sz'. e\<^sub>1 @ e\<^sub>2 \<noteq> (num \<Colon> sz')\<close>
       and concat_not_unknown_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 str t'. e\<^sub>1 @ e\<^sub>2 \<noteq> unknown[str]: t'\<close>
       and concat_not_storage_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 v w v' sz. e\<^sub>1 @ e\<^sub>2 \<noteq> (v[w \<leftarrow> v', sz])\<close>
-      and concat_not_true[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> true\<close>
-      and concat_not_false[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2. e\<^sub>1 @ e\<^sub>2 \<noteq> false\<close>
       and exp_simps[simp]:
         \<open>\<And>id t e\<^sub>1 e\<^sub>2. id :\<^sub>t t \<noteq> e\<^sub>1 + e\<^sub>2\<close>
         \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1 @ e\<^sub>2)\<close>
@@ -263,21 +259,10 @@ class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
 
 begin
 
-lemma le_simps[simp]: 
-    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> true\<close> \<open>e\<^sub>1 le e\<^sub>2 \<noteq> false\<close>
-    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
-  unfolding bv_le.simps bv_lor.simps bv_eq_def 
-  using le_word_simp apply simp_all
-  unfolding true_word false_word
-  using le_word_simp by simp_all
-
-lemma true_not_var[simp]: \<open>true \<noteq> (id' :\<^sub>t t)\<close>
-  using var_not_true by metis
-
-lemma false_not_var[simp]: \<open>false \<noteq> (id' :\<^sub>t t)\<close>
-  using var_not_false by metis
+lemma exp_simps'[simp]:
+  \<open>(name :\<^sub>t t) \<noteq> true\<close> \<open>(name :\<^sub>t t) \<noteq> false\<close>
+  \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> true\<close> \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> false\<close>
+  unfolding true_def false_def by auto
 
 lemma concat_not_var[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> name' :\<^sub>t t\<close>
   using var_not_concat by metis
@@ -287,6 +272,16 @@ lemma concat_not_plus[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> e\<^sub>3 + e
 
 lemma plus_not_var[simp]: \<open>e\<^sub>1 + e\<^sub>2 \<noteq> id' :\<^sub>t t\<close>
   using exp_simps(1) by metis
+
+lemma le_simps[simp]: 
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> true\<close> \<open>e\<^sub>1 le e\<^sub>2 \<noteq> false\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+    \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  unfolding bv_lt.simps bv_lor.simps bv_eq_def 
+  using le_word_simp apply simp_all
+  unfolding true_word false_word
+  using le_word_simp by simp_all
 
 lemma exp_syntax_exhaust:
   obtains 

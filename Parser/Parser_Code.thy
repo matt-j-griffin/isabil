@@ -1,11 +1,15 @@
 theory Parser_Code
   imports Parser 
     Lexer_Code 
-    "HOL-Library.Code_Target_Numeral"
 begin
-text \<open>Code Generation for ADT_Lexer\<close>
+
+text \<open>Code Generation for ADT Parser\<close>
+
+type_synonym 'v parser_result = \<open>('v, String.literal) result\<close>
 
 definition \<open>parse_ast str = parse_adt_program (map String.explode str)\<close> 
+
+text \<open>parse_en\<close>
 
 lemma [code]: \<open>parse_en (Node en ast) = (
   if en = ''LittleEndian'' then
@@ -119,6 +123,12 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
   else if e = ''PLUS'' then
     if (length ast = 2) then map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp Plus) e\<^sub>2) (parse_exp (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "PLUS", got many.''
+  else if e = ''MOD'' then
+    if (length ast = 2) then map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp Mod) e\<^sub>2) (parse_exp (ast ! 0)) (parse_exp (ast ! 1))
+    else Error ''Expecting 2 arguments for type "MOD", got many.''
+  else if e = ''SMOD'' then
+    if (length ast = 2) then map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (AOp SMod) e\<^sub>2) (parse_exp (ast ! 0)) (parse_exp (ast ! 1))
+    else Error ''Expecting 2 arguments for type "SMOD", got many.''
   else if e = ''EQ'' then
     if (length ast = 2) then map_result_value2 (\<lambda>e\<^sub>1 e\<^sub>2. BinOp e\<^sub>1 (LOp Eq) e\<^sub>2) (parse_exp (ast ! 0)) (parse_exp (ast ! 1))
     else Error ''Expecting 2 arguments for type "EQ", got many.''
@@ -154,7 +164,7 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
     else Error ''Expecting 1 argument for type "NEG", got many.''
   else Error (List.append ''Expecting either "Store", "Load", "Var", "Let",
            "Int", "Unknown", "NOT", "NEG", "SLE", "SLT", "MINUS", "TIMES", "DIVIDE", "XOR", "OR",
-           "AND", "LT", "LE", "NEQ", "PLUS", "EQ", "RSHIFT", "ARSHIFT", "LSHIFT", "LOW", "HIGH",
+           "AND", "LT", "LE", "NEQ", "PLUS", "MOD", "SMOD", "EQ", "RSHIFT", "ARSHIFT", "LSHIFT", "LOW", "HIGH",
            "UNSIGNED", "SIGNED", "Ite", "Concat", "Extract" but received: '' e)
   )\<close>
   apply (split if_splits, safe)
@@ -238,7 +248,7 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
   
   apply (split if_splits, intro conjI impI)
   subgoal premises p using p(27) apply clarify by (cases ast rule: length2_cases, simp_all)
-  
+
   apply (split if_splits, intro conjI impI)
   subgoal premises p using p(28) apply clarify by (cases ast rule: length2_cases, simp_all)
   
@@ -246,10 +256,16 @@ lemma [code]: \<open>parse_exp (Node e ast) = (
   subgoal premises p using p(29) apply clarify by (cases ast rule: length2_cases, simp_all)
   
   apply (split if_splits, intro conjI impI)
-  subgoal premises p using p(30) apply clarify by (cases ast rule: length1_cases, simp_all)
+  subgoal premises p using p(30) apply clarify by (cases ast rule: length2_cases, simp_all)
   
   apply (split if_splits, intro conjI impI)
-  subgoal premises p using p(31) apply clarify by (cases ast rule: length1_cases, simp_all)  
+  subgoal premises p using p(31) apply clarify by (cases ast rule: length2_cases, simp_all)  
+
+  apply (split if_splits, intro conjI impI)
+  subgoal premises p using p(32) apply clarify by (cases ast rule: length1_cases, simp_all)
+  
+  apply (split if_splits, intro conjI impI)
+  subgoal premises p using p(33) apply clarify by (cases ast rule: length1_cases, simp_all)
   by simp
   
 code_datatype CUnknown Immediate Storage
@@ -303,7 +319,34 @@ lemma [code]: \<open>parse_stmt (Node stmt ast) = (
 
 code_datatype CSpecial CpuExn While Move Jmp stmt.If
 
-export_code parse_ast get_symbol_table get_original_insn get_prog_addrs get_insns in SML
+definition 
+  is_sub_in_list :: \<open>String.literal list \<Rightarrow> AdtFunction \<Rightarrow> bool\<close>
+where
+  \<open>is_sub_in_list lst = Parser.is_sub_in_list (map String.explode lst)\<close>
+
+lemma code_is_sub_in_list[code]: \<open>is_sub_in_list lst (AdtFunction adr name ast) = (name \<in> set (map String.explode lst))\<close>
+  unfolding Parser_Code.is_sub_in_list_def by simp
+
+definition 
+  filter_subroutines_section :: \<open>String.literal list \<Rightarrow> AdtSection \<Rightarrow> AdtSection\<close>
+where
+  \<open>filter_subroutines_section str = Parser.filter_subroutines_section (map String.explode str)\<close>
+
+lemma code_filter_subroutines_section[code]: \<open>filter_subroutines_section lst (AdtSection name ast) = (AdtSection name (filter (is_sub_in_list lst) ast))\<close>
+  unfolding Parser_Code.filter_subroutines_section_def apply simp
+  using is_sub_in_list_def by presburger
+
+definition 
+  filter_subroutines :: \<open>String.literal list \<Rightarrow> AdtSection list \<Rightarrow> AdtSection list\<close>
+where
+  \<open>filter_subroutines str = Parser.filter_subroutines (map String.explode str)\<close>
+
+lemma code_filter_subroutines[code]: \<open>filter_subroutines lst ast = map (filter_subroutines_section lst) ast\<close>
+  unfolding Parser_Code.filter_subroutines_def
+  using filter_subroutines.simps filter_subroutines_section_def by presburger
+
+
+export_code parse_ast get_symbol_table get_original_insn get_prog_addrs get_insns filter_subroutines in SML
   module_name AstParser file_prefix "ast-parser"
 
 text \<open>Reflect the AST parser into the current Isabelle/HOL session\<close>
@@ -316,7 +359,8 @@ code_reflect AstParser
         and Endian = BigEndian | LittleEndian 
         and Cast = Low | High | Signed | Unsigned 
         and LOp = Eq | Neq | Lt | Le | Slt | Sle
-        and AOp = Plus | Minus | Times | Divide | SDivide | Mod | SMod | And | Or | Xor | LShift | RShift | ARShift
+        and AOp = Plus | Minus | Times | Divide | SDivide | Mod | SMod | And | Or | Xor | LShift | 
+                  RShift | ARShift
         and UnOp = Neg | Not 
         and exp = UnOp | BinOp | Store | Load | Concat | Extract | Val | EVar | Cast | Let | Ite
         and stmt = Move | While | If | Jmp | CpuExn | CSpecial
@@ -328,6 +372,7 @@ code_reflect AstParser
         and insn_ext = insn_ext
   functions parse_ast integer_of_int integer_of_nat nat_of_integer int_of_integer integer_of_char
             get_original_insn get_symbol_table get_prog_addrs get_insns String.implode
+            filter_subroutines get_subroutine_addrs
 
 
 end
