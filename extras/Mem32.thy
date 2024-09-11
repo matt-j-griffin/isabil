@@ -137,6 +137,35 @@ method solve_type_succ32I_scaffold methods recurs = (
 
 method solve_type_succ32I = (
   solve_type_succ32I_scaffold solve_type_succ32I
-) 
+)
+
+lemmas xtract32_24_16[simp] = xtract_concat_consecutive[of 24 31 16, simplified]
+lemmas xtract32_16_8 [simp] = xtract_concat_consecutive[of 16 31 8, simplified]
+lemmas xtract32_8_0  [simp] = xtract_concat_consecutive[of 8 31 0, simplified]
+lemmas xtract23_16_0 [simp] = xtract_concat_consecutive[of 16 23 0, simplified]
+lemmas xtract32_24_0 [simp] = xtract_concat_consecutive[of 24 31 0, simplified]
+lemmas xtract32 = xtract32_24_16 xtract32_24_0 xtract32_16_8 xtract32_8_0 xtract23_16_0
+                  xtract16_8_0
+
+lemmas xtract_nested_31_0_23_0 [simp] = nested_extract_within'[of  0 23  0 31, simplified]
+lemmas xtract_nested_31_0_31_24[simp] = nested_extract_within'[of 24 31  0 31, simplified]
+lemmas xtract_nested_31_8_7_0  [simp] = nested_extract_within'[where sz\<^sub>h\<^sub>i = 31 and sz\<^sub>l\<^sub>o = 8 and sz\<^sub>h\<^sub>i' = 7 and sz\<^sub>l\<^sub>o' = 0, simplified]
+lemmas xtract_nested_31_8_23_8 [simp] = nested_extract_within [where sz\<^sub>h\<^sub>i = 31 and sz\<^sub>l\<^sub>o = 8 and sz\<^sub>l\<^sub>o' = 8, simplified]
+lemmas xtract_nested_31_16_15_8[simp] = nested_extract_within'[where sz\<^sub>h\<^sub>i = 31 and sz\<^sub>l\<^sub>o = 16 and sz\<^sub>h\<^sub>i' = 15 and sz\<^sub>l\<^sub>o' = 8, simplified]
+lemmas xtract_nested_31_16_7_0[simp] = nested_extract_within'[where sz\<^sub>h\<^sub>i = 31 and sz\<^sub>l\<^sub>o = 16 and sz\<^sub>h\<^sub>i' = 7 and sz\<^sub>l\<^sub>o' = 0, simplified]
+lemmas xtract_nested_23_0_15_0 [simp] = nested_extract_within'[of  0 15  0 23, simplified]
+lemmas xtract_nested_23_0_23_16[simp] = nested_extract_within'[of 16 23  0 23, simplified]
+lemmas xtract_nested_15_0_7_0  [simp] = nested_extract_within'[of  0  7  0 15, simplified]
+lemmas xtract_nested_15_0_15_8 [simp] = nested_extract_within'[of  8 15  0 15, simplified]
+lemmas xtract_nested32 = 
+  xtract_nested_31_0_23_0  xtract_nested_31_0_31_24 xtract_nested_31_8_7_0  xtract_nested_31_8_23_8 
+  xtract_nested_31_16_15_8 xtract_nested_31_16_7_0  xtract_nested_23_0_15_0 xtract_nested_23_0_23_16
+  xtract_nested_15_0_7_0   xtract_nested_15_0_15_8
+
+lemma xtract_31_0_63_0:
+  assumes \<open>num < 2 ^ 32\<close>
+    shows \<open>(ext (ext num \<Colon> 32 \<sim> hi : 31 \<sim> lo : 0) \<sim> hi : 63 \<sim> lo : 0) = (num \<Colon> 64)\<close>
+  unfolding xtract.simps apply simp
+  using assms take_bit_nat_eq_self by blast
 
 end

@@ -23,9 +23,35 @@ definition
 where
   \<open>lexer str = Lexer.lexer (String.explode str)\<close>
 
+ML "String.substring"
+(* 
+  In order to make our lexer use string literals we need:
+   - trim literal
+   - takeWhile literal
+   - dropWhile literal
+   - butlast literal
+   - split_not_within literal
+*)
 
-(*code_datatype CNode*)
+(*
+lemma [code]: \<open>lexer lit = (
+    let
+      str = String.explode lit;
+      tstr = trim str;
+      name = takeWhile isnt_lbracket tstr;
+      bargstr = dropWhile isnt_lbracket tstr;
+      argstr = butlast (tl bargstr)
+    in
+      CNode (String.implode name) (map (lexer o String.implode) (split_not_within argstr)))\<close>
+  unfolding Let_def CNode_def lexer_def Lexer.lexer.simps[where str = \<open>map String.ascii_of (literal.explode lit)\<close>]
+   AST.inject String.explode_implode_eq apply (intro conjI)
+  apply auto
+  find_theorems String.explode String.implode
+  apply (intro AST.inject)
 
+
+code_datatype CNode
+*)
 export_code lexer in SML
   module_name AstLexer file_prefix "ast-lexer"
 

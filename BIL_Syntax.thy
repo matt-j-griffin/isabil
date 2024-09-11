@@ -115,9 +115,23 @@ class storage_constructor = size + word_constructor +
       and type_storageI: \<open>\<And>mem num sz\<^sub>1 v sz\<^sub>2. type (mem[(num \<Colon> sz\<^sub>1) \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle>\<close>
 begin
 
+lemma type_storageE: 
+  assumes \<open>type (mem[(num \<Colon> sz\<^sub>1) \<leftarrow> v, sz\<^sub>2]) = t\<close>
+      and \<open>t = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle> \<Longrightarrow> P\<close>
+    shows P
+  using assms type_storageI by blast
+
 lemma type_storage_addrI: \<open>type w = imm\<langle>sz\<^sub>1\<rangle> \<Longrightarrow> type (mem[w \<leftarrow> v, sz\<^sub>2]) = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle>\<close>
   apply (cases w rule: word_exhaust, auto)
   by (rule type_storageI)
+
+lemma type_storage_addrE: 
+  assumes major: \<open>type (mem[w \<leftarrow> v, sz\<^sub>2]) = t\<close> and caveat: \<open>type w = imm\<langle>sz\<^sub>1\<rangle>\<close>
+      and minor: \<open>\<lbrakk>t = mem\<langle>sz\<^sub>1,sz\<^sub>2\<rangle>\<rbrakk> \<Longrightarrow> P\<close>
+    shows P
+  apply (intro minor)
+  unfolding major[symmetric]
+  using caveat by (rule type_storage_addrI)
 
 end
 
@@ -166,23 +180,6 @@ class val = val_syntax +
       and val_exhaust: \<open>\<And>Q v. \<lbrakk>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q; \<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q; 
                         \<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
 
-no_notation List.append  (infixr \<open>@\<close> 65)
-
-class append =
-  fixes append :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>@\<close> 65)
-
-instantiation list :: (type) append
-begin
-
-fun
-  append_list :: \<open>'a list \<Rightarrow> 'a list \<Rightarrow> 'a list\<close> 
-where
-  \<open>append_list xs ys = List.append xs ys\<close>
-
-instance ..
-
-end
-
 no_notation HOL.Not (\<open>~ _\<close> [40] 40)
 
 class not_syntax = 
@@ -211,19 +208,8 @@ datatype exp =
   | Let var exp exp
   | Ite exp exp exp (\<open>ite _ _ _\<close>)
   | Extract nat nat exp (\<open>extract:_:_[_]\<close>)
-  | Concat exp exp
+  | Concat exp exp (infixr \<open>\<copyright>\<close> 70)
 
-instantiation exp :: append
-begin          
-
-definition 
-  append_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> 
-where
-  \<open>append_exp \<equiv> Concat\<close>
-
-instance ..
-
-end
 
 instantiation exp :: not_syntax
 begin          
@@ -237,23 +223,12 @@ instance ..
 
 end
 
-lemma append_inject[simp]:
-  fixes e\<^sub>1 :: exp
-  shows \<open>e\<^sub>1 @ e\<^sub>2 = e\<^sub>1' @ e\<^sub>2' \<longleftrightarrow> (e\<^sub>1 = e\<^sub>1' \<and> e\<^sub>2 = e\<^sub>2')\<close>
-  unfolding append_exp_def by auto
-
-
-class exp = val_syntax + bil_ops + var_syntax + append + not_syntax +
+class exp = val_syntax + bil_ops + var_syntax + not_syntax +
   assumes var_not_word_neq[simp]: \<open>\<And>id t num sz'. (id :\<^sub>t t) \<noteq> (num \<Colon> sz')\<close>
       and var_not_unknown_neq[simp]: \<open>\<And>id t str t'. (id :\<^sub>t t) \<noteq> unknown[str]: t'\<close>
       and var_not_storage_neq[simp]: \<open>\<And>id t v w v' sz. (id :\<^sub>t t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
-      and var_not_concat[simp]: \<open>\<And>id t e\<^sub>1 e\<^sub>2. (id :\<^sub>t t) \<noteq> e\<^sub>1 @ e\<^sub>2\<close>
-      and concat_not_word_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 num sz'. e\<^sub>1 @ e\<^sub>2 \<noteq> (num \<Colon> sz')\<close>
-      and concat_not_unknown_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 str t'. e\<^sub>1 @ e\<^sub>2 \<noteq> unknown[str]: t'\<close>
-      and concat_not_storage_neq[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 v w v' sz. e\<^sub>1 @ e\<^sub>2 \<noteq> (v[w \<leftarrow> v', sz])\<close>
       and exp_simps[simp]:
         \<open>\<And>id t e\<^sub>1 e\<^sub>2. id :\<^sub>t t \<noteq> e\<^sub>1 + e\<^sub>2\<close>
-        \<open>\<And>e\<^sub>3 e\<^sub>4 e\<^sub>1 e\<^sub>2. e\<^sub>3 + e\<^sub>4 \<noteq> (e\<^sub>1 @ e\<^sub>2)\<close>
 
       and le_word_simp[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 num sz. e\<^sub>1 le e\<^sub>2 \<noteq> (num \<Colon> sz)\<close>
 
@@ -261,14 +236,7 @@ begin
 
 lemma exp_simps'[simp]:
   \<open>(name :\<^sub>t t) \<noteq> true\<close> \<open>(name :\<^sub>t t) \<noteq> false\<close>
-  \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> true\<close> \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> false\<close>
   unfolding true_def false_def by auto
-
-lemma concat_not_var[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> name' :\<^sub>t t\<close>
-  using var_not_concat by metis
-
-lemma concat_not_plus[simp]: \<open>e\<^sub>1 @ e\<^sub>2 \<noteq> e\<^sub>3 + e\<^sub>4\<close>
-  using exp_simps(2) by metis
 
 lemma plus_not_var[simp]: \<open>e\<^sub>1 + e\<^sub>2 \<noteq> id' :\<^sub>t t\<close>
   using exp_simps(1) by metis
@@ -315,7 +283,7 @@ where
   \<open>[v\<sslash>var](Let var' e\<^sub>1 e\<^sub>2) = Let var' ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close> |
   \<open>[v\<sslash>var](Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ([v\<sslash>var]e\<^sub>3)\<close> |
   \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
-  \<open>[v\<sslash>var](Concat e\<^sub>1 e\<^sub>2) = Concat ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close>
+  \<open>[v\<sslash>var](e\<^sub>1 \<copyright> e\<^sub>2) = ([v\<sslash>var]e\<^sub>1) \<copyright> ([v\<sslash>var]e\<^sub>2)\<close>
 
 lemma capture_avoiding_sub_size_eq[simp]: \<open>size_class.size ([v\<sslash>var]e) = size_class.size e\<close>
   by (induct e, auto)

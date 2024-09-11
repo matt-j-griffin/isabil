@@ -1,12 +1,16 @@
 theory Bitvector_Syntax
-  imports Syntax "Typing/Type_Syntax"
-begin
+  imports Syntax "Typing/Type_Syntax" 
+begin        
 
 class word_constructor = (*bool_syntax +*) type_syntax +
   fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
   assumes word_inject[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<equiv> nat = nat' \<and> sz = sz'\<close>
       and type_wordI: \<open>\<And>num sz. type (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close>
 begin
+
+lemma type_wordE: \<open>type (num \<Colon> sz) = t \<Longrightarrow> (t = imm\<langle>sz\<rangle> \<Longrightarrow> P) \<Longrightarrow> P\<close>
+  using type_wordI by blast
+
 
 (* TODO = Isabelleism \<rightarrow> 1 = Suc 0*)
 definition
@@ -19,6 +23,10 @@ definition
 where 
   \<open>false \<equiv> (0 \<Colon> 1)\<close>
 
+lemma true_neq_false[simp]: \<open>true \<noteq> false\<close> \<open>false \<noteq> true\<close>
+  unfolding true_def false_def by auto
+
+(* legacy - remove*)
 lemmas true_word = true_def
 lemmas false_word = false_def
 
@@ -340,7 +348,7 @@ lemma bv_lt_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (n
 declare bv_lt.simps[simp del]
 
 function
-  bv_sle :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
+  bv_slt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open><\<^sub>s\<^sub>b\<^sub>v\<close> 55)
 where
   \<open>(nat\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = (if nat\<^sub>1 < nat\<^sub>2 then true else false)\<close> |
   \<open>\<lbrakk>sz\<^sub>1 \<noteq> sz\<^sub>2\<rbrakk> \<Longrightarrow> (_ \<Colon> sz\<^sub>1) <\<^sub>s\<^sub>b\<^sub>v (_ \<Colon> sz\<^sub>2) = undefined\<close> |
@@ -350,7 +358,7 @@ where
 
 termination by (standard, auto)
 
-declare bv_sle.simps[simp del]
+declare bv_slt.simps[simp del]
 
 function
   xtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
@@ -406,6 +414,31 @@ lemma extract_concat64:
   unfolding concat_bit_take_bit_eq
   apply (unfold concat_bit_drop_bit, simp)+
   by (metis add_One_commute assms concat_take_drop_bit_nat_eq_self numeral_plus_numeral semiring_norm(2) semiring_norm(4) semiring_norm(6))
+
+
+lemma xtract_concat_consecutive:
+  assumes \<open>x2 > x3\<close> \<open>x3 > x4\<close>
+    shows \<open>(ext num \<Colon> x1 \<sim> hi : x2 \<sim> lo : x3) \<cdot> (ext num \<Colon> x1 \<sim> hi : x3 - 1 \<sim> lo : x4) = (ext num \<Colon> x1 \<sim> hi : x2 \<sim> lo : x4)\<close>
+unfolding xtract.simps bv_concat.simps proof auto
+  have sz_simp1: \<open>(Suc (x2 - x3) + Suc (x3 - Suc x4)) = (Suc (x2 - x4))\<close>
+    using assms by fastforce
+  have sz_simp2: \<open>Suc (x3 - Suc x4) + x4 = x3\<close>
+    using assms by fastforce
+  show \<open>nat (concat_bit (Suc (x3 - Suc x4)) (int (take_bit (Suc (x3 - Suc x4)) (drop_bit x4 num)))
+          (int (take_bit (Suc (x2 - x3)) (drop_bit x3 num)))) = take_bit (Suc (x2 - x4)) (drop_bit x4 num)\<close>
+    using nat_concat_bit_take_bit_drop_bit2[of \<open>Suc (x3 - Suc x4)\<close> x4 num \<open>Suc (x2 - x3)\<close>, unfolded sz_simp1 sz_simp2]    
+    by blast
+next
+  show \<open>Suc (x2 - x3 + (x3 - Suc x4)) = x2 - x4\<close>
+    using assms by fastforce
+qed
+
+
+lemma nested_extract_within': 
+  assumes  \<open>sz\<^sub>l\<^sub>o' \<le> sz\<^sub>h\<^sub>i'\<close> and \<open>sz\<^sub>h\<^sub>i' + sz\<^sub>l\<^sub>o \<le> sz\<^sub>h\<^sub>i\<close>
+    shows \<open>(ext (ext num \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o) \<sim> hi : sz\<^sub>h\<^sub>i' \<sim> lo : sz\<^sub>l\<^sub>o') = (ext num \<Colon> sz \<sim> hi : (sz\<^sub>h\<^sub>i' + sz\<^sub>l\<^sub>o) \<sim> lo : (sz\<^sub>l\<^sub>o' + sz\<^sub>l\<^sub>o))\<close>
+  using assms unfolding xtract.simps take_bit_drop_bit by auto
+
 
 function (* TODO maintain sign*)
   sxtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>exts _ \<sim> hi : _ \<sim> lo : _\<close>)
@@ -521,7 +554,7 @@ lemma succ_plus: \<open>succ ((x \<Colon> sz) +\<^sub>b\<^sub>v (y \<Colon> sz))
 lemmas bv_simps = bv_plus.simps bv_minus.simps bv_times.simps bv_divide.simps bv_sdivide.simps
                   bv_inc.simps bv_land.simps bv_lor.simps bv_xor.simps bv_mod\<^sub>b\<^sub>v.simps bv_smod.simps
                   bv_lsl.simps bv_lsr.simps bv_asr.simps bv_concat.simps bv_uminus.simps
-                  bv_negation.simps bv_lt.simps bv_sle.simps xtract.simps sxtract.simps
+                  bv_negation.simps bv_lt.simps bv_slt.simps xtract.simps sxtract.simps
 
 
 

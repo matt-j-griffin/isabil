@@ -243,4 +243,55 @@ method solve_type_succ64I = (
   solve_type_succ64I_scaffold solve_type_succ64I
 ) 
 
+
+lemmas xtract64_56_48[simp] = xtract_concat_consecutive[of 56 63 48, simplified]
+lemmas xtract64_48_40[simp] = xtract_concat_consecutive[of 48 63 40, simplified]
+lemmas xtract64_40_32[simp] = xtract_concat_consecutive[of 40 63 32, simplified]
+lemmas xtract64_32_24[simp] = xtract_concat_consecutive[of 32 63 24, simplified]
+lemmas xtract64_24_16[simp] = xtract_concat_consecutive[of 24 63 16, simplified]
+lemmas xtract64_16_8 [simp] = xtract_concat_consecutive[of 16 63 8, simplified]
+lemmas xtract64_8_0  [simp] = xtract_concat_consecutive[of 8 63 0, simplified]
+lemmas xtract40_32_0 [simp] = xtract_concat_consecutive[of 32 39 0, simplified]
+lemmas xtract48_40_0 [simp] = xtract_concat_consecutive[of 40 47 0, simplified]
+lemmas xtract56_48_0 [simp] = xtract_concat_consecutive[of 48 55 0, simplified]
+lemmas xtract64_56_0 [simp] = xtract_concat_consecutive[of 56 63 0, simplified]
+lemmas xtract64 = xtract64_56_48 xtract64_48_40 xtract64_40_32 xtract64_32_24 xtract64_24_16
+                  xtract64_16_8  xtract64_8_0
+
+lemmas xtract_nested_63_8_55_8[simp]  = nested_extract_within [of  8  8 63, simplified]
+lemmas xtract_nested_63_16_47_8[simp] = nested_extract_within [of  8 16 63, simplified]
+lemmas xtract_nested_63_24_39_8[simp] = nested_extract_within [of  8 24 63, simplified]
+lemmas xtract_nested_63_32_31_8[simp] = nested_extract_within [of  8 32 63, simplified]
+lemmas xtract_nested_63_40_23_8[simp] = nested_extract_within [of  8 40 63, simplified]
+lemmas xtract_nested_63_48_15_8[simp] = nested_extract_within [of  8 48 63, simplified]
+lemmas xtract_nested_55_0_47_0[simp]  = nested_extract_within'[of  0 47  0 55, simplified]
+lemmas xtract_nested_47_0_39_0[simp]  = nested_extract_within'[of  0 39  0 47, simplified]
+lemmas xtract_nested_39_0_31_0[simp]  = nested_extract_within'[of  0 31  0 39, simplified]
+lemmas xtract_nested_63_8_7_0[simp]   = nested_extract_within'[of  0  7  8 63,  simplified]
+lemmas xtract_nested_63_16_7_0[simp]  = nested_extract_within'[of  0  7 16 63, simplified]
+lemmas xtract_nested_63_24_7_0[simp]  = nested_extract_within'[of  0  7 24 63, simplified]
+lemmas xtract_nested_63_32_7_0[simp]  = nested_extract_within'[of  0  7 32 63, simplified]
+lemmas xtract_nested_63_40_7_0[simp]  = nested_extract_within'[of  0  7 40 63, simplified]
+lemmas xtract_nested_63_48_7_0[simp]  = nested_extract_within'[of  0  7 48 63, simplified]
+lemmas xtract_nested_55_0_55_48[simp] = nested_extract_within'[of 48 55  0 55, simplified]
+lemmas xtract_nested_47_0_47_40[simp] = nested_extract_within'[of 40 47  0 47, simplified]
+lemmas xtract_nested_39_0_39_32[simp] = nested_extract_within'[of 32 39  0 39, simplified]
+
+lemma xtract_num_lt:
+  assumes num_lt: \<open>num < 2 ^ 64\<close>
+    shows \<open>(ext num \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = num \<Colon> 64\<close>
+  using extract_concat64 num_lt by auto
+
+
+lemmas solve_exps_mem64_simps = 
+  xtract64_56_48 xtract64_48_40 xtract64_40_32 xtract64_32_24 xtract64_24_16 xtract64_16_8 
+  xtract64_8_0   xtract40_32_0  xtract48_40_0  xtract56_48_0  xtract64_56_0
+
+  xtract_nested_63_8_55_8  xtract_nested_63_16_47_8 xtract_nested_63_24_39_8 
+  xtract_nested_63_32_31_8 xtract_nested_63_40_23_8 xtract_nested_63_48_15_8
+  xtract_nested_55_0_47_0  xtract_nested_47_0_39_0  xtract_nested_39_0_31_0
+  xtract_nested_63_8_7_0   xtract_nested_63_16_7_0  xtract_nested_63_24_7_0
+  xtract_nested_63_32_7_0  xtract_nested_63_40_7_0  xtract_nested_63_48_7_0
+  xtract_nested_55_0_55_48 xtract_nested_47_0_47_40 xtract_nested_39_0_39_32
+
 end

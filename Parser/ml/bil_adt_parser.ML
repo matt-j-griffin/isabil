@@ -1,12 +1,27 @@
 val syntax_simps = @{thms syntax_simps}
 
+
+fun describe_string_error AstParser.EmptyString = "Cannot convert empty string"
+  | describe_string_error (AstParser.InvalidRadixa _) = "The provided radix was too large (max 32)"
+  | describe_string_error (AstParser.InvalidCodepointa (c, _)) = "Codepoint out of range for radix: "
+
+(* TODO SHOULD BE CODEGEN *)
+fun describe_parse_error (AstParser.ParseNatError en) = describe_string_error en
+  | describe_parse_error (AstParser.ParseIntError ei) = describe_string_error ei
+  | describe_parse_error (AstParser.ParseArgumentError (str, expected, actual)) = "Expecting X arguments for \"" ^ (AstParser.implode str) ^ "\", got: Y"
+  | describe_parse_error (AstParser.StringMustBeQuoted str) = "Expecting string wrapped in quotes, received: " ^ AstParser.implode str
+  | describe_parse_error (AstParser.ParseTagInvalid (strs, str)) = "Expecting one of [" ^ (AstParser.join (map AstParser.implode strs)) ^ "], but received: " ^ AstParser.implode str
+  | describe_parse_error (AstParser.TagExistsError str) = "Expecting empty string before brackets, received: " ^ AstParser.implode str
+  | describe_parse_error (AstParser.InvalidAdtInsn strs) = "Expecting adt insn translation to contain two or three lines: [" ^ (AstParser.join (map AstParser.implode strs)) ^ "]"
+  | describe_parse_error (AstParser.InvalidAdtFunction strs) = "Expecting adt function to contain at least two lines: [" ^ (AstParser.join (map AstParser.implode strs)) ^ "]"
+
 (**
  or_raise
  ----------------------
  If Value return it, otherwise throw the error.
  **)
-fun or_raise (AstParser.Value v) = v
-  | or_raise (AstParser.Error e) = raise Fail (Str_Literal.literal_of_asciis (map AstParser.integer_of_char e))
+fun or_raise _ (AstParser.Value v) = v
+  | or_raise f (AstParser.Error e) = raise Fail (f e)
 
 (**
  mk_prog
@@ -101,33 +116,22 @@ fun mk_insn (AstParser.Insn_ext (addr,sz,bil,_)) =
     (mk_sz_word sz) $ 
     IsaBIL.mk_bil bil
 
-
-
-
-
-
-
-
-
-
-
-fun gen_theorems prep_fact prep_att add_fixes
-    kind raw_facts raw_fixes int lthy =
-  let
-    val facts = raw_facts |> map (fn ((name, atts), bs) =>
-      ((name, map (prep_att lthy) atts),
-        bs |> map (fn (b, more_atts) => (prep_fact lthy b, map (prep_att lthy) more_atts))));
-    val (_, ctxt') = add_fixes raw_fixes lthy;
-
-    val facts' = facts
-      |> Attrib.partial_evaluation ctxt'
-      |> Attrib.transform_facts (Proof_Context.export_morphism ctxt' lthy);
-    val (res, lthy') = lthy |> Local_Theory.notes_kind kind facts';
-    val _ =
-      Proof_Display.print_results
-        {interactive = int, pos = Position.thread_data (), proof_state = false}
-        lthy' ((kind, ""), res);
-  in (res, lthy') end;
+(**
+ mk_original_table_def
+ ----------------------
+ Grab the original instructions (i.e. x86) from the AST as strings and put them in a map 
+ (word \<rightarrow> string), add this to the target theory
+ arg{0} - Theory to add the original table to
+ arg{1} - The AST to generate the original table from
+ **)
+fun mk_original_table_def lthy ast =
+  let 
+    val orig_insns = AstParser.get_original_insn ast
+    val orig_table_def = mk_original_table orig_insns
+    val orig_binding = (Binding.name "orig_table", orig_table_def)
+  in 
+    make_const_def orig_binding lthy
+  end;
 
 (**
  make_decode_for_word
@@ -187,58 +191,64 @@ fun bil_parser_lines localename assembly subroutines lthy =
         mk_assume asm_name (HOLogic.Trueprop $ decode_term, [])
       end
 
+    val _ = tracing ("Start time: " ^ Time.toString (Time.now()))
+
+    val _ = tracing ("Parsing BIL AST")
+
     (* Parse AST using the code-generator *)
     val ast_unprocessed = assembly 
       |> AstParser.parse_ast
-      |> or_raise
-    
+      |> or_raise describe_parse_error
+ 
+    val _ = tracing ("Done parsing BIL" ^ Time.toString (Time.now()))
+   
     val ast = if (List.null subroutines) 
       then 
         ast_unprocessed
       else
         (AstParser.filter_subroutines subroutines ast_unprocessed)
 
-    (* Architecture size, currently fixed *)
+    val _ = tracing ("Done filtering BIL" ^ Time.toString (Time.now()))
+
+    (* Architecture size, currently fixed - TODO specify as an option *)
     val arch_sz = (AstParser.nat_of_integer 64)
 
-    (* Grab the original instructions *)
+    (* Grab the instructions *)
     val insns = AstParser.get_insns arch_sz ast
+    val _ = tracing ("Done grabbing instructions" ^ Time.toString (Time.now()))
 
-    (* Grab the original instructions *)
-    val orig_insns = AstParser.get_original_insn ast
-
-    (* Grab the symbol table *)
-    val symbol_table = AstParser.get_symbol_table ast
-
-    (* Grab the program addresses *)
-    val addrs = AstParser.get_prog_addrs arch_sz ast
-
-    (* Grab the program addresses associated with each function (TODO with above for performance) *)
-    val function_addrs = AstParser.get_subroutine_addrs ast
 
     (* Create a locale in the current theory with a fixed decode predicate and assumes for each 
        instruction *)
-    val loc_bindings = Binding.name localename
-
     val _ = tracing ("Creating Isabelle/HOL Elements")
+    val loc_bindings = Binding.name localename
     val decode_assumes = Element.Assumes (List.map mk_decode_equality_assume insns)    
-    val sym_table_def = mk_symbol_table symbol_table
-    val addr_set_def = mk_addr_set addrs
-    val orig_table_def = mk_original_table orig_insns
-
     val _ = tracing ("Adding locale: " ^ Time.toString (Time.now()))
     val loc_elems = [fixes_decode, decode_assumes]
     val (_,lthy) = Expression.add_locale loc_bindings loc_bindings [] ([],[]) loc_elems thy
-    val _ = tracing ("Done adding locale: " ^ Time.toString (Time.now()))      
+    val _ = tracing ("Done adding locale: " ^ Time.toString (Time.now()))
+
+    (* Create the symbol table (in the locale) *)
+    val symbol_table = AstParser.get_symbol_table ast
+    val sym_table_def = mk_symbol_table symbol_table
     val (_,lthy) = (make_const_def (Binding.name "sym_table", sym_table_def)) lthy
     val _ = tracing ("Done adding symbol table: " ^ Time.toString (Time.now()))
+
+
+    (* Create the program addresses (in the locale *)
+    val addrs = AstParser.get_prog_addrs arch_sz ast
+    val addr_set_def = mk_addr_set addrs
     val (_,lthy) = (make_const_def (Binding.name "addr_set", addr_set_def)) lthy
     val _ = tracing ("Done adding addr_set table: " ^ Time.toString (Time.now()))
+
+    (* Grab the program addresses associated with each function (TODO with above for performance) *)
+    val function_addrs = AstParser.get_subroutine_addrs ast
     val (_,lthy) = make_subroutine_decodes function_addrs lthy
     val _ = tracing ("Done adding subroutine decodes: " ^ Time.toString (Time.now()))
 
+    (* Only include the original table if the include_asm option is set *)
     val include_asm = Config.get_global thy bil_include_asm
-    val lthy = if include_asm then snd ((make_const_def (Binding.name "orig_table", orig_table_def)) lthy) else lthy
+    val lthy = if include_asm then snd (mk_original_table_def lthy ast) else lthy
     val _ = tracing ("Done adding orig_table: " ^ Time.toString (Time.now()))
 
     val _ = tracing ("Added locale: " ^ localename ^ " with a decode predicate for " ^ Int.toString (length addrs) ^ " instructions. To get started, execute:\n\ncontext " ^ localename ^ "\nbegin\n   find_theorems decode\nend\n")

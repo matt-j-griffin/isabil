@@ -7,7 +7,7 @@ theory Parse
 begin
 
 text\<open>
-  The attribute ``BIL\_include\_asm'' (default @{value "False"}) defines whether to include the 
+  The attribute ``BIL\_include\_asm'' (default \<copyright>{value "False"}) defines whether to include the 
   original assembly instructions in the generated locale.
 \<close>
 

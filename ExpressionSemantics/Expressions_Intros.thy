@@ -67,7 +67,7 @@ lemmas step_exps_lessI = step_exps_reduce_singleI[OF step_lessI]
 lemmas step_exps_less_eqI = step_exps_reduce_singleI[OF step_less_eqI]
 
 lemmas step_exps_concatI = step_exps_reduce_singleI[OF step_concatI]
-interpretation step_exps_concatI: exp2_val_word_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 @ e\<^sub>2) \<leadsto>* (e\<^sub>1 \<cdot> e\<^sub>2))\<close>
+interpretation step_exps_concatI: exp2_val_word_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto>* (e\<^sub>1 \<cdot> e\<^sub>2))\<close>
   apply (standard)
   using step_exps_concatI by blast
 
@@ -113,11 +113,11 @@ interpretation step_exps_ite_falseI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e
   using step_exps_reduce_singleI[OF step_ite_falseI] by blast
 
 lemmas step_exps_concat_lhs_unI = step_exps_reduce_singleI[OF step_concat_lhs_unI]
-interpretation step_exps_concat_lhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>1 str. \<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) @ e) \<leadsto>* unknown[str]: imm\<langle>sz\<^sub>1 + sz\<rangle>)\<close>
+interpretation step_exps_concat_lhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>1 str. \<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) \<copyright> e) \<leadsto>* unknown[str]: imm\<langle>sz\<^sub>1 + sz\<rangle>)\<close>
   apply standard
   using step_exps_concat_lhs_unI by blast
 
-interpretation step_exps_concat_rhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>2 str. \<Delta> \<turnstile> (e @ unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) \<leadsto>* unknown[str]: imm\<langle>sz + sz\<^sub>2\<rangle>)\<close>
+interpretation step_exps_concat_rhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>2 str. \<Delta> \<turnstile> (e \<copyright> unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) \<leadsto>* unknown[str]: imm\<langle>sz + sz\<^sub>2\<rangle>)\<close>
   apply (standard)
   using step_exps_reduce_singleI[OF step_concat_rhs_unI] by blast
 (*
@@ -189,7 +189,7 @@ interpretation step_exps_load_byte_from_nextI: exp_val_syntax \<open>\<lambda>e 
 
 
 interpretation step_exps_load_word_beI: exp_val_is_mem_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num sz e'. 
-  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> ((e\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m) @ (e\<^sub>1[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) \<leadsto>* e'\<rbrakk> 
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> ((e\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m) \<copyright> (e\<^sub>1[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) \<leadsto>* e'\<rbrakk> 
     \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz \<leadsto>* e')\<close>
   apply standard
   apply (rule step_exps_reduceI)
@@ -198,7 +198,7 @@ interpretation step_exps_load_word_beI: exp_val_is_mem_syntax \<open>\<lambda>e\
 
 lemmas step_exps_load_word_elI = step_exps_reduceI[OF step_load_word_elI]
 interpretation step_exps_load_word_elI: load_multiple_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<^sub>w. (\<And>\<Delta> num sz e'. 
-  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> (e\<^sub>1[succ e\<^sub>w, el]:usz - sz\<^sub>m\<^sub>e\<^sub>m @ (e\<^sub>1[e\<^sub>w, el]:usz\<^sub>m\<^sub>e\<^sub>m)) \<leadsto>* e'\<rbrakk> 
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> (e\<^sub>1[succ e\<^sub>w, el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<copyright> (e\<^sub>1[e\<^sub>w, el]:usz\<^sub>m\<^sub>e\<^sub>m)) \<leadsto>* e'\<rbrakk> 
     \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e\<^sub>w, el]:usz \<leadsto>* e')\<close>
   apply (standard)
   using step_exps_load_word_elI by blast
@@ -255,7 +255,7 @@ lemmas step_exps_concat_rhsI = step_exps_reduceI[OF step_concat_rhsI]
 lemmas step_exps_extract_reduceI = step_exps_reduceI[OF step_extract_reduceI]
 
 lemmas step_exps_concat_lhsI = step_exps_reduceI[OF step_concat_lhsI]
-interpretation step_exps_concat_lhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' x. \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'; \<Delta> \<turnstile> (e\<^sub>1' @ e) \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 @ e) \<leadsto>* x)\<close>
+interpretation step_exps_concat_lhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' x. \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'; \<Delta> \<turnstile> (e\<^sub>1' \<copyright> e) \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e) \<leadsto>* x)\<close>
   apply (standard)
   using step_exps_concat_lhsI by blast
 
@@ -269,79 +269,41 @@ interpretation step_exps_bop_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<
   apply (standard)
   using step_exps_bop_rhsI by blast
 
-locale bop_lemmas =
-    fixes bop_fun :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> and bop :: BinOp
-  assumes bop_simps: \<open>\<And>e\<^sub>1 e\<^sub>2. bop_fun e\<^sub>1 e\<^sub>2 = BinOp e\<^sub>1 bop e\<^sub>2\<close>
+context bop_lemmas
 begin
 
-lemma lhs:
+lemma step_exps_lhsI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close> and \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1' e\<^sub>2 \<leadsto>* e\<^sub>3\<close>
     shows \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1 e\<^sub>2 \<leadsto>* e\<^sub>3\<close>
   using assms unfolding bop_simps by (rule step_exps_bop_lhsI)
 
-sublocale rhs: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
+sublocale step_exps_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
   apply standard
   unfolding bop_simps using step_exps_bop_rhsI by blast
 
 end
 
-locale aop_lemmas =
-  fixes bop_fun :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> and aop :: AOp
-  assumes aop_simps: \<open>bop_fun e\<^sub>1 e\<^sub>2 = BinOp e\<^sub>1 (AOp aop) e\<^sub>2\<close>
+context aop_lemmas
 begin
 
-sublocale bop_lemmas 
-  where bop_fun = bop_fun 
-    and bop = \<open>AOp aop\<close>
-  apply (standard)
-  using aop_simps by blast
-
-lemma unk_lhs: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto>* (unknown[str]: t)\<close>
+lemma step_exps_unk_lhsI: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto>* (unknown[str]: t)\<close>
   unfolding aop_simps by (rule step_exps_aop_unk_lhsI)
 
-lemma unk_rhs: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto>* (unknown[str]: t)\<close>
+lemma step_exps_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto>* (unknown[str]: t)\<close>
   unfolding aop_simps by (rule step_exps_aop_unk_rhsI)
 
 end
 
-interpretation step_exps_plusI: aop_lemmas \<open>(+)\<close> \<open>Plus\<close> by (standard, unfold plus_exp.simps, rule)
-interpretation step_exps_minusI: aop_lemmas \<open>(-)\<close> \<open>Minus\<close> by (standard, unfold minus_exp.simps, rule)
-interpretation step_exps_timesI: aop_lemmas \<open>(*)\<close> \<open>Times\<close> by (standard, unfold times_exp.simps, rule)
-interpretation step_exps_divideI: aop_lemmas \<open>(div)\<close> \<open>Divide\<close> by (standard, unfold divide_exp.simps, rule)
-interpretation step_exps_modI: aop_lemmas \<open>(mod)\<close> \<open>Mod\<close> by (standard, unfold modulo_exp.simps, rule)
-interpretation step_exps_sdivideI: aop_lemmas \<open>(sdiv)\<close> \<open>SDivide\<close> by (standard, unfold sdivide_exp.simps, rule)
-interpretation step_exps_smodI: aop_lemmas \<open>(smod)\<close> \<open>SMod\<close> by (standard, unfold smod_exp.simps, rule)
-interpretation step_exps_landI: aop_lemmas \<open>(&&)\<close> \<open>And\<close> by (standard, unfold land_exp.simps, rule)
-interpretation step_exps_lorI: aop_lemmas \<open>(||)\<close> \<open>Or\<close> by (standard, unfold lor_exp.simps, rule)
-interpretation step_exps_xorI: aop_lemmas \<open>(xor)\<close> \<open>Xor\<close> by (standard, unfold xor_exp.simps, rule)
-interpretation step_exps_lslI: aop_lemmas \<open>(<<)\<close> \<open>LShift\<close> by (standard, unfold lsl_exp.simps, rule)
-interpretation step_exps_lsrI: aop_lemmas \<open>(>>)\<close> \<open>RShift\<close> by (standard, unfold lsr_exp.simps, rule)
-interpretation step_exps_asrI: aop_lemmas \<open>(>>>)\<close> \<open>ARShift\<close> by (standard, unfold asr_exp.simps, rule)
-
-locale lop_lemmas =
-  fixes bop_fun :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close> and lop :: LOp
-  assumes lop_simps: \<open>bop_fun e\<^sub>1 e\<^sub>2 = BinOp e\<^sub>1 (LOp lop) e\<^sub>2\<close>
+context lop_lemmas
 begin
 
-sublocale bop_lemmas 
-  where bop_fun = bop_fun 
-    and bop = \<open>LOp lop\<close>
-  apply (standard)
-  using lop_simps by blast
-
-
-lemma unk_lhs: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto>* (unknown[str]: imm\<langle>1\<rangle>)\<close>
+lemma step_exps_unk_lhsI: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto>* (unknown[str]: imm\<langle>1\<rangle>)\<close>
   unfolding lop_simps by (rule step_exps_lop_unk_lhsI)
 
-lemma unk_rhs: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto>* (unknown[str]: imm\<langle>1\<rangle>)\<close>
+lemma step_exps_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto>* (unknown[str]: imm\<langle>1\<rangle>)\<close>
   unfolding lop_simps by (rule step_exps_lop_unk_rhsI)
 
 end
-
-interpretation step_exps_leI:  lop_lemmas \<open>(le)\<close>  Le  by (standard, unfold le_exp.simps, rule)
-interpretation step_exps_ltI:  lop_lemmas \<open>(lt)\<close>  Lt  by (standard, unfold lt_exp.simps, rule)
-interpretation step_exps_sltI: lop_lemmas \<open>(sle)\<close> Sle by (standard, unfold sle_exp.simps, rule)
-interpretation step_exps_sleI: lop_lemmas \<open>(slt)\<close> Slt by (standard, unfold slt_exp.simps, rule)
 
 method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
     \<comment> \<open>Var\<close>
@@ -351,35 +313,35 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
 
   \<comment> \<open>Plus\<close>
   (rule step_exps_plusI) |
-  (rule step_exps_plusI.rhs.word step_exps_plusI.lhs, solve_exp, (recurs | succeed)) |
+  (rule plus.step_exps_rhsI.word plus.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Minus\<close>
   (rule step_exps_minusI) |
-  (rule step_exps_minusI.rhs.word step_exps_minusI.lhs, solve_exp, (recurs | succeed)) |
+  (rule minus.step_exps_rhsI.word minus.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>land\<close>
   (rule step_exps_landI) |
-  (rule step_exps_landI.rhs.word step_exps_landI.lhs, solve_exp, (recurs | succeed)) |
+  (rule land.step_exps_rhsI.word land.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>lor\<close>
   (rule step_exps_lorI) |
-  (rule step_exps_lorI.rhs.word step_exps_lorI.lhs, solve_exp, (recurs | succeed)) |
+  (rule lor.step_exps_rhsI.word lor.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Lsl\<close>
   (rule step_exps_lslI) |
-  (rule step_exps_lslI.lhs, solve_exp, (recurs | succeed)) |
+  (rule lsl.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Lsr\<close>
   (rule step_exps_lsrI) |
-  (rule step_exps_lsrI.lhs, solve_exp, (recurs | succeed)) |
+  (rule lsr.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Le\<close>
   (rule step_exps_less_eqI) |
-  (rule step_exps_leI.rhs.word step_exps_leI.lhs, solve_exp, (recurs | succeed)) |
+  (rule le.step_exps_rhsI.word le.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Lt\<close>
   (rule step_exps_lessI) |
-  (rule step_exps_ltI.rhs.word step_exps_ltI.lhs, solve_exp, (recurs | succeed)) |
+  (rule lt.step_exps_rhsI.word lt.step_exps_lhsI, solve_exp, (recurs | succeed)) |
 
   \<comment> \<open>Eq\<close>
   (rule step_exps_eq_sameI.false) |

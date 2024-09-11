@@ -1,56 +1,39 @@
 theory Statement_Elims
-  imports Statement_Syntax
+  imports Statement_Syntax "../ExpressionSemantics/Expressions_Elims"
 begin                  
 
-subsection \<open>BIL\<close>
+subsection \<open>Sequences\<close>
 
-lemma step_bil_emptyE:
-  assumes \<open>\<Delta>,w \<turnstile> ([]::bil) \<leadsto> \<Delta>',w'\<close>
-      and E: \<open>\<lbrakk>\<Delta>' = \<Delta>; w' = w\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) unfolding step_syntax_list_def by (elim EmptyE E)
+lemmas step_bil_emptyE = EmptyE[unfolded step_syntax_list_def[symmetric]]
+lemmas step_bil_seqE = NextE[unfolded step_syntax_list_def[symmetric] step_syntax_stmt_def[symmetric]]
 
-lemma step_bil_seqE:
+lemma step_bil_singleE: 
     fixes s :: stmt
-  assumes \<open>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s # seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<close>
-      and E: \<open>\<And>\<Delta>\<^sub>2 w\<^sub>2.\<lbrakk>\<Delta>\<^sub>1,w\<^sub>1 \<turnstile> s \<leadsto> \<Delta>\<^sub>2, w\<^sub>2; \<Delta>\<^sub>2,w\<^sub>2 \<turnstile> seq \<leadsto> \<Delta>\<^sub>3,w\<^sub>3\<rbrakk> \<Longrightarrow> P\<close>
-    shows P 
-  using assms(1) unfolding step_syntax_list_def apply (elim NextE)
-  unfolding step_syntax_list_def[symmetric] step_syntax_stmt_def[symmetric] by (elim E)
-
-subsection \<open>Special\<close>
-
-lemma step_stmt_specialE:
-  assumes \<open>\<Delta>,w \<turnstile> (Special str) \<leadsto> \<Delta>',w'\<close>
-      and E: \<open>\<lbrakk>\<Delta>' = \<Delta>; w' = w\<rbrakk> \<Longrightarrow> P\<close>
+  assumes minor: \<open>\<Delta>,w \<turnstile> [s] \<leadsto> \<Delta>',w'\<close>
+      and major: \<open>\<Delta>,w \<turnstile> s \<leadsto> \<Delta>',w' \<Longrightarrow> P\<close> 
     shows P
-  using assms unfolding step_syntax_stmt_def by (elim SpecialE E)
+  using minor apply (rule step_bil_seqE)
+  apply (erule step_bil_emptyE)
+  apply (rule major)
+  by clarify
 
-subsection \<open>CpuExn\<close>
+subsection \<open>Statements\<close>
 
-lemma step_stmt_cpuexnE:
-  assumes \<open>\<Delta>,w \<turnstile> (cpuexn code) \<leadsto> \<Delta>',w'\<close>
-      and E: \<open>\<lbrakk>\<Delta>' = \<Delta>; w' = w\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) unfolding step_syntax_stmt_def by (elim CpuExnE E)
+lemmas step_stmt_specialE = SpecialE[unfolded step_syntax_stmt_def[symmetric]]
+lemmas step_stmt_cpuexnE = CpuExnE[unfolded step_syntax_stmt_def[symmetric]]
+lemmas step_stmt_moveE = MoveE[unfolded step_syntax_stmt_def[symmetric]]
 
-subsection \<open>Move\<close>
+(*
+interpretation exp_val_syntax \<open>\<lambda>e' v'. 
+  (\<And>\<Delta> w var e \<Delta>' w' P. \<lbrakk>
+      \<Delta>,w \<turnstile> var := e \<leadsto> \<Delta>',w'; 
+      (\<And>v. \<lbrakk>\<Delta>' = \<Delta>(var \<mapsto> v'); w' = w; \<Delta> \<turnstile> e \<leadsto>* e'\<rbrakk> \<Longrightarrow> P)
+    \<rbrakk> \<Longrightarrow> P)\<close>
+*)
 
-lemma step_stmt_moveE:
-  assumes \<open>\<Delta>,w \<turnstile> (var := e) \<leadsto> \<Delta>',w'\<close>
-      and E: \<open>\<And>v. \<lbrakk>\<Delta> \<turnstile> e \<leadsto>* (Val v); \<Delta>' = \<Delta>(var \<mapsto> v); w' = w\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) unfolding step_syntax_stmt_def by (elim MoveE E)
+lemmas step_stmt_jmpE = JmpE[unfolded step_syntax_stmt_def[symmetric]]
 
-subsection \<open>Jmp\<close>
-
-lemma step_stmt_jmpE:
-  assumes \<open>\<Delta>,w \<turnstile> (jmp e) \<leadsto> \<Delta>',w'\<close>
-      and E: \<open>\<And>num sz. \<lbrakk>\<Delta> \<turnstile> e \<leadsto>* (num \<Colon> sz); \<Delta>' = \<Delta>; w' = (num \<Colon> sz)\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) unfolding step_syntax_stmt_def by (elim JmpE E)
-
-subsection \<open>If\<close>
+subsubsection \<open>If\<close>
 
 lemma step_stmt_if_emptyE:
   assumes \<open>\<Delta>,w \<turnstile> (If e [] []) \<leadsto> \<Delta>',w'\<close>
@@ -58,16 +41,7 @@ lemma step_stmt_if_emptyE:
     shows P
   using E assms(1) step_stmt_if_empty by blast
 
-lemma step_stmt_ifE:
-  assumes \<open>\<Delta>,w \<turnstile> (If e seq\<^sub>1 seq\<^sub>2) \<leadsto> \<Delta>',w'\<close>
-      and Etrue: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* true; \<Delta>,w \<turnstile> seq\<^sub>1 \<leadsto> \<Delta>',w'\<rbrakk> \<Longrightarrow> P\<close>
-      and Efalse: \<open>\<lbrakk>\<Delta> \<turnstile> e \<leadsto>* false; \<Delta>,w \<turnstile> seq\<^sub>2 \<leadsto> \<Delta>',w'\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) unfolding step_syntax_stmt_def apply (elim IfE)
-  unfolding step_syntax_list_def[symmetric]
-  subgoal by (rule Etrue)
-  subgoal by (rule Efalse)
-  .
+lemmas step_stmt_ifE = IfE[unfolded step_syntax_stmt_def[symmetric] step_syntax_list_def[symmetric]]
 
 lemma step_stmt_if_thenE:
   assumes \<open>\<Delta>,w \<turnstile> (IfThen e seq\<^sub>1) \<leadsto> \<Delta>',w'\<close>
@@ -83,7 +57,7 @@ lemma step_stmt_if_elseE:
     shows P
   using assms(1) by (elim step_stmt_ifE Etrue Efalse step_bil_emptyE)
 
-subsection \<open>While\<close>
+subsubsection \<open>While\<close>
 
 lemma step_stmt_while_emptyE:
   assumes \<open>\<Delta>,w \<turnstile> (While e []) \<leadsto> \<Delta>', w'\<close>
@@ -102,5 +76,34 @@ lemma step_stmt_whileE:
     unfolding step_syntax_stmt_def[symmetric] step_syntax_list_def[symmetric] by (erule Etrue)
   subgoal by (erule Efalse)
   .
+
+subsection \<open>Symbolic Execution\<close>
+
+method solve_bilE_scaffold methods recurs solve_exps uses add = (
+  (erule step_stmt_cpuexnE step_stmt_specialE step_stmt_if_emptyE) |
+
+  (erule step_stmt_moveE, (solve_exps?)) |
+
+  (erule step_stmt_jmpE, (solve_exps?)) |
+
+  (erule step_stmt_if_emptyE, clarify) |
+  (erule step_stmt_if_thenE; solve_expsE?, recurs?) |
+  (erule step_stmt_if_elseE; solve_expsE?, prefer_last, recurs?) |
+  (erule step_stmt_ifE; solve_expsE?, recurs?) |
+
+  (erule step_stmt_while_emptyE, solve_exps) |
+
+  (erule step_stmt_while_emptyE) |
+  (erule step_stmt_whileE) |
+
+  erule step_bil_emptyE | 
+
+  (erule step_bil_singleE, (recurs?)) | 
+  (erule step_bil_seqE, recurs?, (recurs)?)
+)
+
+method solve_bilE uses add = (
+  solve_bilE_scaffold \<open>solve_bilE add: add\<close> \<open>solve_expsE add: add\<close> add: add
+)
 
 end

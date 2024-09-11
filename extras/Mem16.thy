@@ -33,4 +33,17 @@ lemma type_storage_el16: \<open>type (storage_el16 mem (num \<Colon> sz\<^sub>a\
 lemma type_storage_be16: \<open>type (storage_be16 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
+(* TODO move *)
+lemma nested_extract_within: 
+  assumes \<open>sz\<^sub>l\<^sub>o' + sz\<^sub>l\<^sub>o \<le> sz\<^sub>h\<^sub>i\<close>
+    shows \<open>(ext (ext num \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o) \<sim> hi : (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o) \<sim> lo : sz\<^sub>l\<^sub>o') = (ext num \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : (sz\<^sub>l\<^sub>o' + sz\<^sub>l\<^sub>o))\<close>
+  using assms using nested_extract_within'[where sz\<^sub>h\<^sub>i'= \<open>sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<close> and sz\<^sub>l\<^sub>o = sz\<^sub>l\<^sub>o and sz\<^sub>l\<^sub>o' = sz\<^sub>l\<^sub>o' and sz\<^sub>h\<^sub>i = sz\<^sub>h\<^sub>i and num = num and sz = sz]
+  apply auto
+  using add_le_imp_le_diff by blast
+
+\<comment> \<open>Little Endian\<close>
+
+lemmas xtract16_8_0[simp] = xtract_concat_consecutive[of 8 15 0, simplified]
+
+
 end

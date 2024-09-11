@@ -1,0 +1,20 @@
+session Relative_Security_BIL = "Coinductive" +  
+  options [document = pdf, document_output = "output"]
+  sessions "Word_Lib"
+  directories
+    "../Relative_Security"
+    "../General_Preliminaries"
+    "../IMP_Programs/Library"
+    "./BIL"
+    "./Cheang_et_al/3b"
+    "./Examples"
+    "./Examples/ex01/msvc"
+  theories 
+    Figure_3b
+    Ex_Kocher
+    Ex01
+    Ex01_Mitigated
+    Ex01_Solution
+
+
+    

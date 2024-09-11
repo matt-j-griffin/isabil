@@ -2,8 +2,12 @@ theory Expression_Syntax_Locales
   imports Expression_Syntax
 begin
 
-lemma word_is_word: \<open>\<exists>num. (num' \<Colon> sz) = (num \<Colon> sz) \<and> (num' \<Colon> sz) = (num \<Colon> sz) \<and> (num' \<Colon> sz) = (num \<Colon> sz)\<close>
-  by blast
+lemma word_is_word':
+  assumes \<open>sz' = sz\<close>
+    shows \<open>\<exists>num. (num' \<Colon> sz') = (num \<Colon> sz) \<and> (num' \<Colon> sz') = (num \<Colon> sz) \<and> (num' \<Colon> sz') = (num \<Colon> sz)\<close>
+  using assms by blast
+
+lemmas word_is_word = word_is_word'[OF refl]
 
 lemma plus_is_word: 
   assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz) \<and> v\<^sub>1 = (num \<Colon> sz) \<and> w\<^sub>1 = (num \<Colon> sz)\<close> 
@@ -18,8 +22,25 @@ lemma succ_is_word:
   using assms apply auto
   unfolding succ.simps by (intro plus_is_word word_is_word)
 
+lemma xtract_is_word': 
+  assumes \<open>Suc (sz\<^sub>1 - sz\<^sub>2) = sz\<close>
+      and \<open>\<exists>num. e = (num \<Colon> sz') \<and> v = (num \<Colon> sz') \<and> w = (num \<Colon> sz')\<close>
+    shows \<open>\<exists>num. (ext e \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz) \<and>
+                 (ext v \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz) \<and> 
+                 (ext w \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz)\<close>
+  using assms apply auto
+  unfolding xtract.simps by auto
+
+lemmas xtract_is_word = xtract_is_word'[OF refl]
+lemma xtract_is_wordv: 
+  assumes \<open>\<exists>num. e = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> v = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> w = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2))\<close>
+    shows \<open>\<exists>num. (ext e \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and>
+                 (ext v \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> 
+                 (ext w \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2))\<close>
+  using assms by (rule xtract_is_word)
+
 method solve_is_wordI = 
-  (rule succ_is_word plus_is_word word_is_word; solve_is_wordI)
+  (rule succ_is_word xtract_is_word plus_is_word word_is_word; solve_is_wordI)
 
 locale exp_val_word_fixed_sz_is_ok_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz :: nat
@@ -257,6 +278,61 @@ lemmas storage_syntaxs = storage unknown_mem storage_addr
 
 end
 
+lemma succ_is_valI':
+  fixes e :: exp
+  assumes \<open>w\<^sub>v = (num \<Colon> sz)\<close> and \<open>e' = (Val w\<^sub>v)\<close>
+    shows \<open>succ e' = Val (succ w\<^sub>v)\<close>
+  using assms by (metis succ_is_word word_constructor_exp_def)
+
+
+lemma succ_is_valI:
+  fixes e :: exp
+  assumes \<open>\<exists>num. e = (num \<Colon> sz) \<and> v = (num \<Colon> sz) \<and> w = (num \<Colon> sz)\<close>
+    shows \<open>succ e = Val (succ v)\<close>
+  using assms apply auto 
+  using succ_is_valI' word_constructor_exp_def by presburger
+
+(* Can these be generated via a locale? *)
+lemma eq_is_valI:
+  fixes e :: exp
+  assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz) \<and> v\<^sub>1 = (num \<Colon> sz) \<and> w\<^sub>1 = (num \<Colon> sz)\<close>
+      and \<open>\<exists>num. e\<^sub>2 = (num \<Colon> sz) \<and> v\<^sub>2 = (num \<Colon> sz) \<and> w\<^sub>2 = (num \<Colon> sz)\<close>
+    shows \<open>(e\<^sub>1 =\<^sub>b\<^sub>v e\<^sub>2) = Val (v\<^sub>1 =\<^sub>b\<^sub>v v\<^sub>2)\<close>
+  using assms unfolding bv_eq_def sketch safe
+proof safe
+  fix num numa
+  show "(if (num \<Colon> sz::exp) = numa \<Colon> sz then true else false) = Val (if (num \<Colon> sz::val) = numa \<Colon> sz then true else false)"
+    by (cases \<open>num \<Colon> sz = numa \<Colon> sz\<close>, auto simp add: true_word false_word word_constructor_exp_def)
+qed
+
+lemma plus_is_valI:
+  fixes e :: exp
+  assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz) \<and> v\<^sub>1 = (num \<Colon> sz) \<and> w\<^sub>1 = (num \<Colon> sz)\<close>
+      and \<open>\<exists>num. e\<^sub>2 = (num \<Colon> sz) \<and> v\<^sub>2 = (num \<Colon> sz) \<and> w\<^sub>2 = (num \<Colon> sz)\<close>
+    shows \<open>(e\<^sub>1 +\<^sub>b\<^sub>v e\<^sub>2) = Val (v\<^sub>1 +\<^sub>b\<^sub>v v\<^sub>2)\<close>
+  using assms apply auto
+  by (simp add: Val_simp_word bv_plus.simps(1))
+
+lemma xtract_is_valI:
+  fixes e :: exp
+  assumes \<open>w\<^sub>v = (num \<Colon> sz)\<close> and \<open>e' = (Val w\<^sub>v)\<close>
+    shows \<open>(ext e' \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o) = Val (ext w\<^sub>v \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o)\<close>
+  using assms by (metis bv_simps(51) word_constructor_exp_def)
+
+(*
+method solve_is_valI = 
+  (rule succ_is_word xtract_is_word plus_is_word word_is_word; solve_is_wordI)
+*)
+lemmas Val_refl = refl[where t = \<open>Val _\<close>]
+
+method solve_is_valI
+  \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = (
+  (rule word_constructor_exp_def storage_constructor_exp_def) |
+  (rule succ_is_valI plus_is_valI eq_is_valI; solve_is_wordI) |
+  (rule xtract_is_valI, force, solve_is_valI) |
+  (rule Val_refl) \<comment> \<open>Last case\<close>
+)
+
 locale exp_val_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> prop\<close>
   assumes is_val: \<open>\<And>e v. e = (Val v) \<Longrightarrow> PROP P e v\<close>
@@ -274,10 +350,6 @@ sublocale exp_val_storage_syntax
   where P = \<open>\<lambda>e v _ _. P e v\<close>
   apply standard
   unfolding storage_constructor_exp_def by (rule val)
-
-(*
-lemmas syntaxs = word_syntax storage unknown val
-*)
 
 end
 
@@ -673,10 +745,16 @@ end
 
 locale store_multiple_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> prop\<close>
-  assumes store_val: \<open>\<And>e\<^sub>1 v\<^sub>1 e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m num. \<lbrakk>type v\<^sub>1 = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = (Val v\<^sub>1); 
-      e\<^sub>3 = (Val v\<^sub>3)\<rbrakk>
-        \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
+  assumes is_val3: \<open>\<And>e\<^sub>1 v\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. \<lbrakk>type v\<^sub>1 = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = (Val v\<^sub>1);
+      \<exists>num. e\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<and> v\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<and> w\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r); e\<^sub>3 = (Val v\<^sub>3)\<rbrakk>
+        \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
 begin
+
+lemma store_val: (* legacy *)
+  assumes \<open>type v\<^sub>1 = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>e\<^sub>1 = (Val v\<^sub>1)\<close>
+      and \<open>e\<^sub>3 = (Val v\<^sub>3)\<close>
+    shows \<open>PROP P e\<^sub>1 v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m\<close>
+  using assms by (intro is_val3 word_is_word)
 
 sublocale word: exp2_storage_val_syntax
   where P2 = \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>num. PROP P e\<^sub>1 v\<^sub>1 (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) e\<^sub>2 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>

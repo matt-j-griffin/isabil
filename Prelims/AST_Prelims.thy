@@ -152,9 +152,6 @@ next
     using le_SucI by presburger
 qed auto
 
-
-type_synonym 'v parser_result = \<open>('v, string) result\<close>
-
 abbreviation \<open>ord0 \<equiv> of_char (CHR ''0'')\<close>
 abbreviation \<open>ord9 \<equiv> of_char (CHR ''9'')\<close>
 abbreviation \<open>orda \<equiv> of_char (CHR ''a'')\<close>
@@ -166,22 +163,28 @@ abbreviation \<open>ordZ \<equiv> of_char (CHR ''Z'')\<close>
 
 text \<open>Converts a char ordinal to a numeric type (with radix)\<close>
 
+datatype 'a OfCharRadixError = 
+  InvalidRadix 'a | 
+  InvalidCodepoint char 'a 
+
+type_synonym 'a of_char_radix_result = "('a, 'a OfCharRadixError) result"
+
 definition
-  of_char_radix :: \<open>('a::{minus,ord,comm_semiring_1}) \<Rightarrow> char \<Rightarrow>  ('a::{minus,ord,comm_semiring_1}) parser_result\<close>
+  of_char_radix :: \<open>('a::{minus,ord,comm_semiring_1}) \<Rightarrow> char \<Rightarrow> ('a::{minus,ord,comm_semiring_1}) of_char_radix_result\<close>
 where
   \<open>of_char_radix radix c  = (
     let 
       ord = of_char c 
     in
-      if (radix > 36) then Error (List.append ''Radix out of range (>36): '' [c])
+      if (radix > 36) then Error (InvalidRadix radix)
       else if (ord0 \<le> ord \<and> ord \<le> max ord9 radix) then Value (ord - ord0)
       else if (radix > 10 \<and> orda \<le> ord \<and> ord \<le> orda + (radix - 11)) then Value (ord - orda + 10)
       else if (radix > 10 \<and> ordA \<le> ord \<and> ord \<le> ordA + (radix - 11)) then Value (ord - ordA + 10)
-      else Error (List.append ''Codepoint out of range for radix: '' [c])
+      else Error (InvalidCodepoint c radix)
   )\<close>
 
 abbreviation
-  of_char_dec :: \<open>char \<Rightarrow> ('a::{minus,ord,comm_semiring_1}) parser_result\<close>
+  of_char_dec :: \<open>char \<Rightarrow> ('a::{minus,ord,comm_semiring_1}) of_char_radix_result\<close>
 where
   \<open>of_char_dec \<equiv> of_char_radix 10\<close>
 
@@ -200,7 +203,7 @@ lemma of_char_dec_0_9: \<open>of_char_dec c = Value v \<Longrightarrow> (v::nat)
   unfolding of_char_radix_def Let_def by (auto split: if_splits)
 
 abbreviation
-  of_char_hex :: \<open>char \<Rightarrow> ('a::{minus,ord,comm_semiring_1}) parser_result\<close>
+  of_char_hex :: \<open>char \<Rightarrow> ('a::{minus,ord,comm_semiring_1}) of_char_radix_result\<close>
 where
   \<open>of_char_hex \<equiv> of_char_radix 16\<close>
 
@@ -224,26 +227,54 @@ lemma of_char_hex_nat[simp]:
 lemma of_char_hex_0_16: \<open>of_char_hex c = Value v \<Longrightarrow> (v::nat) \<in> {0..15}\<close>
   unfolding of_char_radix_def Let_def by (auto split: if_splits)
 
+datatype 'a OfStringRadixError = 
+  EmptyString | (*''Cannot convert empty string to nat''*)
+  InvalidRadix 'a |
+  InvalidCodepoint char 'a
+
+fun 
+  of_string_radix_error_to_string :: \<open>'a OfStringRadixError \<Rightarrow> string\<close>
+where 
+  \<open>of_string_radix_error_to_string EmptyString = ''Cannot convert empty string''\<close> |
+  \<open>of_string_radix_error_to_string (InvalidRadix _) = ''The provided radix was too large (max 32)''\<close> |
+  \<open>of_string_radix_error_to_string (InvalidCodepoint c _) = ''Codepoint out of range for radix: '' @ [c]\<close>
+
+fun 
+  to_nat_of_string_radix_error :: \<open>'a OfCharRadixError \<Rightarrow> 'a OfStringRadixError\<close>
+where
+  \<open>to_nat_of_string_radix_error (OfCharRadixError.InvalidRadix radix) = InvalidRadix radix\<close> |
+  \<open>to_nat_of_string_radix_error (OfCharRadixError.InvalidCodepoint codepoint radix) = InvalidCodepoint codepoint radix\<close>
+  
+type_synonym 'a of_string_radix_result = \<open>('a, 'a OfStringRadixError) result\<close>
+type_synonym nat_of_string_radix_result = \<open>nat of_string_radix_result\<close>
 
 fun
-  nat_of_string_radix  :: \<open>nat \<Rightarrow> string \<Rightarrow> nat parser_result\<close>
+  nat_of_string_radix  :: \<open>nat \<Rightarrow> string \<Rightarrow> nat_of_string_radix_result\<close>
 where
-  \<open>nat_of_string_radix _ [] = Error ''Cannot convert empty string to nat''\<close> |
-  \<open>nat_of_string_radix radix [c] = of_char_radix radix c\<close> |
+  \<open>nat_of_string_radix _ [] = Error EmptyString\<close> |
+  \<open>nat_of_string_radix radix [c] = map_result_error to_nat_of_string_radix_error (of_char_radix radix c)\<close> |
   \<open>nat_of_string_radix radix (c # str) = (
-    Result.bind (of_char_radix radix c) (\<lambda>d. map_result_value (\<lambda>m. (radix ^ length str) * d + m) (nat_of_string_radix radix str))
+    let 
+      num_result' = of_char_radix radix c;
+      num_result = map_result_error to_nat_of_string_radix_error num_result'
+    in 
+      Result.bind num_result (\<lambda>d. map_result_value (\<lambda>m. (radix ^ length str) * d + m) (nat_of_string_radix radix str))
   )\<close>
 
 abbreviation \<open>nat_of_dec_string \<equiv> nat_of_string_radix 10\<close>
 abbreviation \<open>nat_of_hex_string \<equiv> nat_of_string_radix 16\<close>
 
+type_synonym int_of_string_radix_result = \<open>int of_string_radix_result\<close>
+
+abbreviation \<open>of_string_radix_error \<equiv> map_OfStringRadixError of_nat\<close>
+
 fun
-  int_of_string  :: \<open>string \<Rightarrow> int parser_result\<close>
+  int_of_string  :: \<open>string \<Rightarrow> int_of_string_radix_result\<close>
 where
-  \<open>int_of_string [] = Error ''Cannot convert empty string to int''\<close> |
+  \<open>int_of_string [] = Error EmptyString\<close> |
   \<open>int_of_string (c # str) = (
-    if c = CHR ''-'' then map_result_value (\<lambda>x. x * -1) (map_result_value of_nat (nat_of_dec_string str))
-    else map_result_value of_nat (nat_of_dec_string (c # str))
+    if c = CHR ''-'' then map_result_value (\<lambda>x. x * -1) (map_result of_nat of_string_radix_error (nat_of_dec_string str))
+    else map_result of_nat of_string_radix_error (nat_of_dec_string (c # str))
   )\<close>
 
 

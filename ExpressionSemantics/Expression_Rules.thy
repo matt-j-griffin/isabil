@@ -17,9 +17,9 @@ where
   LoadUnMem: \<open>\<Delta> \<turnstile> (unknown[str]: t)[Val v, ed]:usz \<leadsto> unknown[str]: imm\<langle>sz\<rangle>\<close> |
   LoadUnAddr: \<open>\<Delta> \<turnstile> v[w \<leftarrow> v', sz][unknown[str]: t, ed]:usz' \<leadsto> unknown[str]: imm\<langle>sz'\<rangle>\<close> |
   LoadWordBe: \<open>\<lbrakk>sz > sz\<^sub>m\<^sub>e\<^sub>m; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<rbrakk> \<Longrightarrow> 
-      \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz) \<leadsto> (((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m) @ (((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))))\<close> |
+      \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz) \<leadsto> (((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m) \<copyright> (((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))))\<close> |
   LoadWordEl: \<open>\<lbrakk>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; sz > sz\<^sub>m\<^sub>e\<^sub>m\<rbrakk> \<Longrightarrow> 
-      \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> ((((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) @ ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> |
+      \<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz) \<leadsto> ((((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) \<copyright> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close> |
 
   \<comment> \<open>Store\<close>
   StoreStepVal: \<open>\<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<leadsto> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3')\<close> |
@@ -89,11 +89,11 @@ where
   Neg: \<open>\<Delta> \<turnstile> (-(num \<Colon> sz)) \<leadsto> (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close> |
 
   \<comment> \<open>Concat\<close>
-  ConcatRhs: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 @ e\<^sub>2) \<leadsto> (e\<^sub>1 @ e\<^sub>2')\<close> |
-  ConcatLhs: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 @ (Val v\<^sub>2)) \<leadsto> (e\<^sub>1' @ (Val v\<^sub>2))\<close> |
-  ConcatRhsUn: \<open>type v = imm\<langle>sz\<^sub>1\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((Val v) @ (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>)) \<leadsto> (unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>)\<close> |
-  ConcatLhsUn: \<open>type v = imm\<langle>sz\<^sub>2\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) @ (Val v)) \<leadsto> (unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>)\<close> |
-  Concat: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close> |
+  ConcatRhs: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> (e\<^sub>1 \<copyright> e\<^sub>2')\<close> |
+  ConcatLhs: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> (Val v\<^sub>2)) \<leadsto> (e\<^sub>1' \<copyright> (Val v\<^sub>2))\<close> |
+  ConcatRhsUn: \<open>type v = imm\<langle>sz\<^sub>1\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((Val v) \<copyright> (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>)) \<leadsto> (unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>)\<close> |
+  ConcatLhsUn: \<open>type v = imm\<langle>sz\<^sub>2\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) \<copyright> (Val v)) \<leadsto> (unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>)\<close> |
+  Concat: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<copyright> (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close> |
 
   \<comment> \<open>Extract\<close>
   Extract: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<leadsto> (ext (num \<Colon> sz) \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2)\<close> |
@@ -108,12 +108,64 @@ where
   CastSigned: \<open>\<Delta> \<turnstile> (extend:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close> |
   CastUnsigned: \<open>\<Delta> \<turnstile> (pad:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close>
 
+text \<open>An expression transition always makes progress\<close>
+
+lemma step_exp_neq': 
+  assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close> 
+    shows \<open>e \<noteq> e'\<close>
+using assms proof (induct rule: step_exp.induct)
+  case (Let \<Delta> var v e)
+  then show ?case 
+    by (rule let_neq_capture_avoid_v)
+next
+  case (LoadByteFromNext w num\<^sub>2 sz\<^sub>2 \<Delta> v v' sz ed)
+  then show ?case 
+    by (cases w rule: word_exhaust, auto)
+next
+  case (LessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
+  then show ?case 
+    using le.not_other_bops by simp    
+next
+  case (SignedLessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
+  then show ?case 
+    using sle.not_other_bops by simp    
+qed (unfold bv_simps, simp_all)
+
+corollary step_exp_neq: \<open>\<not>(\<Delta> \<turnstile> e \<leadsto> e)\<close>
+  using step_exp_neq' by auto
+
+text \<open>Therefore, a value can never be a transition\<close>
+
+lemma step_exp_val_no_step_intermediary: \<open>\<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> e \<noteq> (Val v)\<close>
+  by (induct rule: step_exp.induct, simp_all)
+
+corollary step_exp_not_val[simp]: \<open>\<not>(\<Delta> \<turnstile> (Val v) \<leadsto> e)\<close>
+  using step_exp_val_no_step_intermediary by blast
+
+interpretation step_exp_not_val: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e'. \<not>(\<Delta> \<turnstile> e \<leadsto> e'))\<close>
+  by (standard, simp)
+
+\<comment> \<open>Ensure transition of common values are in the simpset.\<close>
+(* TODO check these do not already exist *)
+declare step_exp_not_val.word[simp add] 
+declare step_exp_not_val.storage[simp add]
+declare step_exp_not_val.unknown[simp add]
+
+(* TODO *)
+lemma step_exp_not_bv_concat[simp]: \<open>\<not>(\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e)\<close>
+  unfolding bv_concat.simps by (rule step_exp_not_val.word)
+
+subsubsection \<open>Elimination rules\<close>
+
+subsection \<open>Val\<close>
+
+inductive_cases ValE: \<open>\<Delta> \<turnstile> (Val v) \<leadsto> e\<close>
 inductive_cases VarE: \<open>\<Delta> \<turnstile> (name' :\<^sub>t t) \<leadsto> e\<close>
 
 inductive_cases LoadStepAddrE: \<open>\<Delta> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz \<leadsto> e\<close>
 inductive_cases LoadStepMemE: \<open>\<Delta> \<turnstile> e\<^sub>1[Val v\<^sub>2, ed]:usz \<leadsto> e\<close>
 inductive_cases LoadByteE: \<open>\<Delta> \<turnstile> v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz][(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz \<leadsto> e\<close> 
-inductive_cases LoadByteFromNextE: \<open>\<Delta> \<turnstile> ((v[(num\<^sub>1 \<Colon> sz\<^sub>1) \<leftarrow> v', sz][(num\<^sub>2 \<Colon> sz\<^sub>2), ed]:usz)::exp) \<leadsto> e\<close>
+inductive_cases LoadByteFromNextE: \<open>\<Delta> \<turnstile> ((v[w \<leftarrow> v', sz][(num\<^sub>2 \<Colon> sz\<^sub>2), ed]:usz)::exp) \<leadsto> e\<close>
 inductive_cases LoadUnMemE: \<open>\<Delta> \<turnstile> (unknown[str]: t)[Val v, ed]:usz \<leadsto> e\<close> 
 inductive_cases LoadUnAddrE: \<open>\<Delta> \<turnstile> v[w \<leftarrow> v', sz][unknown[str]: t, ed]:usz' \<leadsto> e\<close> 
 inductive_cases LoadWordBeE: \<open>\<Delta> \<turnstile> ((Val v)[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz) \<leadsto> e\<close>
@@ -122,6 +174,7 @@ inductive_cases LoadWordElE: \<open>\<Delta> \<turnstile> ((Val v)[(num \<Colon>
 inductive_cases StoreStepValE: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<leadsto> e\<close>
 inductive_cases StoreStepAddrE: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> e\<close>
 inductive_cases StoreStepMemE: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [(Val v\<^sub>2), en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> e\<close>
+inductive_cases StoreWordE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), en]:usz \<leftarrow> (Val val)) \<leadsto> e\<close>
 inductive_cases StoreWordBeE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz \<leftarrow> (Val val)) \<leadsto> e\<close>
 inductive_cases StoreWordElE: \<open>\<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<leadsto> e\<close>
 inductive_cases StoreUnAddrE: \<open>\<Delta> \<turnstile> ((Val v) with [unknown[str]: t', ed]:usz' \<leftarrow> (Val v')) \<leadsto> e\<close>
@@ -145,12 +198,12 @@ inductive_cases AopUnkLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 (AOp ao
 inductive_cases LopUnkRhsE: \<open>\<Delta> \<turnstile> BinOp (unknown[str]: t) (LOp aop) e\<^sub>2 \<leadsto> e\<close>
 inductive_cases LopUnkLhsE: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 (LOp aop) unknown[str]: t \<leadsto> e\<close>
 
-inductive_cases PlusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm PlusE
-inductive_cases MinusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm MinusE
-inductive_cases TimesE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) * (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm TimesE
-inductive_cases DivE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) div (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm DivE
-inductive_cases SDivE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) sdiv (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm SDivE
-inductive_cases ModE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) % (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm ModE
+inductive_cases PlusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases MinusE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases TimesE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) * (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases DivE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) div (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases SDivE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) sdiv (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases ModE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) % (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
 inductive_cases SModE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) smod (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm SModE
 inductive_cases LslE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) << (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm LslE
 inductive_cases LsrE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) >> (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close> thm LsrE
@@ -172,11 +225,11 @@ inductive_cases UopUnkE: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t
 inductive_cases NotE: \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<leadsto> e\<close>
 inductive_cases NegE: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> e\<close>
 
-inductive_cases ConcatRhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 @ e\<^sub>2) \<leadsto> e\<close>
-inductive_cases ConcatLhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 @ (Val v\<^sub>2)) \<leadsto> e\<close>
-inductive_cases ConcatRhsUnE: \<open>\<Delta> \<turnstile> ((Val v) @ (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>)) \<leadsto> e\<close>
-inductive_cases ConcatLhsUnE: \<open>\<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) @ (Val v)) \<leadsto> e\<close>
-inductive_cases ConcatE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) @ (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e\<close>
+inductive_cases ConcatRhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> e\<close>
+inductive_cases ConcatLhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> (Val v\<^sub>2)) \<leadsto> e\<close>
+inductive_cases ConcatRhsUnE: \<open>\<Delta> \<turnstile> ((Val v) \<copyright> (unknown[str]: imm\<langle>sz\<^sub>2\<rangle>)) \<leadsto> e\<close>
+inductive_cases ConcatLhsUnE: \<open>\<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) \<copyright> (Val v)) \<leadsto> e\<close>
+inductive_cases ConcatE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<copyright> (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e\<close>
 
 inductive_cases ExtractE: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[(num \<Colon> sz)]) \<leadsto> e\<close>
 inductive_cases ExtractReduceE: \<open>\<Delta> \<turnstile> (extract:sz\<^sub>1:sz\<^sub>2[e]) \<leadsto> e'\<close>
@@ -192,90 +245,23 @@ inductive_cases CastUnsignedE: \<open>\<Delta> \<turnstile> (pad:sz[(num \<Colon
 (* TODO move *)
 lemma Val_not_inject: "v \<noteq> v' \<Longrightarrow> Val v \<noteq> Val v'"
   by simp
+(*
+subsubsection \<open>Reduced Expressions tend to be deterministic\<close>
 
-lemma step_exp_neq': 
-  assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close> 
-    shows \<open>e \<noteq> e'\<close>
-using assms proof (induct rule: step_exp.induct)
-  case (VarIn name' t val \<Delta>)
-  then show ?case 
-    using var.not_val by blast
-next
-  case (VarNotIn name' t \<Delta> str)
-  then show ?case by simp
-next
-  case (Plus \<Delta> num\<^sub>1 sz num\<^sub>2)
-  then show ?case 
-    unfolding plus_exp.simps bv_plus.simps by simp
-next
-  case (LessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
-  then show ?case 
-    unfolding bv_eq_def bv_lor.simps bv_lt.simps by simp
-next
-  case (SignedLessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
-  then show ?case 
-    unfolding bv_eq_def bv_lor.simps bv_sle.simps by simp
-next
-  case (Extract sz\<^sub>2 sz\<^sub>1 \<Delta> num sz)
-  then show ?case
-    unfolding xtract.simps by simp
-next
-  case (CastLow \<Delta> sz num sz')
-  then show ?case 
-    unfolding xtract.simps by simp
-next
-  case (CastHigh \<Delta> sz num sz')
-  then show ?case 
-    unfolding xtract.simps by simp
-next
-  case (CastSigned \<Delta> sz num sz')
-  then show ?case 
-    unfolding xtract.simps by simp
-next
-  case (CastUnsigned \<Delta> sz num sz')
-  then show ?case 
-    unfolding xtract.simps by simp
-next
-  case (Let \<Delta> var v e)
-  then show ?case 
-    by (rule let_neq_capture_avoid_v)
-next
-  case (LoadByteFromNext w num\<^sub>2 sz\<^sub>2 \<Delta> v v' sz ed)
-  then show ?case 
-    by (cases w rule: word_exhaust, auto)
-qed (unfold bv_simps, simp_all)
+text \<open>Reduced Loads are deterministic\<close>
 
-lemma step_exp_neq: \<open>\<not>(\<Delta> \<turnstile> e \<leadsto> e)\<close>
-  using step_exp_neq' by auto
+inductive_cases LoadReducedE: \<open>\<Delta> \<turnstile> ((Val v)[(Val v'), en]:usz) \<leadsto> e\<close>
 
-
-
-
-
-
-lemma step_exp_val_no_step_intermediary: \<open>\<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> e \<noteq> (Val v)\<close>
-  by (induct rule: step_exp.induct, unfold plus_exp.simps, simp_all)
-
-lemma step_exp_not_val[simp]: \<open>\<not>(\<Delta> \<turnstile> (Val v) \<leadsto> e)\<close>
-  using step_exp_val_no_step_intermediary by blast
-
-
-interpretation step_exp_not_val: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e'. \<not>(\<Delta> \<turnstile> e \<leadsto> e'))\<close>
-  by (standard, simp)
-
-(* TODO *)
-lemma step_exp_not_plus[simp]: \<open>\<not>(\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) \<leadsto> e)\<close>
-  unfolding bv_plus.simps by (rule step_exp_not_val.word)
-
-lemma step_exp_not_bv_concat[simp]: \<open>\<not>(\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e)\<close>
-  unfolding bv_concat.simps by (rule step_exp_not_val.word)
-
-lemma step_exp_not_storage[simp]: \<open>\<not>(\<Delta> \<turnstile> v[w \<leftarrow> v', sz] \<leadsto> e')\<close>
-  unfolding storage_constructor_exp_def by (rule step_exp_not_val)
-
-(* TODO move *)
-lemma [simp]: \<open>Cast cast sz e  \<noteq> ext num \<Colon> sz \<sim> hi : szhi \<sim> lo : szlow\<close>
-  unfolding xtract.simps by simp
+lemma determ_step_exp_reduced_load:
+  assumes 1: \<open>\<Delta> \<turnstile> ((Val v\<^sub>1)[(Val v\<^sub>2), en]:usz) \<leadsto> e\<^sub>1\<close>
+      and 2: \<open>\<Delta> \<turnstile> ((Val v\<^sub>1)[(Val v\<^sub>2), en]:usz) \<leadsto> e\<^sub>2\<close>
+    shows \<open>e\<^sub>1 = e\<^sub>2\<close>
+  using 1 2 apply (elim LoadReducedE ValE)
+  apply simp_all
+       defer defer defer defer
+  using 2 apply simp_all
+  apply (elim LoadByteE)
+*)
 
 (*
 lemma step_exp_non_circular:

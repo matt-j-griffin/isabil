@@ -4,14 +4,14 @@ begin
 
 
 datatype ('v, 'e) result =  Value (get: 'v) | Error (err: 'e)
-
+(*
 primrec
   result_of_option :: \<open>'v option \<Rightarrow> 'e \<Rightarrow> ('v, 'e) result\<close>
 where
   \<open>result_of_option (Some x) _ = Value x\<close> |   
   \<open>result_of_option None e = Error e\<close>
-
-
+*)
+find_theorems Value
 
 definition \<open>map_result_value f = map_result f id\<close>
 

@@ -1,5 +1,6 @@
 theory Syntax
   imports "Prelims/Prelims"
+           "/home/griff/Isabelle2024/src/HOL/ex/Sketch_and_Explore" (*TODO remove*)
 begin
 (*
 class bool_syntax =

@@ -153,19 +153,6 @@ method solve_bilI_scaffold methods recurs solve_exps uses add = (
   (rule step_bil_seqI, (recurs | succeed), (recurs | succeed))
 )
 
-(*  (rule step_stmt_moveI.succ2, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_moveI.succ3, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_moveI.succ4, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_moveI.succ5, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_moveI.succ6, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_moveI.succ7, solves \<open>solve_exps\<close>) |*)
-(*  (rule step_stmt_jmpI.succ2, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_jmpI.succ3, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_jmpI.succ4, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_jmpI.succ5, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_jmpI.succ6, solves \<open>solve_exps\<close>) |
-  (rule step_stmt_jmpI.succ7, solves \<open>solve_exps\<close>) |*)
-
 method solve_bilI uses add = (
   solve_bilI_scaffold \<open>solve_bilI add: add\<close> \<open>solve_expsI add: add\<close> add: add
 )

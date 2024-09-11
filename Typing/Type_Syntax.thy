@@ -10,6 +10,7 @@ datatype Type =
   | Mem nat nat (\<open>mem\<langle>_, _\<rangle>\<close>)
 
 class type_syntax =
-  fixes type :: \<open>'a \<Rightarrow> Type\<close>
+    fixes type :: \<open>'a \<Rightarrow> Type\<close>
+  assumes type_determ: \<open>\<And>v t t'. \<lbrakk>type v = t; type v = t'\<rbrakk> \<Longrightarrow> t' = t\<close>
 
 end
