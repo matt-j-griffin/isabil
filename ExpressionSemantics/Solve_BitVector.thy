@@ -112,7 +112,7 @@ lemma succ_left_neqI:
   assumes \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
     shows \<open>succ (succ w) \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
 proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
+  case w: (Word num\<^sub>1 sz\<^sub>1)
   show ?thesis 
     using w assms apply safe
     unfolding succ.simps bv_plus.simps apply auto
@@ -128,7 +128,7 @@ lemma succ_right_neqI:
   assumes \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ w\<close> 
     shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (succ w)\<close>
 proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
+  case w: (Word num\<^sub>1 sz\<^sub>1)
   show ?thesis 
     using w assms apply safe
     unfolding succ.simps bv_plus.simps apply auto
@@ -144,10 +144,10 @@ lemma succ_succ_neqI:
   assumes \<open>succ w \<noteq> succ w'\<close>
     shows \<open>succ (succ w) \<noteq> succ (succ w')\<close>
 proof (cases w rule: word_exhaust)
-  case w: (1 num\<^sub>1 sz\<^sub>1)
+  case w: (Word num\<^sub>1 sz\<^sub>1)
   show ?thesis 
     proof (cases w' rule: word_exhaust)
-      case w': (1 num\<^sub>2 sz\<^sub>2)
+      case w': (Word num\<^sub>2 sz\<^sub>2)
       show ?thesis 
         using w w' assms apply safe
         unfolding succ.simps bv_plus.simps apply auto
@@ -181,9 +181,9 @@ method solve_word_neq uses add = (
   (rule succ_lt_neqI.plus.plus, solve_word_neq add: add) |
   (rule succ_lt_neqI.plus.word_is_ok, solve_lt_power add: add, solve_word_neq add: add) |
   (rule succ_lt_neqI, solve_lt_power add: add, solve_lt_power add: add, solve_word_neq add: add) |
-  (solves \<open>rule add\<close> | (match conclusion in P for P  \<Rightarrow> \<open>print_term P\<close>, 
+  (solves \<open>rule add\<close> | (
     solves \<open>simp (no_asm) add: add solve_exp_simpset succ.simps bv_plus.simps\<close>))
-)
+) (* match conclusion in P for P  \<Rightarrow> \<open>print_term P\<close>, *)
 
 method solve_bv_neqI = (rule bv_not_eq_same_sz_true, solves simp)
 

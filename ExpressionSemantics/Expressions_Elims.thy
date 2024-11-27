@@ -8,31 +8,39 @@ begin
 
 text \<open>Better reduce rule that includes the assumption e3 \<noteq> e1\<close>
 
+lemmas step_exps_reduce_baseE = 
+    converse_rtranclpE[where r = \<open>step_exp _\<close>, unfolded step_exps_def[symmetric]]
+
 lemma step_exps_reduceE:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>3\<close>
-      and reduceE: \<open>\<And>e\<^sub>2. \<lbrakk>e\<^sub>3 \<noteq> e\<^sub>1; \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2; \<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>3\<rbrakk> \<Longrightarrow> P\<close>
-      and reflE: \<open>e\<^sub>3 = e\<^sub>1 \<Longrightarrow> P\<close>
-    shows P
+  obtains 
+    (Reduce) e\<^sub>2 where 
+        \<open>e\<^sub>3 \<noteq> e\<^sub>1\<close> \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2\<close> \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>3\<close>
+  | (Refl) 
+        \<open>e\<^sub>3 = e\<^sub>1\<close>
 proof (cases \<open>e\<^sub>3 = e\<^sub>1\<close>)
   case True
-  then show ?thesis by (rule reflE)
+  then show ?thesis by (rule Refl)
 next
-  case False
+  case False 
   show ?thesis 
-    using assms(1) apply (rule ReduceE)
-    subgoal for e\<^sub>2
-      using False by (intro reduceE[of e\<^sub>2] conjI)
-    using False by (elim notE)
+  using assms(1) proof (rule step_exps_reduce_baseE)
+    assume "e\<^sub>1 = e\<^sub>3" thus thesis
+      using False by (elim notE, blast)
+  next
+    fix e\<^sub>2 :: exp
+    assume "\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2" "\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>3"
+    thus thesis
+      using False by (intro Reduce[of e\<^sub>2] conjI)
+  qed
 qed
-
 
 lemma step_exps_reduce_strictE:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>3\<close> and \<open>e\<^sub>3 \<noteq> e\<^sub>1\<close>
-      and reduceE: \<open>\<And>e\<^sub>2. \<lbrakk>e\<^sub>3 \<noteq> e\<^sub>1; \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2; \<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>3\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
+  obtains (Reduce) e\<^sub>2 where \<open>e\<^sub>3 \<noteq> e\<^sub>1\<close> \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2\<close> \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>3\<close>
   using assms(1) apply (rule step_exps_reduceE)
   subgoal for e\<^sub>2
-    using assms(2) by (intro reduceE[of e\<^sub>2] conjI)
+    using assms(2) by (intro Reduce[of e\<^sub>2] conjI)
   using assms(2) by (elim notE)
 
 lemmas step_exps_reduce_strict_valE = step_exps_reduce_strictE[where e\<^sub>3 = \<open>Val _\<close>]

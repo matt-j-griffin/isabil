@@ -71,6 +71,12 @@ where
   "map_result_value2 _ (Error e) _ = (Error e)" |
   "map_result_value2 f (Value v) r = (map_result_value (f v) r)"
 
+lemma map_result_value2_inject:
+  assumes \<open>\<And>x. f1 x = f2 x\<close> \<open>v11 = v21\<close> \<open>v12 = v22\<close> 
+    shows \<open>map_result_value2 f1 v11 v12 = map_result_value2 f2 v21 v22\<close>
+  using assms apply auto
+  by presburger
+
 fun map_result_value3 :: "('v \<Rightarrow> 'u \<Rightarrow> 's \<Rightarrow> 't) \<Rightarrow> ('v, 'e) result \<Rightarrow> ('u, 'e) result \<Rightarrow> ('s, 'e) result \<Rightarrow> ('t, 'e) result"
 where
   "map_result_value3 _ (Error e) _ _ = (Error e)" |

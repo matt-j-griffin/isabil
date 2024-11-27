@@ -2,7 +2,7 @@ theory Bitvector_Syntax
   imports Syntax "Typing/Type_Syntax" 
 begin        
 
-class word_constructor = (*bool_syntax +*) type_syntax +
+class word_constructor = type_syntax +
   fixes word_constructor :: \<open>nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (infixl \<open>\<Colon>\<close> 51)
   assumes word_inject[simp]: \<open>\<And>nat sz nat' sz'. (nat \<Colon> sz) = (nat' \<Colon> sz') \<equiv> nat = nat' \<and> sz = sz'\<close>
       and type_wordI: \<open>\<And>num sz. type (num \<Colon> sz) = imm\<langle>sz\<rangle>\<close>
@@ -579,7 +579,7 @@ end
 
 class word = word_constructor +
   assumes word_induct: \<open>\<And>w Q. \<lbrakk>\<And>a b. Q (a \<Colon> b)\<rbrakk> \<Longrightarrow> Q w\<close>
-      and word_exhaust: \<open>\<And>w Q. \<lbrakk>\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
+      and word_exhaust[case_names Word]: \<open>\<And>w Q. \<lbrakk>\<And>a b. w = (a \<Colon> b) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
 begin
 
 lemma type_succ_recI: 

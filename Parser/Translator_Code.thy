@@ -19,6 +19,7 @@ lemmas syntax_simps = plus_exp_def[symmetric]   minus_exp_def[symmetric]
     var_constructor_var_def[symmetric] var_constructor_exp_def[symmetric]
     Immediate_simp Val_simp_word Val_simp_storage Val_simp_unknown
     false_word[symmetric] true_word[symmetric] bool_simps
+    unknown_constructor_val_def[symmetric]
 
 ML_file \<open>ml/isabil.ML\<close>
 

@@ -1,25 +1,8 @@
 theory Syntax
   imports "Prelims/Prelims"
-           "/home/griff/Isabelle2024/src/HOL/ex/Sketch_and_Explore" (*TODO remove*)
-begin
-(*
-class bool_syntax =
-    fixes true :: 'a and false :: 'a
-  assumes true_neq_false[simp]: \<open>true \<noteq> false\<close>
+           "HOL-ex.Sketch_and_Explore" (*TODO remove*)
 begin
 
-lemma bool_syntax_exhaust:
-  obtains 
-    (True) \<open>b = true\<close>
-  | (False) \<open>b = false\<close>
-  | (NotBool) \<open>b \<noteq> false \<and> b \<noteq> true\<close>
-  by force
-
-end
-
-lemma not_true_eq_false[simp]: \<open>\<not> false = true\<close>
-  using true_neq_false by metis
-*)
 class bil_ops = plus + minus + modulo + times + divide + uminus + (*bool_syntax +*)
     fixes lsr :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open>>>\<close> 65)
       and lsl :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close>  (infixl \<open><<\<close> 65)

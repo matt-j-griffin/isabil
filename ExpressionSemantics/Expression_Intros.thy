@@ -6,10 +6,6 @@ begin
 
 subsection \<open>Preliminaries\<close>
 
-(* match_inline method - preserves schematic variables during sublocaling 
-   (I HAVE NO IDEA IF THIS HAS SIDE EFFECTS )*)
-ML_file \<open>../../isabil/extras/match_inline_method.ML\<close>
-
 no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
 no_notation (ASCII) HOL.Not (\<open>~ _\<close> [40] 40)
 
@@ -282,7 +278,7 @@ interpretation step_cast_unsignedI: exp_val_word_sz_syntax \<open>\<lambda>e _ _
 
 method solve_expI_scaffold methods recurs solve_type uses add = (
     \<comment> \<open>Vars\<close>
-  (rule step_var_inI.xtract2 step_var_inI.xtract step_var_inI.word step_var_inI, solve_in_var add: add) |
+  (rule step_var_inI.xtract2 step_var_inI.xtract step_var_inI.word step_var_inI.unknown step_var_inI, solve_in_var add: add) |
   (rule step_var_unI, blast) |
 
   \<comment> \<open>Loads\<close>

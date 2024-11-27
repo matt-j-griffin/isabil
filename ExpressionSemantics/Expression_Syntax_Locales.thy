@@ -327,7 +327,7 @@ lemmas Val_refl = refl[where t = \<open>Val _\<close>]
 
 method solve_is_valI
   \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = (
-  (rule word_constructor_exp_def storage_constructor_exp_def) |
+  (rule word_constructor_exp_def storage_constructor_exp_def unknown_constructor_exp_def) |
   (rule succ_is_valI plus_is_valI eq_is_valI; solve_is_wordI) |
   (rule xtract_is_valI, force, solve_is_valI) |
   (rule Val_refl) \<comment> \<open>Last case\<close>

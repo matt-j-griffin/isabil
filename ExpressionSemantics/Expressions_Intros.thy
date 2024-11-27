@@ -4,8 +4,8 @@ begin
 
 subsection \<open>Refl\<close>
 
-lemmas step_exps_reduceI = Reduce
-lemmas step_exps_reflI = Refl
+lemmas step_exps_reduceI = converse_rtranclp_into_rtranclp[where r = \<open>step_exp _\<close>, unfolded step_exps_def[symmetric]]
+lemmas step_exps_reflI = rtranclp.rtrancl_refl[where r = \<open>step_exp _\<close>, unfolded step_exps_def[symmetric]]
 
 lemma step_exps_reduce_singleI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2\<close>

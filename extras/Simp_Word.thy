@@ -268,6 +268,21 @@ ML \<open>
       in (SOME (wr, 0)) end) ()
     handle TERM _ =>
       NONE)
+    | simp_bv (Const (\<^const_name>\<open>succ\<close>,_) 
+                      $ (Const (\<^const_name>\<open>word_constructor\<close>,Tw) $ tnum $ sz)) =
+    ((fn () =>
+      let
+        val (_,num) = HOLogic.dest_number tnum
+        val (_,numsz) = HOLogic.dest_number sz
+        val sum = (num + 1)
+        val remainder = sum mod (power (2, numsz))
+        val quotient = sum div (power (2, numsz))
+        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
+                  $ HOLogic.mk_number HOLogic.natT remainder
+                  $ sz
+      in (SOME (wr, quotient)) end) ()
+    handle TERM _ =>
+      NONE)
     | simp_bv (Const (\<^const_name>\<open>bv_lor\<close>,_)
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,Tw) $ tnum1 $ sz)
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
@@ -365,6 +380,15 @@ ML \<open>
       Method.intros_tac ctxt [conjI, refl] [] THEN
       TRY (HEADGOAL (Lin_Arith.simple_tac ctxt))
     ) ctxt
+
+  fun simp_bv_succ ctxt = simproc_bv (fn quotient =>
+      HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
+      unfold_tac ctxt @{thms succ.simps bv_plus.simps word_inject power_numeral Num.pow.simps Num.sqr.simps} THEN
+      Method.intros_tac ctxt [conjI, thm_for ctxt quotient, refl] [] THEN
+      HEADGOAL (Lin_Arith.simple_tac ctxt) THEN
+      HEADGOAL (Lin_Arith.simple_tac ctxt)
+    ) ctxt
+
 \<close>
 
 simproc_setup simp_bv_plus  (\<open>(nat\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_plus\<close>
@@ -375,7 +399,7 @@ simproc_setup simp_bv_lsl   (\<open>(nat\<^sub>1 \<Colon> sz\<^sub>1) <<\<^sub>b
 simproc_setup simp_bv_lsr   (\<open>(nat\<^sub>1 \<Colon> sz\<^sub>1) >>\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz\<^sub>2)\<close>) = \<open>K simp_bv_lsr\<close>
 simproc_setup simp_bv_land  (\<open>(nat\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_lor\<close>
 simproc_setup simp_bv_lor   (\<open>(nat\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_land\<close>
-
+(*simproc_setup simp_succ     (\<open>succ (num \<Colon> sz)\<close>) = \<open>K simp_bv_succ\<close>*)
 
 simproc_setup simp_bv_plus_commute2 (\<open>((nat\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)) +\<^sub>b\<^sub>v (nat\<^sub>3 \<Colon> sz)\<close>) = \<open>fn _ =>
   let
@@ -411,7 +435,7 @@ fun simp_word goal_target ctxt = (
     goal_target (asm_simp_tac ((empty_simpset ctxt) 
       addsimprocs [\<^simproc>\<open>simp_bv_plus\<close>, \<^simproc>\<open>simp_bv_minus\<close>, \<^simproc>\<open>simp_bv_plus_commute2\<close>,
                    \<^simproc>\<open>simp_bv_less\<close>, \<^simproc>\<open>simp_bv_eq\<close>, \<^simproc>\<open>simp_bv_lor\<close>,
-                   \<^simproc>\<open>simp_bv_land\<close>, \<^simproc>\<open>simp_bv_lsl\<close>, \<^simproc>\<open>simp_bv_lsr\<close>])
+                   \<^simproc>\<open>simp_bv_land\<close>, \<^simproc>\<open>simp_bv_lsl\<close>, \<^simproc>\<open>simp_bv_lsr\<close> ])
     ) THEN
     Local_Defs.unfold_tac ctxt @{thms lor_true lor_false bv_eq bv_leq_same}
   )
@@ -522,6 +546,9 @@ lemma \<open>(8 \<Colon> 64) |\<^sub>b\<^sub>v (2 \<Colon> 64) = (10 \<Colon> 64
 lemma \<open>(0 \<Colon> 64) |\<^sub>b\<^sub>v (65280 \<Colon> 64) = (65280 \<Colon> 64)\<close>
   apply simp_words
   ..
-
-
+(*
+lemma \<open>succ (315242 \<Colon> 64) = 315243 \<Colon> 64\<close>
+  apply simp_words
+  ..  
+*)
 end

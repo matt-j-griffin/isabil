@@ -437,9 +437,8 @@ subsection \<open>Let steps\<close>
 
 lemma step_exp_letE:
   assumes \<open>\<Delta> \<turnstile> (Let var (Val v) e) \<leadsto> e'\<close>
-      and E: \<open>e' = [v\<sslash>var]e \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LetE step_exp_valE E)
+  obtains \<open>e' = [v\<sslash>var]e\<close>
+  using assms(1) by (elim LetE step_exp_valE)
 
 interpretation step_exp_letE: exp_val_syntax \<open>\<lambda>e'' v. (\<And>\<Delta> var e e' P. \<lbrakk>\<Delta> \<turnstile> (Let var e'' e) \<leadsto> e'; e' = [v\<sslash>var]e \<Longrightarrow> P\<rbrakk> \<Longrightarrow> P)\<close>
   by (standard, rule step_exp_letE, blast+)
@@ -452,9 +451,8 @@ text \<open>Ite steps\<close>
 
 lemma step_exp_if_trueE:
   assumes \<open>\<Delta> \<turnstile> (ite true (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> e\<close>
-      and E: \<open>e = Val v\<^sub>2 \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim IfTrueE step_exp_valE step_exp_valE.true E)
+  obtains \<open>e = Val v\<^sub>2\<close>
+  using assms(1) by (elim IfTrueE step_exp_valE step_exp_valE.true)
   
 
 interpretation step_exp_ite_trueE: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e P. \<lbrakk>
@@ -464,9 +462,8 @@ interpretation step_exp_ite_trueE: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<
 
 lemma step_exp_if_falseE:
   assumes \<open>\<Delta> \<turnstile> (ite false (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> e\<close>
-      and E: \<open>e = Val v\<^sub>3 \<Longrightarrow> P\<close>
-    shows P
-  using assms by (elim IfFalseE step_exp_valE step_exp_valE.false E)
+  obtains \<open>e = Val v\<^sub>3\<close>
+  using assms by (elim IfFalseE step_exp_valE step_exp_valE.false)
 
 interpretation step_exp_ite_falseE: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e P. \<lbrakk>
       \<Delta> \<turnstile> ite false e\<^sub>1 e\<^sub>2 \<leadsto> e; e = e\<^sub>2 \<Longrightarrow> P
@@ -475,9 +472,8 @@ interpretation step_exp_ite_falseE: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\
 
 lemma step_exp_if_unknownE:
   assumes \<open>\<Delta> \<turnstile> (ite unknown[str]: t (Val v\<^sub>2) (Val v\<^sub>3)) \<leadsto> e\<close>
-      and E: \<open>e = unknown[str]: (type v\<^sub>2) \<Longrightarrow> P\<close>
-    shows P
-  using assms by (elim IfUnknownE step_exp_valE step_exp_valE.unknown E)
+  obtains \<open>e = unknown[str]: (type v\<^sub>2)\<close>
+  using assms by (elim IfUnknownE step_exp_valE step_exp_valE.unknown)
 
 interpretation step_exp_if_unknownE: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _. (\<And>\<Delta> e str t P. \<lbrakk>
       \<Delta> \<turnstile> ite (unknown[str]: t) e\<^sub>1 e\<^sub>2 \<leadsto> e; e = unknown[str]: (type v\<^sub>1) \<Longrightarrow> P
@@ -528,21 +524,18 @@ text \<open>Uop steps\<close>
 
 lemma step_exp_uop_unkE: 
   assumes \<open>\<Delta> \<turnstile> (UnOp uop unknown[str]: t) \<leadsto> e\<close>
-      and E: \<open>e = unknown[str]: t \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim UopUnkE step_exp_valE step_exp_valE.unknown E)
+  obtains \<open>e = unknown[str]: t\<close>
+  using assms(1) by (elim UopUnkE step_exp_valE step_exp_valE.unknown)
 
 lemma step_exp_notE: 
   assumes \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = ~\<^sub>b\<^sub>v (num \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim NotE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = ~\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
+  using assms(1) by (elim NotE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_negE: 
   assumes \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = -\<^sub>b\<^sub>v (num \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim NegE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = -\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
+  using assms(1) by (elim NegE step_exp_valE step_exp_valE.word)
 
 text \<open>Fallback steps\<close>
 
@@ -552,9 +545,8 @@ text \<open>Concat steps\<close>
 
 lemma step_exp_concatE:
   assumes major: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz\<^sub>1) \<copyright> (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e\<close>
-      and minor: \<open>e = (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2) \<Longrightarrow> P\<close>
-    shows P
-  using major by (elim ConcatE step_exp_valE.word minor)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
+  using major by (elim ConcatE step_exp_valE.word)
 
 interpretation step_exp_concatE: exp2_val_word_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta> e. \<lbrakk>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> e; e = e\<^sub>1 \<cdot> e\<^sub>2 \<Longrightarrow> P\<rbrakk> \<Longrightarrow> P)\<close>
   by (standard, use step_exp_concatE in blast)
@@ -767,128 +759,100 @@ qed (use word_constructor_exp_def unknown_constructor_exp_def in blast)+
 text \<open>BOP steps\<close>
 
 lemmas step_exp_plusE = PlusE[simplified]
-
-lemma step_exp_minusE:
-  assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim MinusE step_exp_valE step_exp_valE.word E)
-
-lemma step_exp_timesE:
-  assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) * (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) *\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim TimesE step_exp_valE step_exp_valE.word E)
+lemmas step_exp_minusE = MinusE[simplified]
+lemmas step_exp_timesE = TimesE[simplified]
 
 lemma step_exp_divE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) div (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim DivE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim DivE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_sdivE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) sdiv (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim SDivE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim SDivE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_modE: 
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) % (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim ModE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim ModE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_smodE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) smod (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim SModE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim SModE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_lslE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) << (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LslE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LslE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_lsrE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) >> (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LsrE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LsrE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_asrE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) >>> (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim AsrE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim AsrE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_landE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) && (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LAndE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LAndE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_lorE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) || (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LOrE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LOrE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_xorE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) xor (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim XOrE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim XOrE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_eq_sameE:
   assumes \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Eq) (num \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = true \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim EqSameE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = true\<close>
+  using assms(1) by (elim EqSameE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_neq_sameE:
   assumes \<open>\<Delta> \<turnstile> (BinOp (num \<Colon> sz) (LOp Neq) (num \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = false \<Longrightarrow> P\<close>
-    shows P
-  using assms by (elim NeqSameE step_exp_valE step_exp_valE.word E)
+  obtains \<open>e = false\<close>
+  using assms by (elim NeqSameE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_eqE:
   assumes \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Eq) (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e\<close>
-      and E: \<open>\<lbrakk>e = (num\<^sub>1 \<Colon> sz\<^sub>1) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2)\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz\<^sub>1) =\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   using assms(1) 
-  by (metis E EqDiffE bv_eq_def step_exp_eq_sameE step_exp_valE.word)
+  by (metis EqDiffE bv_eq_def step_exp_eq_sameE step_exp_valE.word)
   
 lemma step_exp_neqE:
   assumes \<open>\<Delta> \<turnstile> (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Neq) (num\<^sub>2 \<Colon> sz\<^sub>2)) \<leadsto> e\<close>
-      and E: \<open>\<lbrakk>e = (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2)\<rbrakk> \<Longrightarrow> P\<close>
-    shows P
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   using assms(1)
-  by (metis E NeqDiffE bv_eq_def bv_negation_false_true bv_negation_true_false step_exp_neq_sameE step_exp_valE.word)
+  by (metis  NeqDiffE bv_eq_def bv_negation_false_true bv_negation_true_false step_exp_neq_sameE step_exp_valE.word)
 
 lemma step_exp_lessE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LessE step_exp_valE E step_exp_valE.word)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LessE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_less_eqE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim LessEqE step_exp_valE E step_exp_valE.word)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim LessEqE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_signed_lessE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim SignedLessE step_exp_valE E step_exp_valE.word)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim SignedLessE step_exp_valE step_exp_valE.word)
 
 lemma step_exp_signed_less_eqE:
   assumes \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colon> sz) sle (num\<^sub>2 \<Colon> sz)) \<leadsto> e\<close>
-      and E: \<open>e = (num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) \<Longrightarrow> P\<close>
-    shows P
-  using assms(1) by (elim SignedLessEqE step_exp_valE E step_exp_valE.word)
+  obtains \<open>e = (num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+  using assms(1) by (elim SignedLessEqE step_exp_valE step_exp_valE.word)
 
 text \<open>BOP - Generic\<close>
 

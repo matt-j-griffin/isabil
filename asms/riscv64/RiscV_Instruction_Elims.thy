@@ -1,5 +1,6 @@
 theory RiscV_Instruction_Elims
   imports RiscV_Instructions
+          IsaBIL.Program_Elims
           "../../OperationalSemantics/Program_Elims"
           RiscV_64
           "../../extras/Mem64_Elims"
@@ -163,16 +164,18 @@ lemma step_sdE':
 lemmas step_sdE = step_sdE'[where sz = 4]
 lemmas step_csdE = step_sdE'[where sz = 2]
 
-(*
-lemma step_sdzero':
+lemma step_sdzeroE':
   assumes major: \<open>(\<Delta>, pc, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>', pc', var')\<close>
-      and decode: \<open>\<And>\<Delta> var. (\<Delta>, pc, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l sdzero' sz w rs1 imm\<close>
-      and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), mem_addr \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>(mem, mem') \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>type mem' = mem\<langle>64, 8\<rangle>\<close>
-      and minor: \<open>\<lbrakk>\<Delta>' = \<Delta>(rd \<mapsto> (val \<Colon> 64) >>\<^sub>b\<^sub>v (imm \<Colon> 64)); pc' = pc +\<^sub>b\<^sub>v (4 \<Colon> 64); var' = var\<rbrakk> \<Longrightarrow> R\<close>
-    shows R \<open>(\<Delta>, pc, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(mem \<mapsto> storage_el64 mem' ((mem_addr \<Colon> 64) +\<^sub>b\<^sub>v (imm \<Colon> 64)) (0 \<Colon> 64)), w +\<^sub>b\<^sub>v (sz \<Colon> 64), var)\<close>
-  apply (insert assms(2-))
-  by (solve_prog_mem64E decoder: decode)
+      and decode: \<open>\<And>\<Delta> var. (\<Delta>, pc, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l sdzero' sz pc rs1 imm\<close>
+      and var_in: \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), mem_addr \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> \<open>(mem, mem') \<in>\<^sub>\<Delta> \<Delta>\<close> 
+                  \<open>type mem' = mem\<langle>64, 8\<rangle>\<close>
+      and minor: \<open>\<lbrakk>\<Delta>' = \<Delta>(mem \<mapsto> storage_el64 mem' ((mem_addr \<Colon> 64) +\<^sub>b\<^sub>v (imm \<Colon> 64)) (0 \<Colon> 64)); pc' = pc +\<^sub>b\<^sub>v (sz \<Colon> 64); var' = var\<rbrakk> \<Longrightarrow> R\<close>
+    shows R 
+  using major var_in apply -
+  apply (solve_prog_mem64E decoder: decode)
+  by (rule minor)
 
+(*
 lemma step_sd0:
   assumes major: \<open>(\<Delta>, pc, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>', pc', var')\<close>
       and decode: \<open>\<And>\<Delta> var. (\<Delta>, pc, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l sd0 w rs1 rs2\<close>

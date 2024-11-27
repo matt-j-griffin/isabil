@@ -22,6 +22,7 @@ ML\<open>
 \<close>
                 
 ML_file \<open>ml/bil_adt_parser.ML\<close>
+ML_file \<open>test.ML\<close>
 
 text \<open>BIL Parse, adds commands to parse BIR from strings (with BIR) or from files (with BIR_file)\<close>
 

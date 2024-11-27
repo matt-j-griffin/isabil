@@ -1,10 +1,8 @@
 theory X86_64
-  imports "../BIL_Syntax"
+  imports "../../BIL_Syntax"
 begin
 
 text \<open>BIR variables are passed down from LLVM IR see here: https://dse.in.tum.de/wp-content/uploads/2022/01/translating_x86_binaries_into_llvm_intermediate_representation.pdf\<close>
-
-consts register_id :: \<open>nat \<Rightarrow> (string \<times> nat)\<close>
 
 context var_syntax
 begin
@@ -19,84 +17,84 @@ text \<open>Definition of named (purpose) registers\<close>
 abbreviation
   RAX :: 'a
 where
-  \<open>RAX \<equiv> (''rax'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RAX \<equiv> (''RAX'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RBX :: 'a
 where
-  \<open>RBX \<equiv> (''rbx'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RBX \<equiv> (''RBX'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RCX :: 'a
 where
-  \<open>RCX \<equiv> (''rcx'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RCX \<equiv> (''RCX'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RDX :: 'a
 where
-  \<open>RDX \<equiv> (''rdx'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RDX \<equiv> (''RDX'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RSP :: 'a
 where
-  \<open>RSP \<equiv> (''rsp'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RSP \<equiv> (''RSP'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RBP :: 'a
 where
-  \<open>RBP \<equiv> (''rbp'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RBP \<equiv> (''RBP'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RDI :: 'a
 where
-  \<open>RDI \<equiv> (''rdi'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RDI \<equiv> (''RDI'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   RSI :: 'a
 where
-  \<open>RSI \<equiv> (''rsi'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>RSI \<equiv> (''RSI'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 text \<open>Definition of unnamed (general purpose) registers\<close>
 
 abbreviation
   R8 :: 'a
 where
-  \<open>R8 \<equiv> (''r8'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R8 \<equiv> (''R8'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R9 :: 'a
 where
-  \<open>R9 \<equiv> (''r9'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R9 \<equiv> (''R9'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R10 :: 'a
 where
-  \<open>R10 \<equiv> (''r10'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R10 \<equiv> (''R10'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R11 :: 'a
 where
-  \<open>R11 \<equiv> (''r11'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R11 \<equiv> (''R11'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R12 :: 'a
 where
-  \<open>R12 \<equiv> (''r12'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R12 \<equiv> (''R12'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R13 :: 'a
 where
-  \<open>R13 \<equiv> (''r13'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R13 \<equiv> (''R13'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R14 :: 'a
 where
-  \<open>R14 \<equiv> (''r14'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R14 \<equiv> (''R14'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 abbreviation
   R15 :: 'a
 where
-  \<open>R15 \<equiv> (''r15'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
+  \<open>R15 \<equiv> (''R15'' :\<^sub>t imm\<langle>64\<rangle>)\<close>
 
 text \<open>Definition of 128bit XMM registers\<close>
 
@@ -229,45 +227,32 @@ text \<open>Definition of flags\<close>
 abbreviation
   CF :: 'a
 where
-  \<open>CF \<equiv> (''cf'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>CF \<equiv> (''CF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 abbreviation
   OF :: 'a
 where
-  \<open>OF \<equiv> (''of'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>OF \<equiv> (''OF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 abbreviation
   AF :: 'a
 where
-  \<open>AF \<equiv> (''af'':\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>AF \<equiv> (''AF'':\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 abbreviation
   PF :: 'a
 where
-  \<open>PF \<equiv> (''pf'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>PF \<equiv> (''PF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 abbreviation
   SF :: 'a
 where
-  \<open>SF \<equiv> (''sf'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>SF \<equiv> (''SF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 abbreviation
   ZF :: 'a
 where
-  \<open>ZF \<equiv> (''zf'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
-
-text \<open>Syntax for virtual registers\<close>
-
-abbreviation
-  virtual_reg :: \<open>nat \<Rightarrow> 'a\<close> (\<open>#_\<close>)
-where
-  \<open>#(x::nat) \<equiv> (fst (register_id x) :\<^sub>t imm\<langle>snd (register_id x)\<rangle>)\<close>
-
-abbreviation
-  virual_alt :: \<open>nat \<Rightarrow> 'a\<close> (\<open>V_\<close>)
-where
-  \<open>V(x::nat) \<equiv> #x\<close>
-
+  \<open>ZF \<equiv> (''ZF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
 
 end
 

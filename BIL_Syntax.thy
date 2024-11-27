@@ -49,10 +49,8 @@ datatype BinOp =
     AOp AOp
   | LOp LOp
 
-no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
-
 class var_syntax =
-    fixes var_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (\<open>(_/ :\<^sub>t _)\<close> [151, 101] 100)
+    fixes var_constructor :: \<open>string \<Rightarrow> Type \<Rightarrow> 'a\<close> (infixl \<open>:\<^sub>t\<close> 151)
   assumes var_eq[simp]: \<open>\<And>id t id' t'. (id :\<^sub>t t) = (id' :\<^sub>t t') \<longleftrightarrow> id = id' \<and> t = t'\<close>
 begin
 
@@ -158,7 +156,7 @@ lemma word_simps':
 
 lemmas word_simps[simp] = word_simps' word_unknown_neq
 
-lemma bool_simps[simp]: 
+lemma val_syntax_bool_simps[simp]: 
     \<open>true \<noteq> (unknown[str]: t)\<close> \<open>false \<noteq> (unknown[str]: t)\<close>
     \<open>true \<noteq> (v[w \<leftarrow> v', sz])\<close>  \<open>false \<noteq> (v[w \<leftarrow> v', sz])\<close>
   using storage_simps[symmetric] unknown_simps[symmetric] by auto
@@ -177,8 +175,13 @@ end
 class val = val_syntax +
   assumes val_induct: \<open>\<And>Q v. \<lbrakk>\<And>num sz. Q (num \<Colon> sz); \<And>str t. Q (unknown[str]: t); 
                         \<And>mem w v' sz. Q (mem[w \<leftarrow> v', sz])\<rbrakk> \<Longrightarrow> Q v\<close>
-      and val_exhaust: \<open>\<And>Q v. \<lbrakk>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q; \<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q; 
+      and val_exhaust[case_names Word Unknown Storage]: 
+        \<open>\<And>Q v. \<lbrakk>\<And>num sz. v = (num \<Colon> sz) \<Longrightarrow> Q; \<And>str t. v = (unknown[str]: t) \<Longrightarrow> Q; 
                         \<And>mem w v' sz. v = (mem[w \<leftarrow> v', sz]) \<Longrightarrow> Q\<rbrakk> \<Longrightarrow> Q\<close>
+
+      and storage_v_size[simp]: \<open>\<And>v w v' sz. size_class.size v < size_class.size (v[w \<leftarrow> v', sz])\<close>
+
+
 
 no_notation HOL.Not (\<open>~ _\<close> [40] 40)
 
@@ -284,7 +287,7 @@ where
   \<open>[v\<sslash>var](Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ([v\<sslash>var]e\<^sub>3)\<close> |
   \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
   \<open>[v\<sslash>var](e\<^sub>1 \<copyright> e\<^sub>2) = ([v\<sslash>var]e\<^sub>1) \<copyright> ([v\<sslash>var]e\<^sub>2)\<close>
-
+ 
 lemma capture_avoiding_sub_size_eq[simp]: \<open>size_class.size ([v\<sslash>var]e) = size_class.size e\<close>
   by (induct e, auto)
 

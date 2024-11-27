@@ -1,20 +1,30 @@
-session Relative_Security_BIL = "Coinductive" +  
+chapter AFP 
+
+session IsaBIL = Eisbach +
+  description "
+    IsaBIL: Binary Analysis in Isabelle/HOL using CMU's BAP Intermediary Language.
+  "
   options [document = pdf, document_output = "output"]
-  sessions "Word_Lib"
+  sessions
+    "Eisbach-Match-Schematics"
+    "HOL-ex" (* TODO *)
   directories
-    "../Relative_Security"
-    "../General_Preliminaries"
-    "../IMP_Programs/Library"
-    "./BIL"
-    "./Cheang_et_al/3b"
-    "./Examples"
-    "./Examples/ex01/msvc"
+    Prelims
+    Parser
+    OperationalSemantics
+    ExpressionSemantics
+    StatementSemantics
+    Typing
   theories 
-    Figure_3b
-    Ex_Kocher
-    Ex01
-    Ex01_Mitigated
-    Ex01_Solution
+    IsaBIL
 
+session "IsaBIL-Ex" in extras = IsaBIL +  
+  options [document = pdf, document_output = "output"]
+  theories 
+    Simp_PC
 
+session "IsaBIL-RiscV-64" in "asms/riscv64" = "IsaBIL-Ex" +  
+  options [document = pdf, document_output = "output"]
+  theories
+    RiscV_64
     

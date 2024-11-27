@@ -1,6 +1,6 @@
 theory Prelims
   imports Main 
-          "../extras/Match_Inline" 
+          "Eisbach-Match-Schematics.Match_Inline" 
 begin
 
 
@@ -11,7 +11,7 @@ method solve_set_inI uses add =
   (rule UnI1, solve_set_inI add: add) |
   (rule UnI2, solve_set_inI add: add) |
   \<comment> \<open>Without the guard this will loop indefinitely\<close>
-  (match_inline add in subset: \<open>_ \<subseteq> _\<close> \<Rightarrow> \<open>(rule set_mp, solves \<open>rule subset\<close>, solve_set_inI add: add)\<close>)
+  (match_schematics add in subset: \<open>_ \<subseteq> _\<close> \<Rightarrow> \<open>(rule set_mp, solves \<open>rule subset\<close>, solve_set_inI add: add)\<close>)
 
 lemma mod_Suc_neq: \<open>1 < y \<Longrightarrow> Suc x mod y \<noteq> x mod y\<close>
   unfolding mod_Suc by simp
@@ -158,6 +158,5 @@ text \<open>simp rules for solving nth numerals\<close>
 
 lemmas nth_numeral_simps = nth_Cons_numeral One_nat_def nth_Cons_Suc diff_numeral_Suc diff_zero pred_numeral_simps 
             Num.BitM.simps(1) numeral_One nth_Cons_0
-
 
 end

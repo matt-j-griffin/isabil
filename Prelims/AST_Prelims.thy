@@ -59,9 +59,9 @@ lemma length_insert_hd: \<open>length xs \<le> length (insert_hd x xs)\<close>
 function
   split :: \<open>'a \<Rightarrow> 'a list \<Rightarrow> 'a list list\<close>
 where
-  \<open>split _ [] = []\<close> |
-  \<open>split c (c # str) = [] # split c str\<close> |
-  \<open>\<lbrakk>c' \<noteq> c\<rbrakk> \<Longrightarrow> split c (c' # str) = (insert_hd c' (split c str))\<close>
+  Empty: \<open>split _ [] = []\<close> |
+  Eq: \<open>split c (c # str) = [] # split c str\<close> |
+  Nxt: \<open>\<lbrakk>c' \<noteq> c\<rbrakk> \<Longrightarrow> split c (c' # str) = (insert_hd c' (split c str))\<close>
   subgoal for _ x
     apply (cases x, auto)
     subgoal for c str

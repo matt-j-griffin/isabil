@@ -45,6 +45,15 @@ next
     using major unfolding length_butlast Cons by simp
 qed
 
+function
+  if_hd_eq :: \<open>'a \<Rightarrow> ('a list \<Rightarrow> 'c) \<Rightarrow> ('a list \<Rightarrow> 'c) \<Rightarrow> 'a list \<Rightarrow> 'c\<close>
+where
+  \<open>if_hd_eq c P _ (c # cs) = P (c # cs)\<close> |
+  \<open>\<lbrakk>c \<noteq> c'\<rbrakk> \<Longrightarrow> if_hd_eq c _ Q (c' # cs) = Q (c' # cs)\<close> |
+  \<open>if_hd_eq c _ Q [] = Q []\<close>
+  apply auto
+  by (metis list.exhaust)
+termination by (standard, auto)
 
 function
   lexer :: \<open>string \<Rightarrow> AST\<close>
@@ -52,8 +61,8 @@ where
   \<open>lexer str = (
     let 
       tstr = trim str;
-      name = takeWhile isnt_lbracket tstr;
-      bargstr = dropWhile isnt_lbracket tstr;
+      name = (if_hd_eq (CHR ''"'') id (takeWhile isnt_lbracket) tstr);
+      bargstr = (if_hd_eq (CHR ''"'') (\<lambda>_. []) (dropWhile isnt_lbracket) tstr);
       argstr = butlast (tl bargstr)
     in
       Node name (map lexer (split_not_within argstr))
@@ -61,24 +70,42 @@ where
   by auto
 termination proof (standard, rule wf_mlex[of \<open>{}\<close> length])
   fix str tstr name bargstr argstr ast assume prems: \<open>tstr = trim str\<close> 
-    \<open>name = takeWhile isnt_lbracket tstr\<close> \<open>bargstr = dropWhile isnt_lbracket tstr\<close>
+    \<open>name = if_hd_eq CHR 0x22 id (takeWhile isnt_lbracket) tstr\<close> 
+    \<open>bargstr = if_hd_eq (CHR ''"'') (\<lambda>_. []) (dropWhile isnt_lbracket) tstr\<close>
     \<open>argstr = butlast (tl bargstr)\<close> and rel: \<open>ast \<in> set (split_not_within argstr)\<close>
   show \<open>(ast, str) \<in> length <*mlex*> {}\<close>
   proof (rule mlex_less) 
     show \<open>length ast < length str\<close>
-    using rel[unfolded prems] proof (cases str)
-      assume ast: \<open>ast \<in> set (split_not_within (butlast (tl (dropWhile isnt_lbracket (trim str)))))\<close>
+    proof (cases \<open>trim str\<close>)
       case Nil
-      thus ?thesis using ast by simp
-    next
-      assume ast: \<open>ast \<in> set (split_not_within (butlast (tl (dropWhile isnt_lbracket (trim str)))))\<close>
-      case (Cons a list)
       show ?thesis 
-      proof (insert ast Cons , drule length_split_not_within , elim length_butlast_le_ltE)
-        assume "length ast < length (tl (dropWhile isnt_lbracket (trim str)))"
-        thus "length ast < length str"
-          by (elim length_tl_ltE length_dropWhile_ltE length_trim_ltE)
-      qed simp
+        using rel[unfolded prems Nil, simplified] by auto
+    next
+      case (Cons a list)
+      then show ?thesis 
+      proof (cases \<open>a = CHR ''"''\<close>)
+        case True
+        show ?thesis 
+          using rel[unfolded prems Cons True, simplified] by auto
+      next
+        case False
+        hence ast: \<open>ast \<in> set (split_not_within (butlast (tl (dropWhile isnt_lbracket (trim str)))))\<close>
+          unfolding Cons
+          using rel[unfolded prems Cons False, simplified] by auto
+        show ?thesis
+        proof (cases str)
+          case Nil
+          thus ?thesis using ast by simp
+        next
+          case (Cons a list)
+          show ?thesis 
+          proof (insert ast Cons , drule length_split_not_within , elim length_butlast_le_ltE)
+            assume "length ast < length (tl (dropWhile isnt_lbracket (trim str)))"
+            thus "length ast < length str"
+              by (elim length_tl_ltE length_dropWhile_ltE length_trim_ltE)
+          qed simp
+        qed
+      qed
     qed
   qed
 qed standard

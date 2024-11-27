@@ -1,20 +1,5 @@
 val syntax_simps = @{thms syntax_simps}
 
-
-fun describe_string_error AstParser.EmptyString = "Cannot convert empty string"
-  | describe_string_error (AstParser.InvalidRadixa _) = "The provided radix was too large (max 32)"
-  | describe_string_error (AstParser.InvalidCodepointa (c, _)) = "Codepoint out of range for radix: "
-
-(* TODO SHOULD BE CODEGEN *)
-fun describe_parse_error (AstParser.ParseNatError en) = describe_string_error en
-  | describe_parse_error (AstParser.ParseIntError ei) = describe_string_error ei
-  | describe_parse_error (AstParser.ParseArgumentError (str, expected, actual)) = "Expecting X arguments for \"" ^ (AstParser.implode str) ^ "\", got: Y"
-  | describe_parse_error (AstParser.StringMustBeQuoted str) = "Expecting string wrapped in quotes, received: " ^ AstParser.implode str
-  | describe_parse_error (AstParser.ParseTagInvalid (strs, str)) = "Expecting one of [" ^ (AstParser.join (map AstParser.implode strs)) ^ "], but received: " ^ AstParser.implode str
-  | describe_parse_error (AstParser.TagExistsError str) = "Expecting empty string before brackets, received: " ^ AstParser.implode str
-  | describe_parse_error (AstParser.InvalidAdtInsn strs) = "Expecting adt insn translation to contain two or three lines: [" ^ (AstParser.join (map AstParser.implode strs)) ^ "]"
-  | describe_parse_error (AstParser.InvalidAdtFunction strs) = "Expecting adt function to contain at least two lines: [" ^ (AstParser.join (map AstParser.implode strs)) ^ "]"
-
 (**
  or_raise
  ----------------------
@@ -41,7 +26,7 @@ fun mk_prog addr =
 fun mk_symbol_table lst =
   let 
     val term_lst = lst
-      |> List.map (fn (label, tid) => (AstParser.implode label, AstParser.integer_of_nat tid)) 
+      |> List.map (fn (label, tid) => (label, AstParser.integer_of_nat tid)) 
       |> List.map (fn (label, tid) => (HOLogic.mk_string label, IsaBIL.mk_word_of_int tid 64)) 
       |> List.map HOLogic.mk_prod 
       |> HOLogic.mk_list @{typ "(string \<times> word)"}
@@ -58,7 +43,7 @@ fun mk_symbol_table lst =
 fun mk_original_table lst =
   let 
     val term_lst = lst
-      |> List.map (fn (tid, label) => (AstParser.integer_of_nat tid, AstParser.implode label)) 
+      |> List.map (fn (tid, label) => (AstParser.integer_of_nat tid, label)) 
       |> List.map (fn (tid, label) => (IsaBIL.mk_word_of_int tid 64, HOLogic.mk_string label)) 
       |> List.map HOLogic.mk_prod 
       |> HOLogic.mk_list @{typ "(word \<times> string)"}
@@ -151,7 +136,7 @@ fun make_decode_for_addr lthy addr =
  **)
 fun make_subroutine_decode lthy (str, addrs) =
   let
-    val name = "decode_" ^ AstParser.implode str
+    val name = "decode_" ^ str
     val facts = map (make_decode_for_addr lthy) addrs
   in
     ((Binding.qualified_name name, []), [(facts, [])])
@@ -196,9 +181,9 @@ fun bil_parser_lines localename assembly subroutines lthy =
     val _ = tracing ("Parsing BIL AST")
 
     (* Parse AST using the code-generator *)
-    val ast_unprocessed = assembly 
-      |> AstParser.parse_ast
-      |> or_raise describe_parse_error
+    val ast_unprocessed = assembly
+      |> AstParser.parse_adt_program
+      |> or_raise AstParser.parse_error_to_string
  
     val _ = tracing ("Done parsing BIL" ^ Time.toString (Time.now()))
    

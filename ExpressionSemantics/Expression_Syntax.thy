@@ -287,7 +287,7 @@ lemmas Val_simp_word = word_constructor_exp_def[symmetric]
 lemmas Val_simp_storage = storage_constructor_exp_def[symmetric]
 lemmas Val_simp_unknown = unknown_constructor_exp_def[symmetric]
 
-(*TODO no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)*)
+no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
 
 lemma exp_exhaust:
   obtains 
@@ -765,5 +765,10 @@ lemma bops_no_overlap[simp]:
     \<open>(num\<^sub>1' \<Colon> sz') sle ((num\<^sub>2' \<Colon> sz')::exp) \<noteq> (num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bop_syntax by simp_all
 
+lemma capture_avoiding_var[simp]: \<open>[val\<sslash>(nm :\<^sub>t tp)](nm :\<^sub>t tp) = Val val\<close>
+  by (simp add: var_constructor_exp_def)
+
+lemma capture_avoiding_var_neq[intro]: \<open>var \<noteq> (nm :\<^sub>t tp) \<Longrightarrow> [val\<sslash>var](nm :\<^sub>t tp) = (nm :\<^sub>t tp)\<close>
+  by (simp add: var_constructor_exp_def)
 
 end
