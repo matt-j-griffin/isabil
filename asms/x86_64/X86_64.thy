@@ -227,32 +227,32 @@ text \<open>Definition of flags\<close>
 abbreviation
   CF :: 'a
 where
-  \<open>CF \<equiv> (''CF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>CF \<equiv> (''CF'' :\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 abbreviation
   OF :: 'a
 where
-  \<open>OF \<equiv> (''OF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>OF \<equiv> (''OF'' :\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 abbreviation
   AF :: 'a
 where
-  \<open>AF \<equiv> (''AF'':\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>AF \<equiv> (''AF'':\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 abbreviation
   PF :: 'a
 where
-  \<open>PF \<equiv> (''PF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>PF \<equiv> (''PF'' :\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 abbreviation
   SF :: 'a
 where
-  \<open>SF \<equiv> (''SF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>SF \<equiv> (''SF'' :\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 abbreviation
   ZF :: 'a
 where
-  \<open>ZF \<equiv> (''ZF'' :\<^sub>t imm\<langle>1\<rangle>)\<close>
+  \<open>ZF \<equiv> (''ZF'' :\<^sub>t imm\<langle>Suc 0\<rangle>)\<close>
 
 end
 

@@ -22,13 +22,13 @@ abbreviation \<open>jmp' sz w imm \<equiv> \<lparr> addr = w, size = (sz \<Colon
 
 subsubsection \<open>CMPQ\<close>
 
-abbreviation \<open>cmpq' sz w lhs imm\<^sub>r\<^sub>h\<^sub>s rs\<^sub>r\<^sub>h\<^sub>s tmp \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
-  (tmp :\<^sub>t imm\<langle>64\<rangle>) := (mem[rs\<^sub>r\<^sub>h\<^sub>s + (imm\<^sub>r\<^sub>h\<^sub>s \<Colon> 64), el]:u64) - lhs, CF := (mem[rs\<^sub>r\<^sub>h\<^sub>s + (imm\<^sub>r\<^sub>h\<^sub>s \<Colon> 64), el]:u64) lt lhs,
-  OF := high:1[(mem[rs\<^sub>r\<^sub>h\<^sub>s + (imm\<^sub>r\<^sub>h\<^sub>s \<Colon> 64), el]:u64) xor lhs && ((mem[rs\<^sub>r\<^sub>h\<^sub>s + (imm\<^sub>r\<^sub>h\<^sub>s \<Colon> 64), el]:u64) xor (tmp :\<^sub>t imm\<langle>64\<rangle>))],
-  AF := BinOp (16 \<Colon> 64) (LOp Eq) ((16 \<Colon> 64) && ((tmp :\<^sub>t imm\<langle>64\<rangle>) xor (mem[rs\<^sub>r\<^sub>h\<^sub>s + (imm\<^sub>r\<^sub>h\<^sub>s \<Colon> 64), el]:u64) xor lhs)),
-  PF := negation (low:1[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (tmp :\<^sub>t imm\<langle>64\<rangle> >> (4 \<Colon> 64) xor tmp :\<^sub>t imm\<langle>64\<rangle>) 
-          (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (1 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))]),
-  SF := high:1[tmp :\<^sub>t imm\<langle>64\<rangle>], 
+abbreviation \<open>cmpq' sz w lhs rhs tmp \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
+  (tmp :\<^sub>t imm\<langle>64\<rangle>) := lhs - rhs, CF := lhs lt rhs,
+  OF := high:Suc 0[lhs xor rhs && (lhs xor (tmp :\<^sub>t imm\<langle>64\<rangle>))],
+  AF := BinOp (16 \<Colon> 64) (LOp Eq) ((16 \<Colon> 64) && ((tmp :\<^sub>t imm\<langle>64\<rangle>) xor (lhs) xor rhs)),
+  PF := \<sim> (low:Suc 0[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (tmp :\<^sub>t imm\<langle>64\<rangle> >> (4 \<Colon> 64) xor tmp :\<^sub>t imm\<langle>64\<rangle>) 
+          (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (Suc 0 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))]),
+  SF := high:Suc 0[tmp :\<^sub>t imm\<langle>64\<rangle>], 
   ZF := BinOp (0 \<Colon> 64) (LOp Eq) (tmp :\<^sub>t imm\<langle>64\<rangle>)
 ]\<rparr>\<close>
 
@@ -41,31 +41,34 @@ abbreviation \<open>retq' sz w tmp \<equiv> \<lparr>addr = w, size = sz \<Colon>
 subsubsection \<open>XORL\<close>
 
 abbreviation \<open>xorl_self' sz w var \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
-  var := (0 \<Colon> 64), AF := unknown[''bits'']: imm\<langle>1\<rangle>, ZF := true, PF := true, OF := false, CF := false,
+  var := (0 \<Colon> 64), AF := unknown[''bits'']: imm\<langle>Suc 0\<rangle>, ZF := true, PF := true, OF := false, CF := false,
   SF := false
 ]\<rparr>\<close>
 
 subsubsection \<open>JAE\<close>
 
 abbreviation \<open>jae' sz w imm \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
-  IfThen (negation CF) [jmp (imm \<Colon> 64)]
+  IfThen (\<sim> CF) [jmp (imm \<Colon> 64)]
 ]\<rparr>\<close>
 
 subsubsection \<open>ADDQ\<close>
-(*
-abbreviation \<open>addq' sz w imm \<equiv>  \<lparr>addr = w, size = sz \<Colon> 64, code = [
-  ''#12582869'' :\<^sub>t imm\<langle>64\<rangle> := RAX, ''#12582868'' :\<^sub>t imm\<langle>64\<rangle> := mem[16312 \<Colon> 64, el]:u64, 
-  RAX := RAX + ''#12582868'' :\<^sub>t imm\<langle>64\<rangle>, CF := RAX lt ''#12582869'' :\<^sub>t imm\<langle>64\<rangle>,
-        OF :=
-        BinOp high:1[''#12582869'' :\<^sub>t imm\<langle>64\<rangle>] (LOp Eq) high:1[''#12582868'' :\<^sub>t imm\<langle>64\<rangle>] &&
-        (high:1[''#12582869'' :\<^sub>t imm\<langle>64\<rangle>] || high:1[RAX] && negation (high:1[''#12582869'' :\<^sub>t imm\<langle>64\<rangle>] && high:1[RAX])),
-        AF := BinOp (16 \<Colon> 64) (LOp Eq) ((16 \<Colon> 64) && (RAX xor ''#12582869'' :\<^sub>t imm\<langle>64\<rangle> xor ''#12582868'' :\<^sub>t imm\<langle>64\<rangle>)),
-        PF :=
-        negation
-         low:1[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (RAX >> (4 \<Colon> 64) xor RAX)
-                (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (1 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))],
-        SF := high:1[RAX], ZF := BinOp (0 \<Colon> 64) (LOp Eq) RAX
-]\<rparr>\<close>*)
+
+abbreviation \<open>addq' sz w rd src tmp\<^sub>1 tmp\<^sub>2 \<equiv>  \<lparr>addr = w, size = sz \<Colon> 64, code = [
+  tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle> := (rd :\<^sub>t imm\<langle>64\<rangle>),
+  tmp\<^sub>2 :\<^sub>t imm\<langle>64\<rangle> := src,
+  rd :\<^sub>t imm\<langle>64\<rangle> := (rd :\<^sub>t imm\<langle>64\<rangle>) + (tmp\<^sub>2 :\<^sub>t imm\<langle>64\<rangle>),
+  CF := (rd :\<^sub>t imm\<langle>64\<rangle>) lt (tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle>),
+  OF := BinOp (high:Suc 0[tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle>]) (LOp Eq) (high:Suc 0[tmp\<^sub>2 :\<^sub>t imm\<langle>64\<rangle>])
+        && ((high:Suc 0[tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle>]) || (high:Suc 0[rd :\<^sub>t imm\<langle>64\<rangle>])
+        && \<sim> ((high:Suc 0[tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle>]) && (high:Suc 0[rd :\<^sub>t imm\<langle>64\<rangle>]))),
+  AF := BinOp (16 \<Colon> 64) (LOp Eq) ((16 \<Colon> 64) && ((rd :\<^sub>t imm\<langle>64\<rangle>) xor (tmp\<^sub>1 :\<^sub>t imm\<langle>64\<rangle>)
+          xor (tmp\<^sub>2 :\<^sub>t imm\<langle>64\<rangle>))),
+  PF := \<sim> (low:Suc 0[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) ((rd :\<^sub>t imm\<langle>64\<rangle>) >> (4 \<Colon> 64) xor (rd :\<^sub>t imm\<langle>64\<rangle>)) 
+                   (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor (''$0'' :\<^sub>t imm\<langle>64\<rangle>)) 
+                            (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (Suc 0 \<Colon> 64) xor (''$1'' :\<^sub>t imm\<langle>64\<rangle>)))]),
+  SF := (high:Suc 0[rd :\<^sub>t imm\<langle>64\<rangle>]),
+  ZF := BinOp (0 \<Colon> 64) (LOp Eq) (rd :\<^sub>t imm\<langle>64\<rangle>)
+]\<rparr>\<close>
 
 subsubsection \<open>mov'\<close>
 
@@ -77,12 +80,12 @@ subsubsection \<open>SHLQ\<close>
 
 abbreviation \<open>shlq' sz w rd imm tmp \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
   tmp :\<^sub>t imm\<langle>64\<rangle> := (rd :\<^sub>t imm\<langle>64\<rangle>), rd :\<^sub>t imm\<langle>64\<rangle> := (rd :\<^sub>t imm\<langle>64\<rangle>) << (imm \<Colon> 64), 
-  CF := low:1[tmp :\<^sub>t imm\<langle>64\<rangle> >> (55 \<Colon> 64)], 
-  SF := high:1[rd :\<^sub>t imm\<langle>64\<rangle>], 
+  CF := low:(Suc 0)[tmp :\<^sub>t imm\<langle>64\<rangle> >> (55 \<Colon> 64)], 
+  SF := high:(Suc 0)[rd :\<^sub>t imm\<langle>64\<rangle>], 
   ZF := BinOp (0 \<Colon> 64) (LOp Eq) (rd :\<^sub>t imm\<langle>64\<rangle>),
-  PF := negation low:1[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (RAX >> (4 \<Colon> 64) xor (rd :\<^sub>t imm\<langle>64\<rangle>)) 
-                      (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (1 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))],
-  AF := (unknown[''bits'']: imm\<langle>1\<rangle>), OF := (unknown[''bits'']: imm\<langle>1\<rangle>)
+  PF := \<sim> (low:(Suc 0)[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (rd :\<^sub>t imm\<langle>64\<rangle> >> (4 \<Colon> 64) xor (rd :\<^sub>t imm\<langle>64\<rangle>)) 
+                      (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (Suc 0 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))]),
+  AF := (unknown[''bits'']: imm\<langle>Suc 0\<rangle>), OF := (unknown[''bits'']: imm\<langle>Suc 0\<rangle>)
 ]\<rparr>\<close>
 
 

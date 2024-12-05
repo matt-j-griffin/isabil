@@ -85,7 +85,7 @@ where
   \<comment> \<open>Unary op\<close>
   Uop: \<open>\<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> \<Delta> \<turnstile> (UnOp uop e) \<leadsto> (UnOp uop e')\<close> |
   UopUnk: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<leadsto> (unknown[str]: t)\<close> |
-  Not: \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<leadsto> (~\<^sub>b\<^sub>v (num \<Colon> sz))\<close> |
+  Not: \<open>\<Delta> \<turnstile> (\<sim>(num \<Colon> sz)) \<leadsto> (~\<^sub>b\<^sub>v (num \<Colon> sz))\<close> |
   Neg: \<open>\<Delta> \<turnstile> (-(num \<Colon> sz)) \<leadsto> (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close> |
 
   \<comment> \<open>Concat\<close>
@@ -114,22 +114,10 @@ lemma step_exp_neq':
   assumes \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close> 
     shows \<open>e \<noteq> e'\<close>
 using assms proof (induct rule: step_exp.induct)
-  case (Let \<Delta> var v e)
-  then show ?case 
-    by (rule let_neq_capture_avoid_v)
-next
   case (LoadByteFromNext w num\<^sub>2 sz\<^sub>2 \<Delta> v v' sz ed)
   then show ?case 
     by (cases w rule: word_exhaust, auto)
-next
-  case (LessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
-  then show ?case 
-    using le.not_other_bops by simp    
-next
-  case (SignedLessEq \<Delta> num\<^sub>1 sz num\<^sub>2)
-  then show ?case 
-    using sle.not_other_bops by simp    
-qed (unfold bv_simps, simp_all)
+qed simp_all
 
 corollary step_exp_neq: \<open>\<not>(\<Delta> \<turnstile> e \<leadsto> e)\<close>
   using step_exp_neq' by auto
@@ -222,7 +210,7 @@ inductive_cases SignedLessEqE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colo
 
 inductive_cases UopE: \<open>\<Delta> \<turnstile> (UnOp uop e) \<leadsto> e'\<close>
 inductive_cases UopUnkE: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<leadsto> e\<close>
-inductive_cases NotE: \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases NotE: \<open>\<Delta> \<turnstile> (\<sim>(num \<Colon> sz)) \<leadsto> e\<close>
 inductive_cases NegE: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> e\<close>
 
 inductive_cases ConcatRhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> e\<close>

@@ -12,7 +12,7 @@ class bil_ops = plus + minus + modulo + times + divide + uminus + (*bool_syntax 
       and xor :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>xor\<close> 65)
       and sdivide :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>sdiv\<close> 56)
       and smod :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixr \<open>smod\<close> 56)
-      and negation :: \<open>'a \<Rightarrow> 'a\<close>
+      and not :: \<open>'a \<Rightarrow> 'a\<close> (\<open>\<sim> _\<close> [81] 80)
       and lt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>lt\<close> 65)
       and le :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>le\<close> 65)
       and slt :: \<open>'a \<Rightarrow> 'a \<Rightarrow> 'a\<close> (infixl \<open>slt\<close> 65)

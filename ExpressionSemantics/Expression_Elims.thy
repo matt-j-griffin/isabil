@@ -528,7 +528,7 @@ lemma step_exp_uop_unkE:
   using assms(1) by (elim UopUnkE step_exp_valE step_exp_valE.unknown)
 
 lemma step_exp_notE: 
-  assumes \<open>\<Delta> \<turnstile> (~(num \<Colon> sz)) \<leadsto> e\<close>
+  assumes \<open>\<Delta> \<turnstile> (\<sim>(num \<Colon> sz)) \<leadsto> e\<close>
   obtains \<open>e = ~\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
   using assms(1) by (elim NotE step_exp_valE step_exp_valE.word)
 

@@ -84,8 +84,20 @@ lemma modulo_nat_multiI: "k = x div y \<Longrightarrow> X = x - k * y \<Longrigh
   unfolding modulo_nat_def by auto
 
 ML \<open>
-  fun mk_true  T = Const (\<^const_name>\<open>true\<close>, T)
-  fun mk_false T = Const (\<^const_name>\<open>false\<close>,T)
+fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
+  | dest_nat (Const ("Groups.one_class.one", _)) = 1
+  | dest_nat (Const ("Nat.Suc", _) $ t) = (dest_nat t) + 1
+  | dest_nat (Const ("Num.numeral_class.numeral", Type ("fun", _)) $ t) =
+      HOLogic.dest_numeral t
+  | dest_nat (Const ("Groups.uminus_class.uminus", Type ("fun", _)) $ t) =
+       ~ (dest_nat t)
+  | dest_nat t = raise TERM ("dest_number", [t]);
+
+  fun mk_word T tnum tsz = (Const (\<^const_name>\<open>word_constructor\<close>,T) $ tnum $ tsz)
+
+  fun mk_true T = mk_word T HOLogic.Suc_zero HOLogic.Suc_zero
+  fun mk_false T = mk_word T HOLogic.zero HOLogic.Suc_zero
+
 
   (* Surprised this does not exist *)
   fun map_option F (SOME a) = SOME (F a)
@@ -144,18 +156,16 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ sz)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val (_,numsz) = HOLogic.dest_number sz
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+        val numsz = dest_nat sz
         val sum = num1 + num2
         val remainder = sum mod (power (2, numsz))
         val quotient = sum div (power (2, numsz))
 
         val wr = Const (\<^const_name>\<open>bv_plus\<close>,Tp)
-                  $ (Const (\<^const_name>\<open>word_constructor\<close>, Tw) $ tnumo $ sz)
-                  $ (Const (\<^const_name>\<open>word_constructor\<close>, Tw)
-                    $ HOLogic.mk_number HOLogic.natT remainder
-                    $ sz)
+                  $ (mk_word Tw tnumo sz)
+                  $ (mk_word Tw (HOLogic.mk_number HOLogic.natT remainder) sz)
       in (SOME (wr, quotient)) end) ()
 
     handle TERM _ =>
@@ -170,11 +180,9 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val T = snd (func_typs (snd (func_typs Tw)))
-
-      in if (num1 < num2) then SOME (mk_true T, 0) else SOME (mk_false T, 0) end) ()
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+      in if (num1 < num2) then SOME (mk_true Tw, 0) else SOME (mk_false Tw, 0) end) ()
     handle TERM _ =>
       NONE)
     | simp_bv (Const (\<^const_name>\<open>bv_eq\<close>,_)
@@ -182,11 +190,9 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val T = snd (func_typs (snd (func_typs Tw)))
-
-      in if (num1 = num2) then SOME (mk_true T, 0) else SOME (mk_false T, 0) end) ()
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+      in if (num1 = num2) then SOME (mk_true Tw, 0) else SOME (mk_false Tw, 0) end) ()
     handle TERM _ =>
       NONE)
     | simp_bv (Const (\<^const_name>\<open>bv_minus\<close>,_)
@@ -194,15 +200,13 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val (_,numsz) = HOLogic.dest_number sz
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+        val numsz = dest_nat sz
         val sum = (num1 - num2)
         val remainder = sum mod (power (2, numsz))
         val quotient = sum div (power (2, numsz))
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT remainder
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT remainder) sz
       in (SOME (wr, quotient)) end) ()
     handle TERM _ =>
       NONE)
@@ -211,15 +215,13 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val (_,numsz) = HOLogic.dest_number sz
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+        val numsz = dest_nat sz
         val sum = num1 * power (2, num2)
         val remainder = sum mod (power (2, numsz))
         val quotient = sum div (power (2, numsz))
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT remainder
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT remainder) sz
       in (SOME (wr, quotient)) end) ()
     handle TERM _ =>
       NONE)
@@ -228,12 +230,10 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
         val sum = (num1 div power (2, num2))
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT sum
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT sum) sz
       in (SOME (wr, 0)) end) ()
     handle TERM _ =>
       NONE)
@@ -242,15 +242,13 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
-        val (_,numsz) = HOLogic.dest_number sz
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+        val numsz = dest_nat sz
         val sum = (num1 + num2)
         val remainder = sum mod (power (2, numsz))
         val quotient = sum div (power (2, numsz))
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT remainder
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT remainder) sz
       in (SOME (wr, quotient)) end) ()
     handle TERM _ =>
       NONE)
@@ -259,12 +257,10 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
         val result = bitwise_and (num1, num2)
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT result
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT result) sz
       in (SOME (wr, 0)) end) ()
     handle TERM _ =>
       NONE)
@@ -272,14 +268,12 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,Tw) $ tnum $ sz)) =
     ((fn () =>
       let
-        val (_,num) = HOLogic.dest_number tnum
-        val (_,numsz) = HOLogic.dest_number sz
+        val num = dest_nat tnum
+        val numsz = dest_nat sz
         val sum = (num + 1)
         val remainder = sum mod (power (2, numsz))
         val quotient = sum div (power (2, numsz))
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT remainder
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT remainder) sz
       in (SOME (wr, quotient)) end) ()
     handle TERM _ =>
       NONE)
@@ -288,12 +282,10 @@ ML \<open>
                       $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
     ((fn () =>
       let
-        val (_,num1) = HOLogic.dest_number tnum1
-        val (_,num2) = HOLogic.dest_number tnum2
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
         val result = bitwise_or (num1, num2)
-        val wr = Const (\<^const_name>\<open>word_constructor\<close>,Tw)
-                  $ HOLogic.mk_number HOLogic.natT result
-                  $ sz
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT result) sz
       in (SOME (wr, 0)) end) ()
     handle TERM _ =>
       NONE)
@@ -354,7 +346,7 @@ ML \<open>
 
   fun simp_bv_lsl ctxt = simproc_bv (fn quotient =>
       HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
-      unfold_tac ctxt @{thms bv_lsl.simps word_inject power_numeral Num.pow.simps Num.sqr.simps} THEN
+      unfold_tac ctxt @{thms bv_lsl.simps word_inject power_numeral Num.pow.simps Num.sqr.simps Num.mult_num_simps} THEN
       Method.intros_tac ctxt [conjI, thm_for ctxt quotient, refl] [] THEN
       HEADGOAL (Lin_Arith.simple_tac ctxt) THEN
       HEADGOAL (Lin_Arith.simple_tac ctxt)
@@ -362,7 +354,7 @@ ML \<open>
 
   fun simp_bv_lsr ctxt = simproc_bv (fn _ =>
       HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
-      unfold_tac ctxt @{thms bv_lsr.simps word_inject power_numeral Num.pow.simps Num.sqr.simps div_0} THEN
+      unfold_tac ctxt @{thms bv_lsr.simps word_inject power_numeral Num.pow.simps Num.sqr.simps Num.mult_num_simps div_0} THEN
       Method.intros_tac ctxt [conjI, refl] [] THEN
       TRY (HEADGOAL (Lin_Arith.simple_tac ctxt))
     ) ctxt
@@ -546,6 +538,19 @@ lemma \<open>(8 \<Colon> 64) |\<^sub>b\<^sub>v (2 \<Colon> 64) = (10 \<Colon> 64
 lemma \<open>(0 \<Colon> 64) |\<^sub>b\<^sub>v (65280 \<Colon> 64) = (65280 \<Colon> 64)\<close>
   apply simp_words
   ..
+
+lemma \<open>(300 \<Colon> 64) <<\<^sub>b\<^sub>v (9 \<Colon> 64) = (153600 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(300 \<Colon> 64) >>\<^sub>b\<^sub>v (55 \<Colon> 64) = 0 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(100 \<Colon> 64) +\<^sub>b\<^sub>v (Suc 0 \<Colon> 64) = (101 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
 (*
 lemma \<open>succ (315242 \<Colon> 64) = 315243 \<Colon> 64\<close>
   apply simp_words

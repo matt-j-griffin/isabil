@@ -83,10 +83,10 @@ definition
 where
   \<open>e1 smod e2 = (BinOp e1 (AOp SMod) e2)\<close>
 
-definition 
-  negation_exp :: \<open>exp \<Rightarrow> exp\<close>
+definition
+  not_exp :: \<open>exp \<Rightarrow> exp\<close>
 where
-  \<open>negation_exp e1 = (UnOp Not e1)\<close>
+  \<open>not_exp exp = (UnOp Not exp)\<close>
 
 definition 
   lt_exp :: \<open>exp \<Rightarrow> exp \<Rightarrow> exp\<close>
@@ -167,7 +167,7 @@ end
 
 subsubsection \<open>Syntax for UOPs\<close>
 
-lemma uminus_simps[simp]:
+lemma uop_simps[simp]:
   \<open>- w \<noteq> Val v\<close> \<open>Val v \<noteq> - w\<close>
   \<open>- w \<noteq> e\<^sub>1 \<copyright> e\<^sub>2\<close> \<open>(e\<^sub>1 \<copyright> e\<^sub>2) \<noteq> - w\<close>
   \<open>- w \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close> \<open>(e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> - w\<close>
@@ -177,13 +177,26 @@ lemma uminus_simps[simp]:
   \<open>- w \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close> \<open>(ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> - w\<close>
   \<open>- w \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close> \<open>(extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> - w\<close>
   \<open>- w \<noteq> BinOp e\<^sub>1 bop e\<^sub>2\<close> \<open>BinOp e\<^sub>1 bop e\<^sub>2  \<noteq> - w\<close>
-  unfolding uminus_exp_def by simp_all
+  \<open>\<sim> w \<noteq> Val v\<close> \<open>Val v \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> e\<^sub>1 \<copyright> e\<^sub>2\<close> \<open>(e\<^sub>1 \<copyright> e\<^sub>2) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close> \<open>(e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close> \<open>(e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (Cast cast sz e)\<close> \<open>(Cast cast sz e) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (Let var e\<^sub>1 e\<^sub>2)\<close> \<open>(Let var e\<^sub>1 e\<^sub>2) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close> \<open>(ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close> \<open>(extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> BinOp e\<^sub>1 bop e\<^sub>2\<close> \<open>BinOp e\<^sub>1 bop e\<^sub>2  \<noteq> \<sim> w\<close>
+  \<open>\<sim> w \<noteq> - w'\<close> \<open>- w' \<noteq> \<sim> w\<close>
+  unfolding uminus_exp_def not_exp_def by simp_all
 
 lemma inject[simp]: 
   \<open>(- v = - v') \<longleftrightarrow> (v = v')\<close>
   \<open>(UnOp uop v = - v') \<longleftrightarrow> (uop = Neg \<and> v = v')\<close>
   \<open>(- v = UnOp uop v') \<longleftrightarrow> (Neg = uop \<and> v = v')\<close>
-  unfolding uminus_exp_def by auto
+  \<open>(\<sim> v = \<sim> v') \<longleftrightarrow> (v = v')\<close>
+  \<open>(UnOp uop v = \<sim> v') \<longleftrightarrow> (uop = Not \<and> v = v')\<close>
+  \<open>(\<sim> v = UnOp uop v') \<longleftrightarrow> (Not = uop \<and> v = v')\<close>
+  unfolding uminus_exp_def not_exp_def by auto
 
 subsubsection \<open>Syntax for BOPs\<close>
 
@@ -214,6 +227,7 @@ lemma simps[simp]:
   \<open>\<And>uop e\<^sub>1 e\<^sub>2 e\<^sub>3. UnOp uop e\<^sub>1 \<noteq> bop_fun e\<^sub>2 e\<^sub>3\<close>
   \<open>\<And>uop e\<^sub>1 e\<^sub>2 e\<^sub>3. bop_fun e\<^sub>2 e\<^sub>3 \<noteq> UnOp uop e\<^sub>1\<close>
   \<open>-e \<noteq> bop_fun e\<^sub>1 e\<^sub>2\<close> \<open>bop_fun e\<^sub>1 e\<^sub>2 \<noteq> -e\<close>
+  \<open>\<sim>e \<noteq> bop_fun e\<^sub>1 e\<^sub>2\<close> \<open>bop_fun e\<^sub>1 e\<^sub>2 \<noteq> \<sim>e\<close>
   unfolding bop_simps by simp_all
 
 lemma binop_inject[simp]: 
@@ -223,6 +237,10 @@ lemma binop_inject[simp]:
 
 lemma inject[simp]: \<open>(bop_fun e\<^sub>1 e\<^sub>2 = bop_fun e\<^sub>1' e\<^sub>2') \<longleftrightarrow> (e\<^sub>1 = e\<^sub>1' \<and> e\<^sub>2 = e\<^sub>2')\<close>
   by (simp add: bop_simps)
+
+lemma capture_avoiding_sub[simp]:
+  \<open>[v\<sslash>var](bop_fun e\<^sub>1 e\<^sub>2) = bop_fun ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close>
+  unfolding bop_simps by auto
 
 end
 
@@ -341,7 +359,7 @@ lemma not_bv_concat[simp]: \<open>exp \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)
   unfolding bv_concat.simps unfolding word_constructor_exp_def by (rule not_val not_val')+
 end
 
-locale not_exp =
+locale neq_exp =
     fixes exp :: exp
   assumes not_load[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 en sz. exp \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close>
       and not_store[simp]: \<open>\<And>e\<^sub>1 e\<^sub>2 e\<^sub>3 en sz. exp \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close>
@@ -401,93 +419,96 @@ lemma not_other_bops[simp]:
   \<open>e\<^sub>1 slt e\<^sub>2 \<noteq> exp\<close> \<open>exp \<noteq> e\<^sub>1 slt e\<^sub>2\<close> 
   unfolding bop_syntax by simp_all
 
-lemma not_other_uops[simp]: \<open>-e \<noteq> exp\<close> \<open>exp \<noteq> -e\<close>
-  unfolding uminus_exp_def by simp_all
+lemma not_other_uops[simp]: \<open>-e \<noteq> exp\<close> \<open>exp \<noteq> -e\<close> \<open>\<sim>e \<noteq> exp\<close> \<open>exp \<noteq> \<sim>e\<close>
+  unfolding uminus_exp_def not_exp_def by simp_all
 
 end
 
-locale not_exp_and_val = not_exp_val + not_exp
+locale neq_exp_and_val = not_exp_val + neq_exp
 
 
-interpretation var: not_exp_and_val \<open>(id' :\<^sub>t t)\<close>
+interpretation var: neq_exp_and_val \<open>(id' :\<^sub>t t)\<close>
   unfolding var_constructor_exp_def by (standard, auto)
 
-interpretation val: not_exp \<open>Val v\<close>
+interpretation val: neq_exp \<open>Val v\<close>
   by (standard, auto)
 
-interpretation storage: not_exp \<open>(v[w \<leftarrow> v', sz])\<close>
+interpretation storage: neq_exp \<open>(v[w \<leftarrow> v', sz])\<close>
   unfolding storage_constructor_exp_def by (standard, auto)
 
-interpretation word: not_exp \<open>(num \<Colon> sz)\<close>
+interpretation word: neq_exp \<open>(num \<Colon> sz)\<close>
   unfolding word_constructor_exp_def by (standard, auto)
 
-interpretation unknown: not_exp \<open>(unknown[str]: t)\<close>
+interpretation unknown: neq_exp \<open>(unknown[str]: t)\<close>
   unfolding unknown_constructor_exp_def by (standard, auto)
 
-interpretation true: not_exp \<open>true\<close>
+interpretation true: neq_exp \<open>true\<close>
   unfolding true_word by (standard, auto)
 
-interpretation false: not_exp \<open>false\<close>
+interpretation false: neq_exp \<open>false\<close>
   unfolding false_word by (standard, auto)
 
-interpretation concat: not_exp \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
+interpretation concat: neq_exp \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   unfolding bv_concat.simps by (standard, auto)
 
-interpretation plus: not_exp \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation plus: neq_exp \<open>(num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_plus.simps by (standard, auto)
 
-interpretation minus: not_exp \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation minus: neq_exp \<open>(num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_minus.simps by (standard, auto)
 
-interpretation times: not_exp \<open>(num\<^sub>1 \<Colon> sz) *\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation times: neq_exp \<open>(num\<^sub>1 \<Colon> sz) *\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_times.simps by (standard, auto)
 
-interpretation divide: not_exp \<open>(num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation divide: neq_exp \<open>(num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_divide.simps by (standard, auto)
 
-interpretation sdivide: not_exp \<open>(num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation sdivide: neq_exp \<open>(num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_sdivide.simps by (standard, auto)
 
-interpretation mod: not_exp \<open>(num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation mod: neq_exp \<open>(num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_mod\<^sub>b\<^sub>v.simps by (standard, auto)
 
-interpretation smod: not_exp \<open>(num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation smod: neq_exp \<open>(num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_smod.simps by (standard, auto)
 
-interpretation lsl: not_exp \<open>(num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation lsl: neq_exp \<open>(num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lsl.simps by (standard, auto)
 
-interpretation lsr: not_exp \<open>(num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation lsr: neq_exp \<open>(num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lsr.simps by (standard, auto)
 
-interpretation asr: not_exp \<open>(num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation asr: neq_exp \<open>(num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_asr.simps by (standard, auto)
 
-interpretation land: not_exp \<open>(num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation land: neq_exp \<open>(num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_land.simps by (standard, auto)
 
-interpretation lor: not_exp \<open>(num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation lor: neq_exp \<open>(num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lor.simps by (standard, auto)
 
-interpretation xor: not_exp \<open>(num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation xor: neq_exp \<open>(num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_xor.simps by (standard, auto)
 
-interpretation lt: not_exp \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation lt: neq_exp \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lt.simps by (standard, auto)
 
-interpretation le: not_exp \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation le: neq_exp \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lt.simps bv_lor.simps bv_eq_def by (standard, auto)
 
-interpretation slt: not_exp \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation slt: neq_exp \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_slt.simps by (standard, auto)
 
-interpretation sle: not_exp \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
+interpretation sle: neq_exp \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_slt.simps bv_lor.simps bv_eq_def by (standard, auto)
 
-interpretation uminus: not_exp \<open>-\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
+interpretation uminus: neq_exp \<open>-\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
   unfolding bv_uminus.simps by (standard, auto)
 
-interpretation xtract: not_exp \<open>ext (num \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w\<close>
+interpretation not: neq_exp \<open>~\<^sub>b\<^sub>v (num \<Colon> sz)\<close>
+  unfolding bv_negation.simps by (standard, auto)
+
+interpretation xtract: neq_exp \<open>ext (num \<Colon> sz) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w\<close>
   unfolding xtract.simps by (standard, auto)
 
 lemma bops_no_overlap[simp]:
@@ -770,5 +791,8 @@ lemma capture_avoiding_var[simp]: \<open>[val\<sslash>(nm :\<^sub>t tp)](nm :\<^
 
 lemma capture_avoiding_var_neq[intro]: \<open>var \<noteq> (nm :\<^sub>t tp) \<Longrightarrow> [val\<sslash>var](nm :\<^sub>t tp) = (nm :\<^sub>t tp)\<close>
   by (simp add: var_constructor_exp_def)
+
+lemma capture_avoiding_var_name_neq[intro]: \<open>nm1 \<noteq> nm2 \<Longrightarrow> [val\<sslash>(nm1 :\<^sub>t tp)](nm2 :\<^sub>t tp) = (nm2 :\<^sub>t tp)\<close>
+  by (simp add: capture_avoiding_var_neq)
 
 end

@@ -12,16 +12,19 @@ lemma type_wordE: \<open>type (num \<Colon> sz) = t \<Longrightarrow> (t = imm\<
   using type_wordI by blast
 
 
-(* TODO = Isabelleism \<rightarrow> 1 = Suc 0*)
-definition
+abbreviation
   true :: 'a
 where 
-  \<open>true \<equiv> (1 \<Colon> 1)\<close>
+  \<open>true \<equiv> (Suc 0 \<Colon> Suc 0)\<close>
 
-definition
+abbreviation
   false :: 'a
 where 
-  \<open>false \<equiv> (0 \<Colon> 1)\<close>
+  \<open>false \<equiv> (0 \<Colon> Suc 0)\<close>
+
+(* TODO delete *)
+lemmas true_def = impI
+lemmas false_def = impI
 
 lemma true_neq_false[simp]: \<open>true \<noteq> false\<close> \<open>false \<noteq> true\<close>
   unfolding true_def false_def by auto
@@ -341,7 +344,7 @@ lemma bv_lt_true: \<open>nat\<^sub>1 < nat\<^sub>2 \<Longrightarrow> (nat\<^sub>
 lemma bv_lt_false: \<open>nat\<^sub>1 \<ge> nat\<^sub>2 \<Longrightarrow> (nat\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz) = false\<close>
   by auto
 
-lemma bv_lt_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 < num\<^sub>2 then 1 else 0) \<Colon> 1)\<close>
+lemma bv_lt_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 < num\<^sub>2 then Suc 0 else 0) \<Colon> Suc 0)\<close>
   unfolding bv_lt.simps apply (split if_splits)+
   by simp
 
@@ -363,7 +366,7 @@ declare bv_slt.simps[simp del]
 function
   xtract :: \<open>'a \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> 'a\<close> (\<open>ext _ \<sim> hi : _ \<sim> lo : _\<close>)
 where
-  \<open>(ext (nat\<^sub>1 \<Colon> _) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w + 1))\<close> |
+  \<open>(ext (nat\<^sub>1 \<Colon> _) \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w) = (take_bit (Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)) (drop_bit sz\<^sub>l\<^sub>o\<^sub>w nat\<^sub>1) \<Colon> (Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)))\<close> |
   \<open>\<lbrakk>(\<forall>nat sz. w \<noteq> (nat \<Colon> sz))\<rbrakk> \<Longrightarrow> (ext w \<sim> hi : _ \<sim> lo : _) = undefined\<close>
   subgoal for P x
     apply (cases x)
@@ -517,7 +520,7 @@ where
 
 lemmas bv_leq_defs = bv_eq_def bv_lor.simps bv_lt.simps
 
-lemma bv_leq_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 \<le> num\<^sub>2 then 1 else 0) \<Colon> 1)\<close>
+lemma bv_leq_true_or_false: \<open>(num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz) = ((if num\<^sub>1 \<le> num\<^sub>2 then Suc 0 else 0) \<Colon> Suc 0)\<close>
   unfolding bv_leq_defs apply (split if_splits)+
   by simp
 
@@ -562,10 +565,10 @@ lemmas bv_simps = bv_plus.simps bv_minus.simps bv_times.simps bv_divide.simps bv
 text \<open>Type syntax for words\<close>
 (* TODO use syntax locales *)
 
-lemma type_trueI[simp]: \<open>type true = imm\<langle>1\<rangle>\<close>
+lemma type_trueI[simp]: \<open>type true = imm\<langle>Suc 0\<rangle>\<close>
   unfolding true_word by (rule type_wordI)
 
-lemma type_falseI[simp]: \<open>type false = imm\<langle>1\<rangle>\<close> 
+lemma type_falseI[simp]: \<open>type false = imm\<langle>Suc 0\<rangle>\<close> 
   unfolding false_word by (rule type_wordI)
 
 lemma type_plusI[simp]: \<open>type ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) = imm\<langle>sz\<rangle>\<close>

@@ -114,7 +114,7 @@ lemma explode_to_implodeI[intro!]:
     shows \<open>str = literal.explode lit\<close>
   unfolding implode implode.rep_eq ascii_of ..
 
-lemma string_simps[simp]: 
+lemma parser_string_simps[simp]:
   \<open>literal.explode STR ''LittleEndian'' = ''LittleEndian''\<close>
   \<open>literal.explode STR ''BigEndian'' = ''BigEndian''\<close>
   \<open>literal.explode STR ''Imm'' = ''Imm''\<close>
@@ -177,17 +177,17 @@ sketch (split if_splits , intro conjI impI , defer_tac) +
 proof (split if_splits , intro conjI impI , defer_tac) +
   assume "en \<noteq> STR ''LittleEndian''" "en \<noteq> STR ''BigEndian''"
   hence en_explode: \<open>literal.explode en \<noteq> ''LittleEndian''\<close> "literal.explode en \<noteq> ''BigEndian''"
-    by (metis literal.explode_inject string_simps)+
+    by (metis literal.explode_inject parser_string_simps)+
   thus "parse_en (Node (literal.explode en) ast) = Error (ParseTagInvalid (map literal.explode [STR ''BigEndian'', STR ''LittleEndian'']) (literal.explode en))"
     by (cases ast, auto)
 next
   assume en: "en = STR ''LittleEndian''"
   show "parse_en (Node (literal.explode en) ast) = (case ast of [] \<Rightarrow> Value el | x # xs \<Rightarrow> Error ((ParseArgumentError \<circ> literal.explode) STR ''LittleEndian'' 0 (length (x # xs))))"
-    unfolding en string_simps by (cases ast, auto)
+    unfolding en parser_string_simps by (cases ast, auto)
 next
   assume en: "en = STR ''BigEndian''"
   show "parse_en (Node (literal.explode en) ast) = (case ast of [] \<Rightarrow> Value be | x # xs \<Rightarrow> Error ((ParseArgumentError \<circ> literal.explode) STR ''BigEndian'' 0 (length (x # xs))))"
-    unfolding en string_simps by (cases ast, auto)
+    unfolding en parser_string_simps by (cases ast, auto)
 qed
 
 
@@ -205,17 +205,17 @@ proof (split if_splits , intro conjI impI , defer_tac) +
   assume "typ \<noteq> STR ''Imm''"
     and "typ \<noteq> STR ''Mem''"
   hence typ_explode: \<open>literal.explode typ \<noteq> ''Imm''\<close> "literal.explode typ \<noteq> ''Mem''"
-    by (metis literal.explode_inject string_simps)+
+    by (metis literal.explode_inject parser_string_simps)+
   thus "parse_typ (Node (literal.explode typ) ast) = Error (ParseTagInvalid (map literal.explode [STR ''Imm'', STR ''Mem'']) (literal.explode typ))"
     by (cases ast, auto)
 next                             
   assume type: "typ = STR ''Imm''"
   show "parse_typ (Node (literal.explode typ) ast) = (if length ast = 1 then map_result_value Imm (parse_nat_dec (ast ! 0)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Imm'' 1 (length ast)))"
-    unfolding type string_simps by (cases ast rule: length1_cases, auto)
+    unfolding type parser_string_simps by (cases ast rule: length1_cases, auto)
 next
   assume type: "typ = STR ''Mem''"
   show "parse_typ (Node (literal.explode typ) ast) = (if length ast = 2 then map_result_value2 Mem (parse_nat_dec (ast ! 0)) (parse_nat_dec (ast ! 1)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Mem'' 2 (length ast)))"
-    unfolding type string_simps by (cases ast rule: length2_cases, auto)
+    unfolding type parser_string_simps by (cases ast rule: length2_cases, auto)
 qed
 
 definition 
@@ -237,13 +237,13 @@ sketch (split if_splits , intro conjI impI , defer_tac) +
 proof (split if_splits , intro conjI impI , defer_tac) +
   assume "var \<noteq> STR ''Var''"
   hence var_explode: \<open>literal.explode var \<noteq> ''Var''\<close>
-    by (metis literal.explode_inject string_simps)+
+    by (metis literal.explode_inject parser_string_simps)+
   thus "parse_var (Node (literal.explode var) ast) = Error (ParseTagInvalid (map literal.explode [STR ''Var'']) (literal.explode var))"
     by simp
 next
   assume var: "var = STR ''Var''"
   show "parse_var (Node (literal.explode var) ast) = (if length ast = 2 then map_result_value2 (\<lambda>str. Var (literal.explode str)) (map_result_value String.implode (parse_str (ast ! 0))) (parse_typ (ast ! 1)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Var'' 2 (length ast)))"
-  unfolding var string_simps
+  unfolding var parser_string_simps
   proof (cases ast rule: length2_cases, auto)
     fix str t :: AST
     show "map_result_value2 Var (parse_str str) (parse_typ t) = map_result_value2 (\<lambda>str. Var (literal.explode str)) (map_result_value String.implode (parse_str str)) (parse_typ t)"
@@ -384,7 +384,7 @@ proof (split if_splits , intro conjI impI , defer_tac) +
          "literal.explode e \<noteq> ''SMOD''" "literal.explode e \<noteq> ''EQ''" "literal.explode e \<noteq> ''RSHIFT''" "literal.explode e \<noteq> ''ARSHIFT''" 
          "literal.explode e \<noteq> ''LSHIFT''" "literal.explode e \<noteq> ''LOW''" "literal.explode e \<noteq> ''HIGH''"  "literal.explode e \<noteq> ''UNSIGNED''" 
          "literal.explode e \<noteq> ''SIGNED''" "literal.explode e \<noteq> ''Concat''" "literal.explode e \<noteq> ''NOT''" "literal.explode e \<noteq> ''NEG''"
-    by (metis literal.explode_inject string_simps)+
+    by (metis literal.explode_inject parser_string_simps)+
   thus "parse_exp (Node (literal.explode e) ast) = Error (ParseTagInvalid (map literal.explode [STR ''Store'', STR ''Load'', STR ''Var'', STR ''Let'', STR ''Int'', STR ''Unknown'', STR ''NOT'', STR ''NEG'', STR ''SLE'', STR ''SLT'', STR ''MINUS'', STR ''TIMES'', STR ''DIVIDE'', STR ''XOR'', STR ''OR'', STR ''AND'', STR ''LT'', STR ''LE'', STR ''NEQ'', STR ''PLUS'', STR ''MOD'', STR ''SMOD'', STR ''EQ'', STR ''RSHIFT'', STR ''ARSHIFT'', STR ''LSHIFT'', STR ''LOW'', STR ''HIGH'', STR ''UNSIGNED'', STR ''SIGNED'', STR ''Ite'', STR ''Concat'', STR ''Extract'']) (literal.explode e))"
     by simp
 next
@@ -588,26 +588,26 @@ proof (split if_splits , intro conjI impI , defer_tac) +
   hence stmt_explode: "String.explode stmt \<noteq> ''Move''" "String.explode stmt \<noteq> ''Jmp''" 
         "String.explode stmt \<noteq> ''CpuExn''" "String.explode stmt \<noteq> ''Special''"
         "String.explode stmt \<noteq> ''While''" "String.explode stmt \<noteq> ''If''"
-    by (metis literal.explode_inject string_simps)+
+    by (metis literal.explode_inject parser_string_simps)+
   thus "parse_stmt (Node (literal.explode stmt) ast) = Error (ParseTagInvalid
        (map literal.explode [STR ''Move'', STR ''Jmp'', STR ''CpuExn'', STR ''Special'', STR ''While'', STR ''If'']) (literal.explode stmt))"
     by (cases ast, auto)
 next
   assume stmt: "stmt = STR ''Move''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 2 then map_result_value2 (:=) (parse_var (ast ! 0)) (parse_exp (ast ! 1)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Move'' 2 (length ast)))"
-    unfolding stmt string_simps by (cases ast rule: length2_cases, simp_all)
+    unfolding stmt parser_string_simps by (cases ast rule: length2_cases, simp_all)
 next
   assume stmt: "stmt = STR ''Jmp''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 1 then map_result_value Jmp (parse_exp (ast ! 0)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Jmp'' 1 (length ast)))"
-    unfolding stmt string_simps by (cases ast rule: length1_cases, simp_all)
+    unfolding stmt parser_string_simps by (cases ast rule: length1_cases, simp_all)
 next
   assume stmt: "stmt = STR ''CpuExn''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 1 then map_result_value CpuExn (parse_int (ast ! 0)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''CpuExn'' 1 (length ast)))"
-    unfolding stmt string_simps by (cases ast rule: length1_cases, simp_all)
+    unfolding stmt parser_string_simps by (cases ast rule: length1_cases, simp_all)
 next
   assume stmt: "stmt = STR ''Special''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 1 then map_result_value (\<lambda>str. special[literal.explode str]) (map_result_value String.implode (parse_str (ast ! 0))) else Error ((ParseArgumentError \<circ> literal.explode) STR ''Special'' 1 (length ast)))"
-    unfolding stmt string_simps sketch (cases ast rule: length1_cases, simp_all)
+    unfolding stmt parser_string_simps sketch (cases ast rule: length1_cases, simp_all)
   proof (cases ast rule: length1_cases , simp_all)
     fix str :: AST
     show "map_result_value Special (parse_str str) = map_result_value (\<lambda>str. special[literal.explode str]) (map_result_value String.implode (parse_str str))"
@@ -616,12 +616,12 @@ next
 next
   assume stmt: "stmt = STR ''While''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 2 then map_result_value2 While (parse_exp (ast ! 0)) (parse_bil (ast ! 1)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''While'' 2 (length ast)))"
-    unfolding stmt string_simps
+    unfolding stmt parser_string_simps
     by (cases ast rule: length2_cases, simp_all)
 next
   assume stmt: "stmt = STR ''If''"
   show "parse_stmt (Node (literal.explode stmt) ast)  = (if length ast = 3 then map_result_value3 stmt.If (parse_exp (ast ! 0)) (parse_bil (ast ! 1)) (parse_bil (ast ! 2)) else Error ((ParseArgumentError \<circ> literal.explode) STR ''If'' 3 (length ast)))"
-    unfolding stmt string_simps
+    unfolding stmt parser_string_simps
     by (cases ast rule: length3_cases, simp_all)
 qed
 

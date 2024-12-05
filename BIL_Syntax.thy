@@ -181,25 +181,6 @@ class val = val_syntax +
 
       and storage_v_size[simp]: \<open>\<And>v w v' sz. size_class.size v < size_class.size (v[w \<leftarrow> v', sz])\<close>
 
-
-
-no_notation HOL.Not (\<open>~ _\<close> [40] 40)
-
-class not_syntax = 
-  fixes not :: \<open>'a \<Rightarrow> 'a\<close> (\<open>~ _\<close> [40] 40)
-
-instantiation bool :: not_syntax
-begin
-
-definition
-  not_bool :: \<open>bool \<Rightarrow> bool\<close>
-where
-  \<open>not_bool = HOL.Not\<close>
-
-instance ..
-
-end
-
 datatype exp = 
     Val val
   | EVar var
@@ -213,20 +194,7 @@ datatype exp =
   | Extract nat nat exp (\<open>extract:_:_[_]\<close>)
   | Concat exp exp (infixr \<open>\<copyright>\<close> 70)
 
-
-instantiation exp :: not_syntax
-begin          
-
-fun
-  not_exp :: \<open>exp \<Rightarrow> exp\<close>
-where
-  \<open>not_exp exp = (UnOp Not exp)\<close>
-
-instance ..
-
-end
-
-class exp = val_syntax + bil_ops + var_syntax + not_syntax +
+class exp = val_syntax + bil_ops + var_syntax +
   assumes var_not_word_neq[simp]: \<open>\<And>id t num sz'. (id :\<^sub>t t) \<noteq> (num \<Colon> sz')\<close>
       and var_not_unknown_neq[simp]: \<open>\<And>id t str t'. (id :\<^sub>t t) \<noteq> unknown[str]: t'\<close>
       and var_not_storage_neq[simp]: \<open>\<And>id t v w v' sz. (id :\<^sub>t t) \<noteq> (v[w \<leftarrow> v', sz])\<close>
@@ -250,7 +218,7 @@ lemma le_simps[simp]:
     \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
     \<open>e\<^sub>1 le e\<^sub>2 \<noteq> (num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)\<close>
   unfolding bv_lt.simps bv_lor.simps bv_eq_def 
-  using le_word_simp apply simp_all
+  using le_word_simp(* apply simp_all*)
   unfolding true_word false_word
   using le_word_simp by simp_all
 
@@ -276,18 +244,18 @@ end
 primrec 
   capture_avoiding_sub :: \<open>val \<Rightarrow> var \<Rightarrow> exp \<Rightarrow> exp\<close> (\<open>[_\<sslash>_]_\<close> [501,500,502] 508)
 where
-  \<open>[_\<sslash>_](Val v) = (Val v)\<close> |
-  \<open>[v\<sslash>var](EVar var') = (if var = var' then (Val v) else (EVar var'))\<close> |
-  \<open>[v\<sslash>var](Load e\<^sub>1 e\<^sub>2 ed sz) = Load ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz\<close> |
-  \<open>[v\<sslash>var](Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz ([v\<sslash>var]e\<^sub>3)\<close> |
-  \<open>[v\<sslash>var](BinOp e\<^sub>1 bop e\<^sub>2) = BinOp ([v\<sslash>var]e\<^sub>1) bop ([v\<sslash>var]e\<^sub>2)\<close> |
-  \<open>[v\<sslash>var](UnOp uop e) = UnOp uop ([v\<sslash>var]e)\<close> |
-  \<open>[v\<sslash>var](Cast cast sz e) = Cast cast sz ([v\<sslash>var]e)\<close> |
-  \<open>[v\<sslash>var](Let var' e\<^sub>1 e\<^sub>2) = Let var' ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close> |
-  \<open>[v\<sslash>var](Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ([v\<sslash>var]e\<^sub>3)\<close> |
-  \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
-  \<open>[v\<sslash>var](e\<^sub>1 \<copyright> e\<^sub>2) = ([v\<sslash>var]e\<^sub>1) \<copyright> ([v\<sslash>var]e\<^sub>2)\<close>
- 
+  Val: \<open>[_\<sslash>_](Val v) = (Val v)\<close> |
+  EVar: \<open>[v\<sslash>var](EVar var') = (if var = var' then (Val v) else (EVar var'))\<close> |
+  Load: \<open>[v\<sslash>var](Load e\<^sub>1 e\<^sub>2 ed sz) = Load ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz\<close> |
+  Store: \<open>[v\<sslash>var](Store e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3) = Store ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ed sz ([v\<sslash>var]e\<^sub>3)\<close> |
+  BinOp: \<open>[v\<sslash>var](BinOp e\<^sub>1 bop e\<^sub>2) = BinOp ([v\<sslash>var]e\<^sub>1) bop ([v\<sslash>var]e\<^sub>2)\<close> |
+  UnOp: \<open>[v\<sslash>var](UnOp uop e) = UnOp uop ([v\<sslash>var]e)\<close> |
+  Cast: \<open>[v\<sslash>var](Cast cast sz e) = Cast cast sz ([v\<sslash>var]e)\<close> |
+  Let: \<open>[v\<sslash>var](Let var' e\<^sub>1 e\<^sub>2) = Let var' ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2)\<close> |
+  Ite: \<open>[v\<sslash>var](Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) = Ite ([v\<sslash>var]e\<^sub>1) ([v\<sslash>var]e\<^sub>2) ([v\<sslash>var]e\<^sub>3)\<close> |
+  Extract: \<open>[v\<sslash>var](Extract sz\<^sub>1 sz\<^sub>2 e') = Extract sz\<^sub>1 sz\<^sub>2 ([v\<sslash>var]e')\<close> |
+  Concat: \<open>[v\<sslash>var](e\<^sub>1 \<copyright> e\<^sub>2) = ([v\<sslash>var]e\<^sub>1) \<copyright> ([v\<sslash>var]e\<^sub>2)\<close>
+
 lemma capture_avoiding_sub_size_eq[simp]: \<open>size_class.size ([v\<sslash>var]e) = size_class.size e\<close>
   by (induct e, auto)
 
