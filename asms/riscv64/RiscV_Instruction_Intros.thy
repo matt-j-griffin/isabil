@@ -280,7 +280,7 @@ subsubsection \<open>BEQ\<close>
 lemma step_beq_true:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beq w temp rs1 rs2 offset\<close>
       and in_vars: \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> true), (offset \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> true), (offset \<Colon> 64), var)\<close>
   apply (insert assms(2-))
   by (solve_prog_mem64I decoder: decode) 
 
@@ -288,14 +288,14 @@ lemma step_beq_false:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beq w temp rs1 rs2 offset\<close>
       and in_vars: \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and \<open>num1 \<noteq> num2\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
   apply (insert assms(2-))
   by (solve_prog_mem64I decoder: decode)
 
 lemma step_beq:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beq w temp rs1 rs2 offset\<close>
       and in_vars: \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
 proof (cases \<open>num1 = num2\<close>)
   case True
   show ?thesis 
@@ -313,20 +313,20 @@ subsubsection \<open>BEQZ\<close>
 lemma step_beqz_true:
   assumes decode_beqz: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beqz w temp rs1 offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), cond \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>cond = 0\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> true), (offset \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> true), (offset \<Colon> 64), var)\<close>
   apply (insert assms(2), unfold assms(3))
   by (solve_prog_mem64I decoder: decode_beqz)
   
 lemma step_beqz_false:
   assumes decode_beqz: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beqz w temp rs1 offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), cond \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>cond \<noteq> 0\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
   by (insert assms(2-), solve_prog_mem64I decoder: decode_beqz)
   
 lemma step_beqz:
   assumes decode_beqz: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l beqz w temp rs1 offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), cond \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>1\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>((temp :\<^sub>t imm\<langle>Suc 0\<rangle>) \<mapsto> false), w +\<^sub>b\<^sub>v (2 \<Colon> 64), var)\<close>
 proof (cases \<open>cond = 0\<close>)
   case True
   show ?thesis 
@@ -385,14 +385,14 @@ lemma step_bge_true:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bge w rs1 rs2 ivar offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and leq: \<open>(num1 \<Colon> 64) \<le>\<^sub>b\<^sub>v (num2 \<Colon> 64) = (true::val)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>1\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I add: leq decoder: decode)
 
 lemma step_bge_false:
   assumes decode_bge: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bge w rs1 rs2 ivar offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and leq: \<open>(num1 \<Colon> 64) \<le>\<^sub>b\<^sub>v (num2 \<Colon> 64) = (false::val)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>1\<rangle> \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> false), w +\<^sub>b\<^sub>v (4 \<Colon> 64), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I add: leq decoder: decode_bge)
 
 subsubsection \<open>BNEZ\<close>
@@ -401,14 +401,14 @@ lemma step_bnez_true:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bnez w rs1 ivar offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and nez: \<open>(num1 \<Colon> 64) =\<^sub>b\<^sub>v (0 \<Colon> 64) = (true::val)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>1\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (2 \<Colon> 64)), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (2 \<Colon> 64)), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I decoder: decode)
 
 lemma step_bnez_false:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bnez w rs1 ivar offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and \<open>(num1 \<Colon> 64) \<noteq>\<^sub>b\<^sub>v (0 \<Colon> 64) = (true::word)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>1\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(ivar :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I decoder: decode)
 
 subsubsection \<open>BLTU\<close>
@@ -417,20 +417,20 @@ lemma step_bltu_true:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bltu w rs1 rs2 temp offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and nez: \<open>(num1 \<Colon> 64) <\<^sub>b\<^sub>v (num2 \<Colon> 64) = (true::val)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>1\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> true), (offset \<Colon> 64), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I decoder: decode add: nez)
 
 lemma step_bltu_false:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bltu w rs1 rs2 temp offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
       and nez: \<open>(num1 \<Colon> 64) <\<^sub>b\<^sub>v (num2 \<Colon> 64) = (false::val)\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>1\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (4 \<Colon> 64)), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (4 \<Colon> 64)), var)\<close>
   by (insert assms(2-3), solve_prog_mem64I decoder: decode add: nez)
 
 lemma step_bltu:
   assumes decode: \<open>\<And>\<Delta> var. (\<Delta>, w, var) \<mapsto>\<^sub>b\<^sub>i\<^sub>l bltu w rs1 rs2 temp offset\<close>
       and \<open>((rs1 :\<^sub>t imm\<langle>64\<rangle>), num1 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close> and \<open>((rs2 :\<^sub>t imm\<langle>64\<rangle>), num2 \<Colon> 64) \<in>\<^sub>\<Delta> \<Delta>\<close>
-    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>1\<rangle> \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>1\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (4 \<Colon> 64)), var)\<close>
+    shows \<open>(\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> true), (offset \<Colon> 64), var) \<or> (\<Delta>, w, var) \<leadsto>\<^sub>b\<^sub>i\<^sub>l (\<Delta>(temp :\<^sub>t imm\<langle>Suc 0\<rangle> \<mapsto> false), (w +\<^sub>b\<^sub>v (4 \<Colon> 64)), var)\<close>
 proof (cases \<open>(num1 \<Colon> 64) <\<^sub>b\<^sub>v (num2 \<Colon> 64) = (true::val)\<close>)
   case True
   show ?thesis 

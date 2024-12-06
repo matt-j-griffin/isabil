@@ -394,8 +394,7 @@ lemmas capture_avoiding_sub_simps =
   string_simps
 
 method simp_capture_avoid uses add = (simp (no_asm) only: capture_avoiding_sub_simps)
-thm step_bop_lhsI step_concat_rhsI
-thm step_bop_rhsI.is_val step_concat_lhsI.is_val
+
 method solve_expI_scaffold methods recurs solve_type uses add = (
     \<comment> \<open>Vars\<close>
   (rule step_var_inI.is_val[rotated], solve_var_inI add: add, solve_is_valI) |
@@ -456,16 +455,24 @@ method solve_expI_scaffold methods recurs solve_type uses add = (
   (rule step_eq_diffI, (assumption | (rule bv_neq_true, assumption))) |
 
   \<comment> \<open>New\<close>
+  (rule step_not_trueI step_not_falseI step_uop_unk_notI step_uop_unk_negI step_uop_unkI step_notI
+       step_negI) |
+
+  (rule step_cast_lowI.is_word step_cast_highI.is_word step_cast_signedI.is_word 
+        step_cast_unsignedI.is_word step_notI.is_sz_word step_negI.is_sz_word, solve_is_wordI) |
+
   (rule step_plusI.is_word2 step_minusI.is_word2 step_timesI.is_word2 step_divI.is_word2 
         step_sdivI.is_word2 step_modI.is_word2 step_smodI.is_word2 step_lslI.is_word2 
         step_lsrI.is_word2 step_asrI.is_word2 step_landI.is_word2 step_lorI.is_word2 
         step_xorI.is_word2 step_concatI.is_word2 step_eqI'.is_word2 ,
      solve_is_wordI, solve_is_wordI) |
-  (rule plus.step_exp_lhsI minus.step_exp_lhsI times.step_exp_lhsI divide.step_exp_lhsI 
+
+  (rule plus.step_exp_lhsI minus.step_exp_lhsI times.step_exp_lhsI divide.step_exp_lhsI
         sdivide.step_exp_lhsI mod.step_exp_lhsI smod.step_exp_lhsI lsl.step_exp_lhsI 
         lsr.step_exp_lhsI asr.step_exp_lhsI land.step_exp_lhsI lor.step_exp_lhsI xor.step_exp_lhsI
         step_concat_rhsI step_bop_lhsI,
       recurs) |
+
   (rule plus.step_exp_rhsI.is_val minus.step_exp_rhsI.is_val times.step_exp_rhsI.is_val
         divide.step_exp_rhsI.is_val sdivide.step_exp_rhsI.is_val mod.step_exp_rhsI.is_val
         smod.step_exp_rhsI.is_val lsl.step_exp_rhsI.is_val lsr.step_exp_rhsI.is_val
@@ -473,31 +480,20 @@ method solve_expI_scaffold methods recurs solve_type uses add = (
         xor.step_exp_rhsI.is_val step_concat_lhsI.is_val step_bop_rhsI.is_val, 
       solve_is_valI, recurs) |
 
-   \<comment> \<open>Uop\<close>
-  rule step_not_trueI step_not_falseI step_uop_unk_notI step_uop_unk_negI step_uop_unkI step_notI
-       step_negI |
-  (rule step_notI.is_sz_word step_negI.is_sz_word, solve_is_wordI) |
-  (rule step_uopI step_reduce_notI step_reduce_negI, recurs) |
    \<comment> \<open>End of New\<close>
 
-
+   \<comment> \<open>Uop\<close>
+  (rule step_uopI step_reduce_notI step_reduce_negI, recurs) |
 
   \<comment> \<open>Concat\<close>
-  (rule step_concatI step_concatI.xtract.xtract) |
   (rule step_concat_lhs_unI step_concat_rhs_unI, solve_type) |
-  (rule step_concat_lhsI.word step_concat_lhsI.xtract step_concat_rhsI, recurs) | 
 
   \<comment> \<open>Extract\<close>
   (rule step_extractI step_extract_unI) | 
   (rule step_extract_reduceI, recurs) |
 
   \<comment> \<open>Cast\<close>
-  (rule step_cast_lowI      step_cast_lowI.xtract      step_cast_lowI.plus
-        step_cast_highI     step_cast_highI.xtract     step_cast_highI.plus
-        step_cast_signedI   step_cast_signedI.xtract   step_cast_signedI.plus
-        step_cast_unsignedI step_cast_unsignedI.xtract step_cast_unsignedI.plus
-        step_cast_unkI) |
-  (rule step_cast_lowI.is_word, solve_is_wordI) |
+  (rule step_cast_unkI) |
   (rule step_cast_reduceI, recurs)
 )
 

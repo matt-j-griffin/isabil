@@ -182,14 +182,14 @@ lemma capture_avoid_is_word:
 
 method solve_is_wordI = 
   (rule word_is_word) |
+  (rule xtract_is_word', linarith, solve_is_wordI) |
   (rule plus.is_word minus.is_word times.is_word divide.is_word
         sdivide.is_word land.is_word lor.is_word xor.is_word mod.is_word smod.is_word lsl.is_word 
         lsr.is_word asr.is_word lt.is_word slt.is_word eq_is_word concat.is_word, 
      solve_is_wordI, solve_is_wordI) |
   (rule succ.is_word not.is_word neg.is_word xtract_is_word capture_avoid_is_word 
         eq_is_word, 
-     solve_is_wordI) |
-  (rule xtract_is_word', linarith, solve_is_wordI)
+     solve_is_wordI)
 
 locale exp_val_word_fixed_sz_is_ok_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz :: nat

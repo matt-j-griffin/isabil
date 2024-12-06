@@ -228,10 +228,10 @@ where
 
 end
 
-lemma type_storage_el64: \<open>type (storage_el64 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+lemma type_storage_el64[simp]: \<open>type (storage_el64 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
-lemma type_storage_be64: \<open>type (storage_be64 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+lemma type_storage_be64[simp]: \<open>type (storage_be64 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
 method solve_type_succ64I_scaffold methods recurs = (

@@ -124,10 +124,10 @@ where
 
 end
 
-lemma type_storage_el32: \<open>type (storage_el32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+lemma type_storage_el32[simp]: \<open>type (storage_el32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
-lemma type_storage_be32: \<open>type (storage_be32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+lemma type_storage_be32[simp]: \<open>type (storage_be32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
   unfolding succ.simps bv_plus.simps by (rule type_storageI)
 
 method solve_type_succ32I_scaffold methods recurs = (

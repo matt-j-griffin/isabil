@@ -551,9 +551,26 @@ lemma \<open>(100 \<Colon> 64) +\<^sub>b\<^sub>v (Suc 0 \<Colon> 64) = (101 \<Co
   apply simp_words
   ..
 
+lemma \<open>(ext 0 \<Colon> 64 \<sim> hi : 64 - 1 \<sim> lo : 0) = 0 \<Colon> 64\<close>
+  apply simp_words
+  unfolding xtract.simps word_inject drop_bit_0 diff_zero id_apply take_bit_of_0 apply (intro conjI)
+  apply linarith
+  apply linarith
+  .
+
+lemma \<open>(ext 12342353624567534874568 \<Colon> 64 \<sim> hi : 64 - 1 \<sim> lo : 0) = 1481839255844843464 \<Colon> 64\<close>
+  apply simp_words
+  unfolding xtract.simps word_inject drop_bit_0 diff_zero id_apply take_bit_of_0
+  unfolding take_bit_Suc_from_most power_numeral Num.pow.simps One_nat_def diff_numeral_Suc pred_numeral_simps diff_zero
+  take_bit_numeral_bit0 take_bit_numeral_bit1 Suc_numeral Num.add_num_simps BitM_plus_one Num.mult_num_simps arith_simps take_bit_0 mult_zero_left mult_zero_right mult_Suc add.right_neutral add_Suc_right
+  apply (intro conjI refl; linarith)
+  .
+
+(*@{thms and_numerals numeral_One and_zero_eq zero_and_eq}*)
 (*
 lemma \<open>succ (315242 \<Colon> 64) = 315243 \<Colon> 64\<close>
   apply simp_words
   ..  
 *)
+
 end
