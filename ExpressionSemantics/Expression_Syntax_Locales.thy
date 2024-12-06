@@ -458,8 +458,8 @@ lemma xtract_is_valI:
 
 lemmas Val_refl = refl[where t = \<open>Val _\<close>]
 
-method solve_is_valI
-  \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = (
+method solve_is_valI uses add
+  \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = ((unfold add)?,
   (rule word_constructor_exp_def storage_constructor_exp_def unknown_constructor_exp_def) |
   (rule plus.is_valI minus.is_valI times.is_valI
         divide.is_valI sdivide.is_valI land.is_valI lor.is_valI xor.is_valI mod.is_valI smod.is_valI 

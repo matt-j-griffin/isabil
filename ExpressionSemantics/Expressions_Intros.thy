@@ -38,13 +38,15 @@ interpretation step_exps_notI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (
   using step_exps_notI by blast
 
 lemmas step_exps_eqI' = step_exps_reduce_singleI[OF step_eqI']
-
 interpretation step_exps_eqI': exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (BinOp e\<^sub>1 (LOp Eq) e\<^sub>2) \<leadsto>* (e\<^sub>1 =\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_exps_eqI' by blast
 
-
 lemmas step_exps_negI = step_exps_reduce_singleI[OF step_negI]
+interpretation step_exps_negI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (- e) \<leadsto>* (-\<^sub>b\<^sub>v e))\<close>
+  apply (standard)
+  using step_exps_negI by blast
+
 lemmas step_exps_lop_unk_lhsI = step_exps_reduce_singleI[OF step_lop_unk_lhsI]
 lemmas step_exps_lop_unk_rhsI = step_exps_reduce_singleI[OF step_lop_unk_rhsI]
 lemmas step_exps_aop_unk_lhsI = step_exps_reduce_singleI[OF step_aop_unk_lhsI]
@@ -411,17 +413,23 @@ lemma step_exps_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: 
 end
 
 method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
-  \<comment> \<open>Var\<close>
-  (rule step_exps_var_inI.xtract step_exps_var_inI.xtract2 step_exps_var_inI.word
-        step_exps_var_inI.leq
-        step_exps_var_inI, solve_in_var add: add) |
+    \<comment> \<open>Try added assumptions, they must solve the goal though\<close>
+  (solves \<open>rule add\<close>) |
 
-  \<comment> \<open>Ops\<close>
+  (rule step_exps_var_inI.is_val[rotated], solve_var_inI add: add, solve_is_valI add: add) |
+  (rule step_exps_var_inI.is_val[rotated], solve_in_var add: add, solve_is_valI add: add) | \<comment> \<open>Remove this method\<close>
+
+  \<comment> \<open>Can the below rule be removed?\<close>
   (rule step_exps_plusI step_exps_minusI step_exps_landI step_exps_lorI step_exps_lslI
         step_exps_lsrI step_exps_less_eqI step_exps_lessI step_exps_eq_sameI
         step_exps_not_falseI step_exps_not_trueI) |          
 
   (rule step_exps_eq_diffI, solve_bv_neqI) |
+
+  (rule step_exps_notI.is_word step_exps_negI.is_word step_exps_cast_highI.is_word 
+        step_exps_cast_lowI.is_word step_exps_cast_signedI.is_word step_exps_cast_unsignedI.is_word, 
+      solve_is_wordI) |
+
   (rule step_exps_plusI.is_word2 step_exps_minusI.is_word2 step_exps_timesI.is_word2
         step_exps_divI.is_word2 step_exps_sdivI.is_word2 step_exps_modI.is_word2 
         step_exps_smodI.is_word2 step_exps_signed_less_eqI.is_word2 step_exps_signed_lessI.is_word2
@@ -430,14 +438,13 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
         step_exps_lorI.is_word2 step_exps_xorI.is_word2 step_exps_concatI.is_word2
         step_exps_eqI'.is_word2,
      solve_is_wordI, solve_is_wordI) |
-  (rule step_exps_notI.is_word, solve_is_wordI) |
 
   (rule plus.step_exps_lhsI minus.step_exps_lhsI times.step_exps_lhsI divide.step_exps_lhsI
         sdivide.step_exps_lhsI mod.step_exps_lhsI smod.step_exps_lhsI le.step_exps_lhsI
         sle.step_exps_lhsI lt.step_exps_lhsI slt.step_exps_lhsI lsl.step_exps_lhsI 
         lsr.step_exps_lhsI asr.step_exps_lhsI land.step_exps_lhsI lor.step_exps_lhsI 
-        xor.step_exps_lhsI step_exps_bop_lhsI 
-        step_exps_reduce_notI,
+        xor.step_exps_lhsI step_exps_bop_lhsI step_exps_cast_reduceI step_exps_store_step_valI
+        step_exps_reduce_notI step_exps_reduce_negI step_exps_concat_rhsI,
      solve_exp, (recurs | succeed)) |
 
   (rule plus.step_exps_rhsI.is_word minus.step_exps_rhsI.is_word times.step_exps_rhsI.is_word
@@ -445,12 +452,13 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
         smod.step_exps_rhsI.is_word le.step_exps_rhsI.is_word sle.step_exps_rhsI.is_word 
         lt.step_exps_rhsI.is_word slt.step_exps_rhsI.is_word lsl.step_exps_rhsI.is_word
         lsr.step_exps_rhsI.is_word asr.step_exps_rhsI.is_word land.step_exps_rhsI.is_word
-        lor.step_exps_rhsI.is_word xor.step_exps_rhsI.is_word step_exps_bop_rhsI.is_word,
+        lor.step_exps_rhsI.is_word xor.step_exps_rhsI.is_word step_exps_bop_rhsI.is_word
+        step_exps_concat_lhsI.is_word step_exps_store_addrI.is_word,
      solve_is_wordI, solve_exp, (recurs | succeed)) |
 
   (rule step_exps_valI.is_val, solve_is_valI) |
 
-  \<comment> \<open>Load\<close>
+  \<comment> \<open>Below this is unsorted\<close>
   (((rule step_exps_load_word_elI.storage.word step_exps_load_word_elI.storage.plus | 
     (rule step_exps_load_word_elI.storage.is_word, solve_is_wordI)) | 
     (rule step_exps_load_word_elI.storage_addr.word step_exps_load_word_elI.storage_addr.plus | 
@@ -466,7 +474,8 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
   \<comment> \<open>Store\<close>
   (rule step_exps_store_valI.succ.storage_addr.xtract step_exps_store_valI, solve_type) |
   (rule step_exps_store_word_elI.succ.storage.xtract step_exps_store_word_elI.word.storage.word 
-        step_exps_store_word_beI.succ.storage.xtract step_exps_store_word_beI.word.storage.word, 
+        step_exps_store_word_beI.succ.storage.xtract step_exps_store_word_beI.word.storage.word,
+   (unfold load_byte_minus_simps)?,
    linarith, standard, (recurs | succeed)) |
 
   (rule step_exps_store_word_elI.succ.storage_addr.xtract 
@@ -482,26 +491,16 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
   (rule step_exps_store_memI.succ.xtract step_exps_store_memI.plus.xtract
         step_exps_store_memI.word.xtract step_exps_store_memI.plus.word
         step_exps_store_memI.word.word step_exps_store_memI
-        step_exps_store_addrI.xtract step_exps_store_addrI.word step_exps_store_addrI
-        step_exps_store_step_valI, solve_exp, (recurs | succeed)) |
-
-  \<comment> \<open>Concat\<close>
-  (rule step_exps_concat_lhsI.xtract step_exps_concat_rhsI, solve_exp, (recurs | succeed)) |
-
-  \<comment> \<open>Cast\<close>
-  (rule step_exps_cast_highI.is_word step_exps_cast_lowI.is_word step_exps_cast_signedI.is_word 
-        step_exps_cast_unsignedI.is_word, solve_is_wordI) |
-  (rule step_exps_cast_reduceI, solve_exp, (recurs | succeed)) |
-
+        
+        , solve_exp, (recurs | succeed))
   
 (*
    \<open>Reflexive case\<close>
    \<open>(rule step_exps_reflI) \<comment> TODO added ?\<close>*)
-  (succeeds \<open>rule add\<close>) \<comment> \<open>Try added assumptions, they must solve the goal though\<close>
 )
 
 method solve_expsI uses add = (
-  solve_expsI_scaffold \<open>solve_expsI add: add\<close> \<open>solve_expI add: add\<close> solve_typeI
+  solve_expsI_scaffold \<open>solve_expsI add: add\<close> \<open>solve_expI add: add\<close> solve_typeI add: add
 )
 
 lemmas REFL = step_exps_reflI

@@ -16,7 +16,7 @@ where
     [     w \<leftarrow> ext v \<sim> hi :  7 \<sim> lo :  0, 8]
     [succ w \<leftarrow> ext v \<sim> hi : 15 \<sim> lo :  8, 8])
 \<close>
-
+lemmas storage_el16_def = refl
 abbreviation 
   storage_be16 :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> 'a\<close>
 where
@@ -24,14 +24,14 @@ where
     [     w \<leftarrow> ext v \<sim> hi : 15 \<sim> lo :  8, 8]
     [succ w \<leftarrow> ext v \<sim> hi :  7 \<sim> lo :  0, 8])
 \<close>
-
+lemmas storage_be16_def = refl
 end
 
 lemma type_storage_el16[simp]: \<open>type (storage_el16 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+  unfolding succ.simps bv_plus.simps storage_el16_def by (rule type_storageI)
 
 lemma type_storage_be16[simp]: \<open>type (storage_be16 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+  unfolding succ.simps bv_plus.simps storage_be16_def by (rule type_storageI)
 
 (* TODO move *)
 lemma nested_extract_within: 
