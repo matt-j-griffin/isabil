@@ -1,6 +1,5 @@
 theory Simp_PC
-  imports 
-    "../Instruction_Syntax"
+  imports IsaBIL.Instruction_Syntax
 begin
 
 text \<open>
@@ -65,10 +64,5 @@ val method_setup =
 val _ =
   Theory.setup method_setup;
 \<close>
-
-
-lemma "(\<Delta>, (12::nat) mod 9, mem) = (\<Delta>, z, mem)"
-  by simp_pc
-
 
 end

@@ -1,7 +1,8 @@
 
 theory Simp_Word
   imports 
-    "../Instruction_Syntax" Simp_Variables
+    IsaBIL.Instruction_Syntax 
+    Simp_Variables
 begin
 
 text \<open>
@@ -83,6 +84,42 @@ lemma bv_minus_inject: \<open>x = z \<Longrightarrow> y = w \<Longrightarrow> (x
 lemma modulo_nat_multiI: "k = x div y \<Longrightarrow> X = x - k * y \<Longrightarrow> x mod (y::nat) = X"
   unfolding modulo_nat_def by auto
 
+lemma take_bit_numeral_of_Suc_0[simp]: \<open>take_bit (numeral x) (Suc 0) = 1\<close>
+  by simp
+
+lemma take_bit_numeral_Numeral1[simp]: \<open>take_bit (numeral n) Numeral1 = 1\<close>
+  by simp_all
+
+lemma drop_bit_numeral_Numeral1[simp]: \<open>drop_bit (numeral n) Numeral1 = 0\<close>
+  by simp
+
+lemma of_bool_bit_numeral[simp]:
+  \<open>of_bool (bit (numeral (num.Bit1 b) ) 0) = 1\<close>
+  \<open>of_bool (bit (numeral (num.Bit0 b) ) 0) = 0\<close>
+  by simp_all
+
+lemmas simp_words_xtract = xtract.simps word_inject 
+   arith_simps  
+   diff_zero id_apply 
+   take_bit_0 take_bit_of_0 take_bit_numeral_bit0 take_bit_numeral_bit1 take_bit_Suc_bit0
+   take_bit_Suc_bit1
+   take_bit_numeral_of_Suc_0 take_bit_Suc_from_most take_bit_numeral_Numeral1 
+
+   power_numeral Num.pow.simps One_nat_def diff_numeral_Suc
+   pred_numeral_simps   Suc_numeral BitM_plus_one 
+   mult_Suc add_Suc_right   power_0
+   cancel_comm_monoid_add_class.diff_cancel of_bool_bit_numeral 
+
+   drop_bit_0 drop_bit_of_0 drop_bit_numeral_bit0 drop_bit_numeral_bit1 drop_bit_Suc_bit0 
+   drop_bit_Suc_bit1 drop_bit_of_Suc_0 drop_bit_numeral_Numeral1
+
+
+lemmas simp_words_lsr = bv_lsr.simps word_inject power_numeral Num.pow.simps Num.sqr.simps 
+   div_0 arith_simps power_Suc power_0 One_nat_def mult_Suc_right 
+
+lemmas simp_words_xor = bv_xor.simps word_inject xor_nat_numerals xor_numerals numeral_One
+            Suc_numeral One_nat_def plus_nat.add_Suc mult_Suc_right
+            arith_simps xor.right_neutral xor.left_neutral xor_self_eq
 ML \<open>
 fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
   | dest_nat (Const ("Groups.one_class.one", _)) = 1
@@ -148,6 +185,28 @@ fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
     in
       loop (x, y, 1)
     end;
+
+  fun int_bitwise_op (bop: (word * word) -> word, a: int, b: int) : int =
+    let
+        val wa = Word.fromInt a
+        val wb = Word.fromInt b
+        val wx = bop (wa, wb)
+    in
+        Word.toInt wx
+    end;
+
+  fun bitwise_xor (a: int, b: int) : int = int_bitwise_op (Word.xorb, a, b)
+
+  fun word_extract (w: word, start: word, length: word): word =
+    let
+      val mask = Word.<<(Word.fromInt 1, length) - Word.fromInt 1
+      val shifted = Word.>>(w, start)
+    in
+      Word.andb (shifted, mask)
+    end;
+
+  fun bitwise_extract (w: int, start: int, length: int): int = Word.toInt (
+    word_extract (Word.fromInt w, Word.fromInt start, Word.fromInt length))
 
   fun find_commute_bv_plus_new (Const (\<^const_name>\<open>bv_plus\<close>,Tp)
                       $ (Const (\<^const_name>\<open>bv_plus\<close>,_)
@@ -289,6 +348,32 @@ fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
       in (SOME (wr, 0)) end) ()
     handle TERM _ =>
       NONE)
+    | simp_bv (Const (\<^const_name>\<open>bv_xor\<close>,_)
+                      $ (Const (\<^const_name>\<open>word_constructor\<close>,Tw) $ tnum1 $ sz)
+                      $ (Const (\<^const_name>\<open>word_constructor\<close>,_) $ tnum2 $ _)) =
+    ((fn () =>
+      let
+        val num1 = dest_nat tnum1
+        val num2 = dest_nat tnum2
+        val result = bitwise_xor (num1, num2)
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT result) sz
+      in (SOME (wr, 0)) end) ()
+    handle TERM _ =>
+      NONE)
+    | simp_bv (Const (\<^const_name>\<open>xtract\<close>,_)
+                      $ (Const (\<^const_name>\<open>word_constructor\<close>,Tw) $ tnum $ _)
+                      $ tszhi $ tszlo) =
+    ((fn () =>
+      let
+        val num = dest_nat tnum
+        val szhi = dest_nat tszhi
+        val szlo = dest_nat tszlo
+        val result = bitwise_extract (num, szlo, szhi + 1)
+        val wr = mk_word Tw (HOLogic.mk_number HOLogic.natT result) 
+                            (HOLogic.mk_number HOLogic.natT (szhi - szlo + 1))
+      in (SOME (wr, 0)) end) ()
+    handle TERM _ =>
+      NONE)
     | simp_bv typ = error ("Did not match simproc pattern: " ^ Pretty.string_of (Syntax.pretty_term @{context} typ))
 
   fun mod_tac ctxt quotient = 
@@ -354,7 +439,7 @@ fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
 
   fun simp_bv_lsr ctxt = simproc_bv (fn _ =>
       HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
-      unfold_tac ctxt @{thms bv_lsr.simps word_inject power_numeral Num.pow.simps Num.sqr.simps Num.mult_num_simps div_0} THEN
+      unfold_tac ctxt @{thms simp_words_lsr} THEN
       Method.intros_tac ctxt [conjI, refl] [] THEN
       TRY (HEADGOAL (Lin_Arith.simple_tac ctxt))
     ) ctxt
@@ -381,6 +466,19 @@ fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
       HEADGOAL (Lin_Arith.simple_tac ctxt)
     ) ctxt
 
+  fun simp_bv_xor ctxt = simproc_bv (fn _ =>
+      HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
+      unfold_tac ctxt @{thms simp_words_xor} THEN
+      Method.intros_tac ctxt [conjI, refl] [] THEN
+      TRY (HEADGOAL (Lin_Arith.simple_tac ctxt))
+    ) ctxt
+
+  fun simp_bv_xtract ctxt = simproc_bv (fn _ =>
+      HEADGOAL (resolve_tac ctxt [eq_reflection]) THEN 
+      unfold_tac ctxt @{thms simp_words_xtract} THEN
+      Method.intros_tac ctxt [conjI, refl] [] THEN
+      TRY (HEADGOAL (Lin_Arith.simple_tac ctxt))
+    ) ctxt
 \<close>
 
 simproc_setup simp_bv_plus  (\<open>(nat\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_plus\<close>
@@ -392,6 +490,8 @@ simproc_setup simp_bv_lsr   (\<open>(nat\<^sub>1 \<Colon> sz\<^sub>1) >>\<^sub>b
 simproc_setup simp_bv_land  (\<open>(nat\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_lor\<close>
 simproc_setup simp_bv_lor   (\<open>(nat\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_land\<close>
 (*simproc_setup simp_succ     (\<open>succ (num \<Colon> sz)\<close>) = \<open>K simp_bv_succ\<close>*)
+simproc_setup simp_bv_xor   (\<open>(nat\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)\<close>) = \<open>K simp_bv_xor\<close>
+simproc_setup simp_bv_xtract   (\<open>ext num \<Colon> sz \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2\<close>) = \<open>K simp_bv_xtract\<close>
 
 simproc_setup simp_bv_plus_commute2 (\<open>((nat\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (nat\<^sub>2 \<Colon> sz)) +\<^sub>b\<^sub>v (nat\<^sub>3 \<Colon> sz)\<close>) = \<open>fn _ =>
   let
@@ -420,16 +520,24 @@ simproc_setup simp_bv_plus_commute2 (\<open>((nat\<^sub>1 \<Colon> sz) +\<^sub>b
 
 text \<open>Remove this method from the simpset to prevent it interfering\<close>
 
+lemma bv_neg_1_bit_simps: \<open>~\<^sub>b\<^sub>v (1 \<Colon> 1) = (0 \<Colon> 1)\<close> \<open>~\<^sub>b\<^sub>v (0 \<Colon> 1) = (1 \<Colon> 1)\<close>
+  by auto
+
+lemmas simp_word = minus0 times0 divide0 land0 land_true lor0 lor_true xor0 xor_eq mod0 
+                   lsl0 lsr0 asr0 concat0 bv_negation_true_false bv_negation_false_true 
+                   lt0 lt_same extracts_0 bv_eq bv_leq_same bv_neg_1_bit_simps (*extract0*)
+
 ML \<open>
 fun simp_word goal_target ctxt = (
   SIMPLE_METHOD (
-    Local_Defs.unfold_tac ctxt @{thms lor_true lor_false bv_eq bv_leq_same} THEN
+    Local_Defs.unfold_tac ctxt @{thms simp_word} THEN
     goal_target (asm_simp_tac ((empty_simpset ctxt) 
       addsimprocs [\<^simproc>\<open>simp_bv_plus\<close>, \<^simproc>\<open>simp_bv_minus\<close>, \<^simproc>\<open>simp_bv_plus_commute2\<close>,
                    \<^simproc>\<open>simp_bv_less\<close>, \<^simproc>\<open>simp_bv_eq\<close>, \<^simproc>\<open>simp_bv_lor\<close>,
-                   \<^simproc>\<open>simp_bv_land\<close>, \<^simproc>\<open>simp_bv_lsl\<close>, \<^simproc>\<open>simp_bv_lsr\<close> ])
+                   \<^simproc>\<open>simp_bv_land\<close>, \<^simproc>\<open>simp_bv_lsl\<close>, \<^simproc>\<open>simp_bv_lsr\<close>,
+                   \<^simproc>\<open>simp_bv_xor\<close>, \<^simproc>\<open>simp_bv_xtract\<close> ])
     ) THEN
-    Local_Defs.unfold_tac ctxt @{thms lor_true lor_false bv_eq bv_leq_same}
+    Local_Defs.unfold_tac ctxt @{thms simp_word}
   )
 )
 
@@ -551,20 +659,81 @@ lemma \<open>(100 \<Colon> 64) +\<^sub>b\<^sub>v (Suc 0 \<Colon> 64) = (101 \<Co
   apply simp_words
   ..
 
-lemma \<open>(ext 0 \<Colon> 64 \<sim> hi : 64 - 1 \<sim> lo : 0) = 0 \<Colon> 64\<close>
+lemma \<open>(47 \<Colon> 64) xor\<^sub>b\<^sub>v (765 \<Colon> 64) = (722 \<Colon> 64)\<close>
   apply simp_words
-  unfolding xtract.simps word_inject drop_bit_0 diff_zero id_apply take_bit_of_0 apply (intro conjI)
-  apply linarith
-  apply linarith
-  .
+  ..
 
-lemma \<open>(ext 12342353624567534874568 \<Colon> 64 \<sim> hi : 64 - 1 \<sim> lo : 0) = 1481839255844843464 \<Colon> 64\<close>
+lemma \<open>(ext 0 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = 0 \<Colon> 64\<close>
   apply simp_words
-  unfolding xtract.simps word_inject drop_bit_0 diff_zero id_apply take_bit_of_0
-  unfolding take_bit_Suc_from_most power_numeral Num.pow.simps One_nat_def diff_numeral_Suc pred_numeral_simps diff_zero
-  take_bit_numeral_bit0 take_bit_numeral_bit1 Suc_numeral Num.add_num_simps BitM_plus_one Num.mult_num_simps arith_simps take_bit_0 mult_zero_left mult_zero_right mult_Suc add.right_neutral add_Suc_right
-  apply (intro conjI refl; linarith)
-  .
+  ..
+
+lemma \<open>(ext 12342353624567534874568 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = 1481839255844843464 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
+
+lemma 
+    \<open>(ext 1 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = (1 \<Colon> 64)\<close> 
+    \<open>(ext 0 \<Colon> 64 \<sim> hi : 0 \<sim> lo : 0) = (0 \<Colon> 1)\<close> 
+    \<open>(ext 0 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 63) = (0 \<Colon> 1)\<close>
+  apply (simp_words, standard)
+  apply (simp_words, standard)
+  apply (simp_words, standard)
+  done
+
+lemma \<open>(614 \<Colon> 64) >>\<^sub>b\<^sub>v (Suc 0 \<Colon> 64) = (307 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>ext 853 \<Colon> 64 \<sim> hi : 0 \<sim> lo : 0 = 1 \<Colon> 1\<close>
+  apply simp_words
+  ..
+
+lemma \<open>~\<^sub>b\<^sub>v ext (((((((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64)) >>\<^sub>b\<^sub>v (4 \<Colon> 64)) xor\<^sub>b\<^sub>v ((44 \<Colon> 64)
+                         +\<^sub>b\<^sub>v (721 \<Colon> 64))) >>\<^sub>b\<^sub>v (2 \<Colon> 64)) xor\<^sub>b\<^sub>v (((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64)) >>\<^sub>b\<^sub>v
+                         (4 \<Colon> 64)) xor\<^sub>b\<^sub>v ((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64))) >>\<^sub>b\<^sub>v (Suc 0 \<Colon> 64)) xor\<^sub>b\<^sub>v
+                         (((((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64)) >>\<^sub>b\<^sub>v (4 \<Colon> 64)) xor\<^sub>b\<^sub>v ((44 \<Colon> 64) +\<^sub>b\<^sub>v
+                        (721 \<Colon> 64))) >>\<^sub>b\<^sub>v (2 \<Colon> 64)) xor\<^sub>b\<^sub>v (((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64)) >>\<^sub>b\<^sub>v
+                       (4 \<Colon> 64)) xor\<^sub>b\<^sub>v ((44 \<Colon> 64) +\<^sub>b\<^sub>v (721 \<Colon> 64)) \<sim> hi : 0 \<sim> lo : 0 = (0 \<Colon> 1)\<close>
+  apply simp_words
+  ..  
+
+lemma \<open>(16 \<Colon> 64) =\<^sub>b\<^sub>v (16 \<Colon> 64) = true\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(0 \<Colon> 64) xor\<^sub>b\<^sub>v (1 \<Colon> 64) = (1 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(1 \<Colon> 64) xor\<^sub>b\<^sub>v (0 \<Colon> 64) = 1 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(1 \<Colon> 64) xor\<^sub>b\<^sub>v (1 \<Colon> 64) = (0 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(1 \<Colon> 64) xor\<^sub>b\<^sub>v (1 \<Colon> 64) = 0 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(1 \<Colon> 64) xor\<^sub>b\<^sub>v (1 \<Colon> 64) = 0 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(ext 100 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = (100 \<Colon> 64)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(ext 200 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 63) = (0 \<Colon> 1)\<close>
+  apply simp_words
+  ..
+
+lemma \<open>(712 \<Colon> 64) xor\<^sub>b\<^sub>v (512 \<Colon> 64) = 200 \<Colon> 64\<close>
+  apply simp_words
+  ..
+
 
 (*@{thms and_numerals numeral_One and_zero_eq zero_and_eq}*)
 (*

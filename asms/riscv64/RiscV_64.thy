@@ -4,6 +4,11 @@ begin
 
 text \<open>Architecture size of 32/64/128 bits\<close>
 
+lemma riscv_string_simps[simp]: 
+  \<open>''mem'' \<noteq> ''X0''\<close> \<open>''X0'' \<noteq> ''mem''\<close>
+  \<open>''mem'' \<noteq> ''X1''\<close> \<open>''X1'' \<noteq> ''mem''\<close>
+  by auto
+
 context var_syntax
 begin
 

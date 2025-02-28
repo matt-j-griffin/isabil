@@ -3,7 +3,7 @@ theory Typing_Example
 begin
 
 theorem
- \<open>\<not>(\<Gamma> \<turnstile> (Stmt (If foo (Stmt ((x :\<^sub>t imm\<langle>1\<rangle>) := false) Empty) (Stmt ((x :\<^sub>t imm\<langle>32\<rangle>) := (42 \<Colon> 32)) Empty)) bar) is ok)\<close>
+ \<open>\<not>(\<Gamma> \<turnstile> [If foo [(x :\<^sub>t imm\<langle>1\<rangle>) := false] [(x :\<^sub>t imm\<langle>32\<rangle>) := (42 \<Colon> 32)], bar] is ok)\<close>
   apply clarify
   apply (drule rec_seq_typing_is_okE, clarify)
   apply (drule if_stmt_typing_is_okE)

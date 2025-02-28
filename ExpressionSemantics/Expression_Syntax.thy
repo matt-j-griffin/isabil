@@ -10,14 +10,14 @@ text \<open>Some evaluation rules depend on the type of a value. Since there are
 each type, we avoid duplicating each rule by defining the following metafunction:\<close>
 
 method solve_typeI_scaffold methods recurs = (
-  assumption | 
-  rule type_wordI type_storageI type_unknownI type_trueI type_falseI type_plusI |
-  (rule type_succ_recI, recurs) |
+  rule type_wordI type_storageI type_unknownI type_plusI |
+  (rule type_succ_recI, recurs) | \<comment> \<open>TODO non-recursive\<close>
   (rule type_storage_addrI, recurs) 
 ) 
 
-method solve_typeI = (
-  solve_typeI_scaffold solve_typeI
+method solve_typeI uses add = (
+  (solves \<open>rule add\<close>) | 
+  solve_typeI_scaffold \<open>solve_typeI add: add\<close>
 ) 
 
 instantiation exp :: exp
@@ -154,49 +154,286 @@ where
     by (metis type_word.cases)
   unfolding storage_constructor_exp_def word_constructor_exp_def unknown_constructor_exp_def
   by auto
-termination by (standard, auto)
+termination by lexicographic_order
 
-instance 
+function
+  is_ok_exp :: \<open>exp \<Rightarrow> bool\<close>
+where 
+  \<open>is_ok_exp (num \<Colon> sz) = ((num \<Colon> sz)::val) is ok\<close> |
+  \<open>\<lbrakk>\<forall>num sz. x \<noteq> (num \<Colon> sz)\<rbrakk> \<Longrightarrow> is_ok_exp x = False\<close>
+proof -
+  fix P :: bool
+    and x :: exp
+  assume word: "\<And>num sz. x = num \<Colon> sz \<Longrightarrow> P"
+    and not_word: "\<And>xa. \<lbrakk>\<forall>num sz. xa \<noteq> num \<Colon> sz; x = xa\<rbrakk> \<Longrightarrow> P"
+  thus P
+  unfolding word_constructor_exp_def proof (cases x)
+    case (Val v)
+    thus ?thesis 
+    proof (cases v rule: val_exhaust)
+      case (Word num sz)
+      show ?thesis 
+        apply (rule word)
+        unfolding Word Val word_constructor_exp_def by auto
+    next
+      case (Unknown str t)
+      show ?thesis 
+        apply (rule not_word[OF _ refl])
+        unfolding Unknown Val word_constructor_exp_def by auto
+    next
+      case (Storage mem w v' sz)
+      show ?thesis 
+        apply (rule not_word[OF _ refl])
+        unfolding Storage Val word_constructor_exp_def by auto
+    qed
+  qed auto
+qed (unfold word_constructor_exp_def, auto)
+termination by lexicographic_order
+
+function (* TODO this should be an inductive predicate with a deterministic proof *)
+  typed_ok_exp :: \<open>TypingContext \<Rightarrow> exp \<Rightarrow> Type \<Rightarrow> bool\<close>
+where
+  (* Var *)
+  \<open>typed_ok_exp \<Gamma> (id' :\<^sub>t t) t' = ((id' :\<^sub>t t) \<in> set \<Gamma> \<and> (\<Gamma> is ok) \<and> (t is ok) \<and> t = t')\<close> |
+  (* Load *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1[e\<^sub>2, ed]:usz) t = (sz > 0 \<and> (\<exists>sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<and>
+                                             (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>)) \<and> t = imm\<langle>sz\<rangle>)\<close> |
+  (* Store *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1 with [e\<^sub>2, ed]:usz \<leftarrow> e\<^sub>3) mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> = (sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<and> sz > 0 \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: imm\<langle>sz\<rangle>)
+                                                    \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>) 
+                                                    \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>))\<close> |
+  \<open>typed_ok_exp _ (_ with [_, _]:u_ \<leftarrow> _) imm\<langle>_\<rangle> = False\<close> |
+  (* BinOp *)
+  \<open>typed_ok_exp \<Gamma> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) imm\<langle>sz\<rangle> = ((\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>))\<close> |
+  \<open>typed_ok_exp \<Gamma> (BinOp e\<^sub>1 (LOp lop) e\<^sub>2) t = ((\<exists>sz. (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>)) \<and> t = imm\<langle>1\<rangle>)\<close> | 
+  \<open>typed_ok_exp _ (BinOp _ _ _) mem\<langle>_, _\<rangle> = False\<close> |
+  (* UnOp *)
+  \<open>typed_ok_exp \<Gamma> (UnOp uop e) imm\<langle>sz\<rangle> = (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>)\<close> |
+  \<open>typed_ok_exp _ (UnOp _ _) mem\<langle>_,_\<rangle> = False\<close> |
+  (* Cast *)
+  \<open>typed_ok_exp \<Gamma> (pad:sz[e]) t = (sz > 0 \<and> (\<exists>sz'. sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)) \<and> t = imm\<langle>sz\<rangle>)\<close> |
+  \<open>typed_ok_exp \<Gamma> (extend:sz[e]) t = (sz > 0 \<and> (\<exists>sz'. sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)) \<and> t = imm\<langle>sz\<rangle>)\<close> |
+  \<open>typed_ok_exp \<Gamma> (high:sz[e]) t = (sz > 0 \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)) \<and> t = imm\<langle>sz\<rangle>)\<close> |
+  \<open>typed_ok_exp \<Gamma> (low:sz[e]) t = (sz > 0 \<and> (\<exists>sz'. sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)) \<and> t = imm\<langle>sz\<rangle>)\<close> |
+  (* Let *)
+  \<open>typed_ok_exp \<Gamma> (Let (id' :\<^sub>t t) e\<^sub>1 e\<^sub>2) t' = (id' \<notin> dom\<^sub>\<Gamma> \<Gamma> \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: t) \<and> (((id' :\<^sub>t t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'))\<close> |
+  (* Ite *)
+  \<open>typed_ok_exp \<Gamma> (Ite e\<^sub>1 e\<^sub>2 e\<^sub>3) t = ((\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: t) \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: t))\<close> |
+  (* extract *)
+  \<open>typed_ok_exp \<Gamma> (extract:sz\<^sub>1:sz\<^sub>2[e]) t = (sz\<^sub>1 \<ge> sz\<^sub>2 \<and> (\<exists>sz. (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>)) \<and> t = imm\<langle>Suc (sz\<^sub>1 - sz\<^sub>2)\<rangle>)\<close> |
+  (* concat *)
+  \<open>typed_ok_exp \<Gamma> (e\<^sub>1 \<copyright> e\<^sub>2) t = (\<exists>sz\<^sub>1 sz\<^sub>2. t = imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle> \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<^sub>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>2\<rangle>))\<close> |
+  (* val *)
+  \<open>typed_ok_exp \<Gamma> (Val v) t = (\<Gamma> \<turnstile> v :: t)\<close>
+  unfolding var_constructor_exp_def 
+proof -
+  fix P :: bool
+    and x :: "Var.var list \<times> exp \<times> Type"
+  assume EVarE: "\<And>\<Gamma> id' t t'. x = (\<Gamma>, EVar (id' :\<^sub>t t), t') \<Longrightarrow> P"
+    and LoadE: "\<And>\<Gamma> e\<^sub>1 e\<^sub>2 ed sz t. x = (\<Gamma>, e\<^sub>1[e\<^sub>2, ed]:usz, t) \<Longrightarrow> P"
+    and StoreE:"\<And>\<Gamma> e\<^sub>1 e\<^sub>2 ed sz e\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. x = (\<Gamma>, e\<^sub>1 with [e\<^sub>2, ed]:usz \<leftarrow> e\<^sub>3, mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) \<Longrightarrow> P"
+    and StoreImmE:"\<And>uu uv uw ux uy uz va. x = (uu, uv with [uw, ux]:uuy \<leftarrow> uz, imm\<langle>va\<rangle>) \<Longrightarrow> P"
+    and AopE:"\<And>\<Gamma> e\<^sub>1 aop e\<^sub>2 sz. x = (\<Gamma>, BinOp e\<^sub>1 (AOp aop) e\<^sub>2, imm\<langle>sz\<rangle>) \<Longrightarrow> P"
+    and LopE:"\<And>\<Gamma> e\<^sub>1 lop e\<^sub>2 t. x = (\<Gamma>, BinOp e\<^sub>1 (LOp lop) e\<^sub>2, t) \<Longrightarrow> P"
+    and BopMemE:"\<And>vb vc vd ve vf vg. x = (vb, BinOp vc vd ve, mem\<langle>vf, vg\<rangle>) \<Longrightarrow> P"
+    and UnOpE:"\<And>\<Gamma> uop e sz. x = (\<Gamma>, UnOp uop e, imm\<langle>sz\<rangle>) \<Longrightarrow> P"
+    and UnOpMemE:"\<And>vh vi vj vk vl. x = (vh, UnOp vi vj, mem\<langle>vk, vl\<rangle>) \<Longrightarrow> P"
+    and PadE:"\<And>\<Gamma> sz e t. x = (\<Gamma>, pad:sz[e], t) \<Longrightarrow> P"
+    and ExtendE:"\<And>\<Gamma> sz e t. x = (\<Gamma>, extend:sz[e], t) \<Longrightarrow> P"
+    and HighE:"\<And>\<Gamma> sz e t. x = (\<Gamma>, high:sz[e], t) \<Longrightarrow> P"
+    and LowE:"\<And>\<Gamma> sz e t. x = (\<Gamma>, low:sz[e], t) \<Longrightarrow> P"
+    and LetE:"\<And>\<Gamma> id' t e\<^sub>1 e\<^sub>2 t'. x = (\<Gamma>, exp.Let (id' :\<^sub>t t) e\<^sub>1 e\<^sub>2, t') \<Longrightarrow> P"
+    and IteE:"\<And>\<Gamma> e\<^sub>1 e\<^sub>2 e\<^sub>3 t. x = (\<Gamma>, ite e\<^sub>1 e\<^sub>2 e\<^sub>3, t) \<Longrightarrow> P"
+    and ExtractE:"\<And>\<Gamma> sz\<^sub>1 sz\<^sub>2 e t. x = (\<Gamma>, extract:sz\<^sub>1:sz\<^sub>2[e], t) \<Longrightarrow> P"
+    and ConcatE:"\<And>\<Gamma> e\<^sub>1 e\<^sub>2 t. x = (\<Gamma>, e\<^sub>1 \<copyright> e\<^sub>2, t) \<Longrightarrow> P"
+    and ValE: "\<And>\<Gamma> v t. x = (\<Gamma>, Val v, t) \<Longrightarrow> P"
+  show P
+  proof (cases x)
+    case (fields \<Gamma> e t)
+    show ?thesis 
+    proof (cases e)
+      case (Val v)
+      show ?thesis
+        apply (rule ValE)
+        unfolding Val fields by auto
+    next
+      case (EVar var)
+      show ?thesis
+      proof (cases var rule: var_exhaust)
+        case (Var id t)
+        show ?thesis 
+          apply (rule EVarE)
+          unfolding fields EVar Var by auto 
+      qed
+    next
+      case (Load x31 x32 x33 x34)
+      show ?thesis 
+        apply (rule LoadE)
+        unfolding Load fields by auto
+    next
+      case (Store x41 x42 x43 x44 x45)
+      show ?thesis 
+      proof (cases t)
+        case (Imm x1)
+        show ?thesis 
+          apply (rule StoreImmE)
+          unfolding Store Imm fields by auto
+      next
+        case (Mem x21 x22)
+        show ?thesis 
+          apply (rule StoreE)
+          unfolding Store Mem fields by auto
+      qed
+    next
+      case (BinOp x51 bop x53)
+      show ?thesis 
+      proof (cases t)
+        case (Imm x1)
+        show ?thesis 
+        proof (cases bop)
+          case (AOp x1)
+          show ?thesis
+          apply (rule AopE)
+          unfolding AOp Imm BinOp fields by auto
+        next
+          case (LOp x2)
+          show ?thesis
+            apply (rule LopE)
+            unfolding LOp Imm BinOp fields by auto
+        qed
+      next
+        case (Mem x21 x22)
+        show ?thesis
+          apply (rule BopMemE)
+          unfolding Mem BinOp fields by auto
+      qed
+    next
+      case (UnOp x61 x62)
+      show ?thesis 
+      proof (cases t)
+        case (Imm x1)
+        show ?thesis 
+          apply (rule UnOpE)
+          unfolding Imm UnOp fields by auto
+      next
+        case (Mem x21 x22)
+        show ?thesis 
+          apply (rule UnOpMemE)
+          unfolding Mem UnOp fields by auto
+      qed
+    next
+      case (Cast cast x72 x73)
+      show ?thesis 
+      proof (cases cast)
+        case Unsigned
+        show ?thesis 
+          apply (rule PadE)
+          unfolding Unsigned Cast fields by auto
+      next
+        case Signed
+        show ?thesis 
+          apply (rule ExtendE)
+          unfolding Signed Cast fields by auto
+      next
+        case High
+        show ?thesis 
+          apply (rule HighE)
+          unfolding High Cast fields by auto          
+      next
+        case Low
+        show ?thesis 
+          apply (rule LowE)
+          unfolding Low Cast fields by auto          
+      qed
+    next
+      case (Let var x82 x83)
+      show ?thesis 
+      proof (cases var rule: var_exhaust)
+        case (Var id t)
+        show ?thesis 
+          apply (rule LetE)
+          unfolding Let Var fields by auto
+      qed
+    next
+      case (Ite x91 x92 x93)
+      show ?thesis 
+        apply (rule IteE)
+        unfolding Ite fields by auto
+    next
+      case (Extract x101 x102 x103)
+      show ?thesis 
+        apply (rule ExtractE)
+        unfolding Extract fields by auto
+    next
+      case (Concat x111 x112)
+      show ?thesis 
+        apply (rule ConcatE)
+        unfolding Concat fields by auto
+    qed
+  qed
+qed auto
+termination by lexicographic_order
+
+instance
   apply standard 
   apply auto
   unfolding storage_constructor_exp_def word_constructor_exp_def unknown_constructor_exp_def 
-            var_constructor_exp_def true_word false_word bop_syntax 
-  by auto
-
+            var_constructor_exp_def bop_syntax 
+  apply auto
+proof -
+  fix \<Gamma> :: "Var.var list"
+    and a :: exp
+    and t :: Type
+  assume typed_ok: "\<Gamma> \<turnstile> a :: t"
+  thus "t is ok"
+  proof (induct rule: typed_ok_exp.induct)
+    case (18 \<Gamma> v t)
+    thus ?case 
+      unfolding typed_ok_exp.simps
+      by (rule t_is_ok)
+  qed auto
+qed
+    
 end
 
 subsubsection \<open>Syntax for UOPs\<close>
 
-lemma uop_simps[simp]:
-  \<open>- w \<noteq> Val v\<close> \<open>Val v \<noteq> - w\<close>
-  \<open>- w \<noteq> e\<^sub>1 \<copyright> e\<^sub>2\<close> \<open>(e\<^sub>1 \<copyright> e\<^sub>2) \<noteq> - w\<close>
-  \<open>- w \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close> \<open>(e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> - w\<close>
-  \<open>- w \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close> \<open>(e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<noteq> - w\<close>
-  \<open>- w \<noteq> (Cast cast sz e)\<close> \<open>(Cast cast sz e) \<noteq> - w\<close>
-  \<open>- w \<noteq> (Let var e\<^sub>1 e\<^sub>2)\<close> \<open>(Let var e\<^sub>1 e\<^sub>2) \<noteq> - w\<close>
-  \<open>- w \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close> \<open>(ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> - w\<close>
-  \<open>- w \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close> \<open>(extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> - w\<close>
-  \<open>- w \<noteq> BinOp e\<^sub>1 bop e\<^sub>2\<close> \<open>BinOp e\<^sub>1 bop e\<^sub>2  \<noteq> - w\<close>
-  \<open>\<sim> w \<noteq> Val v\<close> \<open>Val v \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> e\<^sub>1 \<copyright> e\<^sub>2\<close> \<open>(e\<^sub>1 \<copyright> e\<^sub>2) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close> \<open>(e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close> \<open>(e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (Cast cast sz e)\<close> \<open>(Cast cast sz e) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (Let var e\<^sub>1 e\<^sub>2)\<close> \<open>(Let var e\<^sub>1 e\<^sub>2) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close> \<open>(ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close> \<open>(extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> BinOp e\<^sub>1 bop e\<^sub>2\<close> \<open>BinOp e\<^sub>1 bop e\<^sub>2  \<noteq> \<sim> w\<close>
-  \<open>\<sim> w \<noteq> - w'\<close> \<open>- w' \<noteq> \<sim> w\<close>
-  unfolding uminus_exp_def not_exp_def by simp_all
+locale uop_lemmas =
+    fixes uop_fun :: \<open>exp \<Rightarrow> exp\<close> and uop :: UnOp
+  assumes uop_simps: \<open>\<And>e. uop_fun e = UnOp uop e\<close>
+begin
 
-lemma inject[simp]: 
-  \<open>(- v = - v') \<longleftrightarrow> (v = v')\<close>
-  \<open>(UnOp uop v = - v') \<longleftrightarrow> (uop = Neg \<and> v = v')\<close>
-  \<open>(- v = UnOp uop v') \<longleftrightarrow> (Neg = uop \<and> v = v')\<close>
-  \<open>(\<sim> v = \<sim> v') \<longleftrightarrow> (v = v')\<close>
-  \<open>(UnOp uop v = \<sim> v') \<longleftrightarrow> (uop = Not \<and> v = v')\<close>
-  \<open>(\<sim> v = UnOp uop v') \<longleftrightarrow> (Not = uop \<and> v = v')\<close>
-  unfolding uminus_exp_def not_exp_def by auto
+lemma simps[simp]:
+  \<open>uop_fun w \<noteq> Val v\<close> \<open>Val v \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> e\<^sub>1 \<copyright> e\<^sub>2\<close> \<open>(e\<^sub>1 \<copyright> e\<^sub>2) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (e\<^sub>1[e\<^sub>2, en]:usz)\<close> \<open>(e\<^sub>1[e\<^sub>2, en]:usz) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3)\<close> \<open>(e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (Cast cast sz e)\<close> \<open>(Cast cast sz e) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (Let var e\<^sub>1 e\<^sub>2)\<close> \<open>(Let var e\<^sub>1 e\<^sub>2) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3)\<close> \<open>(ite e\<^sub>1 e\<^sub>2 e\<^sub>3) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> (extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e])\<close> \<open>(extract:sz\<^sub>l\<^sub>o\<^sub>w:sz\<^sub>h\<^sub>i\<^sub>g\<^sub>h[e]) \<noteq> uop_fun w\<close>
+  \<open>uop_fun w \<noteq> BinOp e\<^sub>1 bop e\<^sub>2\<close> \<open>BinOp e\<^sub>1 bop e\<^sub>2  \<noteq> uop_fun w\<close>
+  unfolding uop_simps by simp_all
+
+lemma unop_inject[simp]: 
+    \<open>(uop_fun e = UnOp uop' e') \<longleftrightarrow> (uop = uop' \<and> e = e')\<close>
+    \<open>(UnOp uop' e' = uop_fun e) \<longleftrightarrow> (uop' = uop \<and> e' = e)\<close>
+  by (auto simp add: uop_simps)
+
+lemma inject[simp]: \<open>(uop_fun e = uop_fun e') \<longleftrightarrow> (e = e')\<close>
+  by (simp add: uop_simps)
+
+lemma capture_avoiding_sub[simp]:
+  \<open>[v\<sslash>var](uop_fun e) = uop_fun ([v\<sslash>var]e)\<close>
+  unfolding uop_simps by auto
+end
+
+interpretation not: uop_lemmas not Not by (standard, unfold not_exp_def,  rule refl)
+interpretation neg: uop_lemmas uminus Neg by (standard, unfold uminus_exp_def,  rule refl)
+
+lemma uop_simps[simp]:
+  fixes w :: exp shows \<open>\<sim> w \<noteq> - w'\<close> \<open>- w' \<noteq> \<sim> w\<close>
+  unfolding uminus_exp_def not_exp_def by simp_all
 
 subsubsection \<open>Syntax for BOPs\<close>
 
@@ -243,7 +480,6 @@ lemma capture_avoiding_sub[simp]:
   unfolding bop_simps by auto
 
 end
-
 
 text \<open>Lemmas that target arithmetic BOPs\<close>
 
@@ -350,10 +586,10 @@ lemma not_val'[simp]: \<open>\<And>v. Val v \<noteq> exp\<close>
   using not_val by blast
 
 lemma not_true[simp]: \<open>exp \<noteq> true\<close> \<open>true \<noteq> exp\<close>
-  unfolding true_word word_constructor_exp_def by (rule not_val not_val')+
+  unfolding  word_constructor_exp_def by (rule not_val not_val')+
 
 lemma not_false[simp]: \<open>exp \<noteq> false\<close> \<open>false \<noteq> exp\<close>
-  unfolding false_word word_constructor_exp_def by (rule not_val not_val')+
+  unfolding  word_constructor_exp_def by (rule not_val not_val')+
 
 lemma not_bv_concat[simp]: \<open>exp \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close> \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2) \<noteq> exp\<close>
   unfolding bv_concat.simps unfolding word_constructor_exp_def by (rule not_val not_val')+
@@ -443,10 +679,10 @@ interpretation unknown: neq_exp \<open>(unknown[str]: t)\<close>
   unfolding unknown_constructor_exp_def by (standard, auto)
 
 interpretation true: neq_exp \<open>true\<close>
-  unfolding true_word by (standard, auto)
+  by (standard, auto)
 
 interpretation false: neq_exp \<open>false\<close>
-  unfolding false_word by (standard, auto)
+  by (standard, auto)
 
 interpretation concat: neq_exp \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   unfolding bv_concat.simps by (standard, auto)
@@ -794,5 +1030,225 @@ lemma capture_avoiding_var_neq[intro]: \<open>var \<noteq> (nm :\<^sub>t tp) \<L
 
 lemma capture_avoiding_var_name_neq[intro]: \<open>nm1 \<noteq> nm2 \<Longrightarrow> [val\<sslash>(nm1 :\<^sub>t tp)](nm2 :\<^sub>t tp) = (nm2 :\<^sub>t tp)\<close>
   by (simp add: capture_avoiding_var_neq)
+
+lemma load_exp_typed_okI:
+  assumes \<open>sz dvd sz'\<close> and \<open>sz' > 0\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>nat', sz\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>nat'\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz' :: imm\<langle>sz'\<rangle>\<close>
+  using assms by auto
+
+lemma load_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1[e\<^sub>2, ed]:usz :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>\<exists>sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. sz\<^sub>m\<^sub>e\<^sub>m dvd sz \<and> sz > 0 \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>)\<close>
+  using assms by auto
+
+lemma store_exp_typed_okI:
+  assumes \<open>sz\<^sub>m\<^sub>e\<^sub>m dvd sz'\<close> and \<open>sz' > 0\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>3 :: imm\<langle>sz'\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> e\<^sub>1 with [e\<^sub>2, ed]:usz' \<leftarrow> e\<^sub>3 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+  using assms by auto
+
+lemma store_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 with [e\<^sub>2, ed]:usz' \<leftarrow> e\<^sub>3 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+    shows \<open>\<exists>sz\<^sub>m\<^sub>e\<^sub>m sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. sz\<^sub>m\<^sub>e\<^sub>m dvd sz' \<and> sz' > 0 \<and> (\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>)
+            \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: imm\<langle>sz'\<rangle>)\<close>
+  using assms by auto
+
+lemma aop_exp_typed_okI: 
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) :: imm\<langle>sz\<rangle>\<close>
+  using assms by auto
+
+lemma aop_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> (BinOp e\<^sub>1 (AOp aop) e\<^sub>2) :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>(\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>)\<close>
+  using assms by auto
+
+lemma lop_exp_typed_okI: 
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (BinOp e\<^sub>1 (LOp aop) e\<^sub>2) :: imm\<langle>1\<rangle>\<close>
+  using assms unfolding typed_ok_exp.simps by auto
+
+lemma lop_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> (BinOp e\<^sub>1 (LOp aop) e\<^sub>2) :: imm\<langle>1\<rangle>\<close>
+    shows \<open>\<exists>sz. (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<rangle>)\<close>
+  using assms unfolding typed_ok_exp.simps by simp
+
+lemma uop_exp_typed_okI:
+  assumes \<open>\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (UnOp uop e) :: imm\<langle>sz\<rangle>\<close>
+  using assms by auto
+
+lemma not_exp_typed_okI:
+    fixes e :: exp
+  assumes \<open>\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>\<close>
+  shows \<open>\<Gamma> \<turnstile> (\<sim> e) :: imm\<langle>sz\<rangle>\<close>
+  unfolding not_exp_def
+  using assms by (rule uop_exp_typed_okI)
+
+lemma uop_exp_typed_okE:
+  assumes \<open>\<Gamma> \<turnstile> (UnOp uop e) :: imm\<langle>sz\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>\<close>
+  using assms by auto
+
+lemma cast_widen_exp_typed_okI:
+  assumes \<open>sz > 0\<close> and \<open>sz \<ge> nat'\<close> and \<open> \<Gamma> \<turnstile> e :: imm\<langle>nat'\<rangle>\<close>
+      and \<open>widen = Signed \<or> widen = Unsigned\<close>
+    shows \<open>\<Gamma> \<turnstile> widen:sz[e] :: imm\<langle>sz\<rangle>\<close>
+  using assms by auto
+
+lemma cast_widen_exp_typed_okE:
+  assumes \<open>\<Gamma> \<turnstile> widen:sz[e] :: imm\<langle>sz\<rangle>\<close>
+      and \<open>widen = Signed \<or> widen = Unsigned\<close>
+    shows \<open>\<exists>sz'. sz > 0 \<and> sz \<ge> sz' \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)\<close>
+  using assms by auto
+
+lemma cast_narrow_exp_typed_okI:
+  assumes \<open>sz > 0\<close> and \<open>nat' \<ge> sz\<close> and \<open>\<Gamma> \<turnstile> e :: imm\<langle>nat'\<rangle>\<close>
+      and \<open>narrow = High \<or> narrow = Low\<close>
+    shows \<open>\<Gamma> \<turnstile> (narrow:sz[e]) :: imm\<langle>sz\<rangle>\<close>
+  using assms by auto
+
+lemma cast_narrow_exp_typed_okE:
+  assumes \<open>\<Gamma> \<turnstile> (narrow:sz[e]) :: imm\<langle>sz\<rangle>\<close>
+      and \<open>narrow = High \<or> narrow = Low\<close>
+    shows \<open>\<exists>sz'. sz > 0 \<and> sz' \<ge> sz \<and> (\<Gamma> \<turnstile> e :: imm\<langle>sz'\<rangle>)\<close>
+  using assms by auto
+
+(*
+lemma T_LET:
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: t\<close>
+      and \<open>name \<notin> dom\<^sub>\<Gamma> \<Gamma>\<close> (* TODO this is inferred *)
+      and \<open>((name, t) # \<Gamma>) \<turnstile> e\<^sub>2 :: t'\<close>
+    shows \<open>\<Gamma> \<turnstile> (Let (name, t) e\<^sub>1 e\<^sub>2) :: t'\<close>
+  using assms by auto
+*)
+
+lemma ite_exp_typed_okI:
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>1\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: t\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>3 :: t\<close>
+    shows \<open>\<Gamma> \<turnstile> ite e\<^sub>1 e\<^sub>2 e\<^sub>3 :: t\<close>
+  using assms by auto
+
+lemma ite_exp_typed_okE:
+  assumes \<open>\<Gamma> \<turnstile> (ite e\<^sub>1 e\<^sub>2 e\<^sub>3) :: t\<close>
+    shows \<open>(\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: t) \<and> (\<Gamma> \<turnstile> e\<^sub>3 :: t)\<close>
+  using assms by auto
+
+lemma extract_exp_typed_okI: 
+  assumes \<open>\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>\<close> and \<open>sz\<^sub>1 \<ge> sz\<^sub>2\<close>
+    shows \<open>\<Gamma> \<turnstile> extract:sz\<^sub>1:sz\<^sub>2[e] :: imm\<langle>Suc (sz\<^sub>1 - sz\<^sub>2)\<rangle>\<close>
+  using assms unfolding typed_ok_exp.simps by blast
+
+lemma extract_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> extract:sz\<^sub>1:sz\<^sub>2[e] :: imm\<langle>Suc (sz\<^sub>1 - sz\<^sub>2)\<rangle>\<close>
+    shows \<open>\<exists>sz. (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>) \<and> sz\<^sub>1 \<ge> sz\<^sub>2\<close>
+  using assms unfolding typed_ok_exp.simps by auto
+  
+lemma concat_exp_typed_okI: 
+  assumes \<open>\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<^sub>1\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>2\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (e\<^sub>1::exp) \<copyright> e\<^sub>2 :: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
+  using assms unfolding typed_ok_exp.simps by auto
+
+lemma concat_exp_typed_okE: 
+  assumes \<open>\<Gamma> \<turnstile> (e\<^sub>1::exp) \<copyright> e\<^sub>2 :: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
+    shows \<open>\<exists>sz\<^sub>1 sz\<^sub>2. (\<Gamma> \<turnstile> e\<^sub>1 :: imm\<langle>sz\<^sub>1\<rangle>) \<and> (\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>2\<rangle>)\<close>
+  using assms unfolding typed_ok_exp.simps by auto
+  
+lemmas T_LOAD = load_exp_typed_okI
+lemmas T_STORE = store_exp_typed_okI
+lemmas T_AOP = aop_exp_typed_okI
+lemmas T_LOP = lop_exp_typed_okI
+lemmas T_UOP = uop_exp_typed_okI
+(*lemmas T_NEG = neg_exp_typed_okI*)
+lemmas T_NOT = not_exp_typed_okI
+lemmas T_CAST_WIDEN = cast_widen_exp_typed_okI
+lemmas T_CAST_NARROW = cast_narrow_exp_typed_okI
+lemmas T_ITE = ite_exp_typed_okI
+lemmas T_EXTRACT = extract_exp_typed_okI
+lemmas T_CONCAT = concat_exp_typed_okI
+
+(*
+context value_typed_ok
+begin
+
+
+lemma T_MEM_val:
+  \<open>\<And>nat sz num\<^sub>1 v v' \<Gamma>. \<lbrakk>(num\<^sub>1 \<Colon> nat) is ok; sz > 0; \<Gamma> \<turnstile> v :: mem\<langle>nat, sz\<rangle>;
+                          \<Gamma> \<turnstile> v' :: imm\<langle>sz\<rangle>\<rbrakk>
+                     \<Longrightarrow> \<Gamma> \<turnstile> (v[(num\<^sub>1 \<Colon> nat) \<leftarrow> v', sz])::val :: mem\<langle>nat, sz\<rangle>\<close>
+  apply simp
+  apply (rule word_is_okE)
+   by auto
+
+
+lemma T_MEM_exp:
+  \<open>\<And>nat sz num\<^sub>1 v v' \<Gamma>. \<lbrakk>(num\<^sub>1 \<Colon> nat) is ok; sz > 0; \<Gamma> \<turnstile> v :: mem\<langle>nat, sz\<rangle>;
+                          \<Gamma> \<turnstile> v' :: imm\<langle>sz\<rangle>\<rbrakk>
+                     \<Longrightarrow> \<Gamma> \<turnstile> (v[(num\<^sub>1 \<Colon> nat) \<leftarrow> v', sz])::exp :: mem\<langle>nat, sz\<rangle>\<close>
+  unfolding storage_constructor_exp_def typed_ok_exp.simps
+  by (rule T_MEM_val, blast+)
+
+
+
+lemma storage_add_is_ok:
+  assumes \<open>\<Gamma> \<turnstile> mem :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+      and \<open>(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) is ok\<close>
+      and \<open>\<Gamma> \<turnstile> v\<^sub>v\<^sub>a\<^sub>l :: imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (mem[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v\<^sub>v\<^sub>a\<^sub>l, sz\<^sub>m\<^sub>e\<^sub>m])::val :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+  apply (rule T_MEM_val)
+  apply (rule assms(2))
+  using assms typed_ok_val.elims(2) apply fastforce
+  using assms(1, 3) by blast+
+(*
+lemma storage_add_is_ok':
+  assumes \<open>\<Gamma> \<turnstile> mem :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+      and \<open>\<Gamma> \<turnstile> Immediate w\<^sub>a\<^sub>d\<^sub>d\<^sub>r :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+      and \<open>\<Gamma> \<turnstile> v\<^sub>v\<^sub>a\<^sub>l :: imm\<langle>sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+    shows \<open>\<Gamma> \<turnstile> (mem[w\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v\<^sub>v\<^sub>a\<^sub>l, sz\<^sub>m\<^sub>e\<^sub>m])::val :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close>
+  using assms apply (rule_tac word_exhaust[of w\<^sub>a\<^sub>d\<^sub>d\<^sub>r], auto)
+  apply (drule storage_add_is_ok)
+  sledgehammer
+  apply (rule storage_add_is_ok)
+  
+  using T_MEM_val
+  using T_MEM_val
+  using assms
+  
+  apply (rule_tac is_ok_judgement_type_val_class.T_MEM_Word_cons)
+  using typing_val_immediate typing_val_mem by blast+
+*)
+end
+(*
+method solve_T_EXP = (
+  match conclusion in
+    \<open>_ \<turnstile> _[_, _]:u_ :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_LOAD, linarith, linarith, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> _ with [_, _]:u_ \<leftarrow> _ :: mem\<langle>_, _\<rangle>\<close> \<Rightarrow> \<open>rule T_STORE, linarith, linarith, solve_T_EXP, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> ite _ _ _ :: _\<close> \<Rightarrow> \<open>rule T_ITE, solve_T_EXP, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> extract:_:_[_] :: imm\<langle>_ - _ + _\<rangle>\<close> \<Rightarrow> \<open>rule T_EXTRACT, solve_T_EXP, linarith\<close>
+  \<bar> \<open>_ \<turnstile> (_::exp) @ _ :: imm\<langle>_ + _\<rangle>\<close> \<Rightarrow> \<open>rule T_CONCAT, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> pad:_[_] :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_CAST_WIDEN, linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar> \<open>_ \<turnstile> extend:_[_] :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_CAST_WIDEN, linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar> \<open>_ \<turnstile> high:_[_] :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_CAST_NARROW, linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar> \<open>_ \<turnstile> low:_[_] :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_CAST_NARROW, linarith, linarith, solve_T_EXP, blast\<close>
+  \<bar> \<open>_ \<turnstile> (UnOp _ _) :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_UOP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> (BinOp _ (AOp _) _) :: imm\<langle>_\<rangle>\<close> \<Rightarrow> \<open>rule T_AOP, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> (BinOp _ (LOp _) _) :: imm\<langle>1\<rangle>\<close> \<Rightarrow> \<open>rule T_LOP, solve_T_EXP, solve_T_EXP\<close>
+  \<bar> \<open>_ \<turnstile> (_ :\<^sub>t _) :: _\<close> \<Rightarrow> \<open>rule T_VAR, linarith, solve_TG, solve_TWF\<close>
+)
+*)
+
+lemma T_WIDE_LOAD: 
+  assumes \<open>0 < sz'\<close> and \<open>sz' \<le> sz\<close> and \<open>sz\<^sub>m\<^sub>e\<^sub>m dvd sz'\<close>
+      and \<open>\<Gamma> \<turnstile> e\<^sub>1 :: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<close> and \<open>\<Gamma> \<turnstile> e\<^sub>2 :: imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+      and \<open>cast = extend \<or> cast = pad\<close>
+    shows \<open>\<Gamma> \<turnstile> cast:sz[e\<^sub>1[e\<^sub>2, el]:usz'] :: imm\<langle>sz\<rangle>\<close>
+  apply (rule T_CAST_WIDEN[of _ sz'])
+  using assms(1,2) apply linarith+
+  subgoal
+    apply (rule T_LOAD[of sz\<^sub>m\<^sub>e\<^sub>m _ _ _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r])
+    using assms(1,3-) by blast+
+  using assms(6) by assumption
+*)
+
+method typec_exp = (fastforce)
 
 end

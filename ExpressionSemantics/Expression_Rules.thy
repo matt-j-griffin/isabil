@@ -25,10 +25,10 @@ where
   StoreStepVal: \<open>\<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<leadsto> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3')\<close> |
   StoreStepAddr: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> (e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> (Val v\<^sub>3))\<close> |
   StoreStepMem: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 with [(Val v\<^sub>2), en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto> (e\<^sub>1' with [(Val v\<^sub>2), en]:usz \<leftarrow> (Val v\<^sub>3))\<close> |
-  StoreWordBe: \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast High sz\<^sub>m\<^sub>e\<^sub>m (Val val)))\<rbrakk> \<Longrightarrow>
-    \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz \<leftarrow> (Val val)) \<leadsto> (e\<^sub>1 with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast Low (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close> |
-  StoreWordEl: \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast Low sz\<^sub>m\<^sub>e\<^sub>m (Val val)))\<rbrakk> \<Longrightarrow>
-    \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<leadsto> (e\<^sub>1 with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast High (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close> |
+  StoreWordBe: \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<rbrakk> \<Longrightarrow>
+    \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz \<leftarrow> (Val val)) \<leadsto> (((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast High sz\<^sub>m\<^sub>e\<^sub>m (Val val))) with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast Low (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close> |
+  StoreWordEl: \<open>\<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>\<rbrakk> \<Longrightarrow>
+    \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz \<leftarrow> (Val val)) \<leadsto> (((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Cast Low sz\<^sub>m\<^sub>e\<^sub>m (Val val))) with [(succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)), el]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m) \<leftarrow> (Cast High (sz - sz\<^sub>m\<^sub>e\<^sub>m) (Val val)))\<close> |
   StoreVal: \<open>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow> \<Delta> \<turnstile> ((Val v) with [(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (Val v')) \<leadsto> (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m])\<close> |
   StoreUnAddr: \<open>type v = t \<Longrightarrow> \<Delta> \<turnstile> ((Val v) with [unknown[str]: t', ed]:usz \<leftarrow> (Val v')) \<leadsto> (unknown[str]: t)\<close> |
 
@@ -107,6 +107,106 @@ where
   CastHigh: \<open>\<Delta> \<turnstile> (high:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz' - 1) \<sim> lo : (sz' - sz))\<close> |
   CastSigned: \<open>\<Delta> \<turnstile> (extend:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close> |
   CastUnsigned: \<open>\<Delta> \<turnstile> (pad:sz[(num \<Colon> sz')]) \<leadsto> (ext (num \<Colon> sz') \<sim> hi : (sz - 1) \<sim> lo : 0)\<close>
+
+lemma step_exp_induct[consumes 1, case_names VarIn VarNotIn LoadStepAddr LoadStepMem LoadByte 
+      LoadByteFromNext LoadUnMem LoadUnAddr LoadWordBe LoadWordEl StoreStepVal StoreStepAddr 
+      StoreStepMem StoreWordBe StoreWordEl StoreVal StoreUnAddr LetStep Let IfStepCond IfStepThen 
+      IfStepElse IfTrue IfFalse IfUnknown BopRhs BopLhs AopUnkLhs AopUnkRhs LopUnkLhs LopUnkRhs Plus 
+      Minus Times Div SDiv Mod SMod Lsl Lsr Asr LAnd LOr XOr EqSame EqDiff NeqSame NeqDiff Less 
+      LessEq SignedLess SignedLessEq Uop UopUnk Not Neg ConcatRhs ConcatLhs ConcatRhsUn ConcatLhsUn 
+      Concat Extract ExtractReduce ExtractUn CastReduce CastUnk CastLow CastHigh CastSigned 
+      CastUnsigned]:
+  assumes steps: \<open>\<Delta> \<turnstile> e \<leadsto> e'\<close>
+      and inducts: \<open>\<And>name' t val. (name' :\<^sub>t t, val) \<in>\<^sub>\<Delta> \<Delta> \<Longrightarrow> P (name' :\<^sub>t t) (Val val)\<close>
+           \<open>\<And>name' t str. name' :\<^sub>t t \<notin> dom \<Delta> \<Longrightarrow> P (name' :\<^sub>t t) unknown[str]: t\<close>
+           \<open>\<And> e\<^sub>2 e\<^sub>2' e\<^sub>1 ed sz. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> P e\<^sub>2 e\<^sub>2' \<Longrightarrow> P e\<^sub>1[e\<^sub>2, ed]:usz e\<^sub>1[e\<^sub>2', ed]:usz\<close>
+           \<open>\<And>e\<^sub>1 e\<^sub>1' v\<^sub>2 ed sz. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P e\<^sub>1[Val v\<^sub>2, ed]:usz e\<^sub>1'[Val v\<^sub>2, ed]:usz\<close>
+           \<open>\<And>v num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r v' sz ed. P v[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v', sz][num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, ed]:usz (Val v')\<close>
+\<open>\<And>w num\<^sub>2 sz\<^sub>2 v v' sz ed. w \<noteq> num\<^sub>2 \<Colon> sz\<^sub>2 \<Longrightarrow> P v[w \<leftarrow> v', sz][num\<^sub>2 \<Colon> sz\<^sub>2, ed]:usz Val v[num\<^sub>2 \<Colon> sz\<^sub>2, ed]:usz\<close>
+\<open>\<And>str t v ed sz. P unknown[str]: t[Val v, ed]:usz unknown[str]: imm\<langle>sz\<rangle>\<close>
+\<open>\<And>v w v' sz str t ed sz'. P v[w \<leftarrow> v', sz][unknown[str]: t, ed]:usz' unknown[str]: imm\<langle>sz'\<rangle>\<close>
+\<open>\<And>sz sz\<^sub>m\<^sub>e\<^sub>m v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num.
+    sz\<^sub>m\<^sub>e\<^sub>m < sz \<Longrightarrow>
+    type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow>
+    P ((Val v)[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz) ((Val v)[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m \<copyright> ((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz - sz\<^sub>m\<^sub>e\<^sub>m))\<close>
+\<open>\<And>v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m sz num.
+    type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow>
+    sz\<^sub>m\<^sub>e\<^sub>m < sz \<Longrightarrow> P ((Val v)[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz) ((Val v)[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<copyright> ((Val v)[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m))\<close>
+\<open>\<And>e\<^sub>3 e\<^sub>3' e\<^sub>1 e\<^sub>2 en sz. \<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3' \<Longrightarrow> P e\<^sub>3 e\<^sub>3' \<Longrightarrow> P e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3 e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3'\<close>
+\<open>\<And>e\<^sub>2 e\<^sub>2' e\<^sub>1 en sz v\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> P e\<^sub>2 e\<^sub>2' \<Longrightarrow> P e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> Val v\<^sub>3 e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> Val v\<^sub>3\<close>
+\<open>\<And>e\<^sub>1 e\<^sub>1' v\<^sub>2 en sz v\<^sub>3. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P e\<^sub>1 with [Val v\<^sub>2, en]:usz \<leftarrow> Val v\<^sub>3 e\<^sub>1' with [Val v\<^sub>2, en]:usz \<leftarrow> Val v\<^sub>3\<close>
+\<open>\<And>sz\<^sub>m\<^sub>e\<^sub>m sz v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num val.
+    sz\<^sub>m\<^sub>e\<^sub>m < sz \<Longrightarrow>
+    type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow>
+    P ((Val v) with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz \<leftarrow> Val val)
+     (((Val v) with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> high:sz\<^sub>m\<^sub>e\<^sub>m[Val val]) with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> low:sz - sz\<^sub>m\<^sub>e\<^sub>m[Val val])\<close>
+\<open>\<And>sz\<^sub>m\<^sub>e\<^sub>m sz v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r num val.
+    sz\<^sub>m\<^sub>e\<^sub>m < sz \<Longrightarrow>
+    type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow>
+    P (Val v with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz \<leftarrow> Val val)
+     ((Val v with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> low:sz\<^sub>m\<^sub>e\<^sub>m[Val val]) with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> high:sz - sz\<^sub>m\<^sub>e\<^sub>m[Val val])\<close>
+\<open>\<And>v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m num ed v'.
+    type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle> \<Longrightarrow> P Val v with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, ed]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> Val v' v[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]\<close>
+\<open>\<And>v t str t' ed sz v'. type v = t \<Longrightarrow> P (Val v with [unknown[str]: t', ed]:usz \<leftarrow> Val v') unknown[str]: t\<close>
+\<open>\<And>e\<^sub>1 e\<^sub>1' var e\<^sub>2. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P (exp.Let var e\<^sub>1 e\<^sub>2) (exp.Let var e\<^sub>1' e\<^sub>2)\<close>
+\<open>\<And>var v e. P (exp.Let var (Val v) e) ([v\<sslash>var]e)\<close>
+\<open>\<And>e\<^sub>1 e\<^sub>1' v\<^sub>2 v\<^sub>3. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P ite e\<^sub>1 Val v\<^sub>2 Val v\<^sub>3 ite e\<^sub>1' Val v\<^sub>2 Val v\<^sub>3\<close>
+\<open>\<And>e\<^sub>2 e\<^sub>2' e\<^sub>1 v\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> P e\<^sub>2 e\<^sub>2' \<Longrightarrow> P ite e\<^sub>1 e\<^sub>2 Val v\<^sub>3 ite e\<^sub>1 e\<^sub>2' Val v\<^sub>3\<close>
+\<open>\<And>e\<^sub>3 e\<^sub>3' e\<^sub>1 e\<^sub>2. \<Delta> \<turnstile> e\<^sub>3 \<leadsto> e\<^sub>3' \<Longrightarrow> P e\<^sub>3 e\<^sub>3' \<Longrightarrow> P ite e\<^sub>1 e\<^sub>2 e\<^sub>3 ite e\<^sub>1 e\<^sub>2 e\<^sub>3'\<close>
+\<open>\<And>v\<^sub>2 v\<^sub>3. P ite true Val v\<^sub>2 Val v\<^sub>3 (Val v\<^sub>2)\<close>
+\<open>\<And>v\<^sub>2 v\<^sub>3. P ite false Val v\<^sub>2 Val v\<^sub>3 (Val v\<^sub>3)\<close>
+\<open>\<And>v\<^sub>2 t' str t v\<^sub>3. type v\<^sub>2 = t' \<Longrightarrow> P (ite (unknown[str]: t) Val v\<^sub>2 Val v\<^sub>3) unknown[str]: t'\<close>
+\<open>\<And>e\<^sub>2 e\<^sub>2' v bop. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> P e\<^sub>2 e\<^sub>2' \<Longrightarrow> P (BinOp (Val v) bop e\<^sub>2) (BinOp (Val v) bop e\<^sub>2')\<close>
+\<open>\<And>e\<^sub>1 e\<^sub>1' bop e\<^sub>2. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P (BinOp e\<^sub>1 bop e\<^sub>2) (BinOp e\<^sub>1' bop e\<^sub>2)\<close>
+\<open>\<And>str t aop e. P (BinOp unknown[str]: t (AOp aop) e) unknown[str]: t\<close>
+\<open>\<And>e aop str t. P (BinOp e (AOp aop) unknown[str]: t) unknown[str]: t\<close>
+\<open>\<And>str t lop e. P (BinOp (unknown[str]: t) (LOp lop) e) (unknown[str]: imm\<langle>1\<rangle>)\<close>
+\<open>\<And>e lop str t. P (BinOp e (LOp lop) unknown[str]: t) unknown[str]: imm\<langle>1\<rangle>\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) + (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) - (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) * (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) *\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) div (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) div\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) sdiv (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) div\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) mod (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) %\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) smod (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) %\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) << (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) <<\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) >> (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) >>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) >>> (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) >>>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) && (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) || (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) xor (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) xor\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num sz. P (BinOp (num \<Colon> sz) (LOp Eq) (num \<Colon> sz)) true\<close>
+\<open>\<And>num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2. (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2) = (true::word) \<Longrightarrow> P (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Eq) (num\<^sub>2 \<Colon> sz\<^sub>2)) false\<close>
+\<open>\<And>num sz. P (BinOp (num \<Colon> sz) (LOp Neq) (num \<Colon> sz)) false\<close>
+\<open>\<And>num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2. (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz\<^sub>2) = (true::word) \<Longrightarrow> P (BinOp (num\<^sub>1 \<Colon> sz\<^sub>1) (LOp Neq) (num\<^sub>2 \<Colon> sz\<^sub>2)) true\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) lt (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) <\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) le (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) slt (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) <\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>num\<^sub>1 sz num\<^sub>2. P ((num\<^sub>1 \<Colon> sz) sle (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) \<le>\<^sub>s\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))\<close>
+\<open>\<And>e e' uop. \<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> P e e' \<Longrightarrow> P (UnOp uop e) (UnOp uop e')\<close>
+\<open>\<And>uop str t. P (UnOp uop unknown[str]: t) unknown[str]: t\<close>
+\<open>\<And>num sz. P (\<sim> (num \<Colon> sz)) (~\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
+\<open>\<And>num sz. P (- (num \<Colon> sz)) (-\<^sub>b\<^sub>v (num \<Colon> sz))\<close>
+\<open>\<And>e\<^sub>2 e\<^sub>2' e\<^sub>1. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> P e\<^sub>2 e\<^sub>2' \<Longrightarrow> P (e\<^sub>1 \<copyright> e\<^sub>2) (e\<^sub>1 \<copyright> e\<^sub>2')\<close>
+\<open>\<And>e\<^sub>1 e\<^sub>1' v\<^sub>2. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> P e\<^sub>1 e\<^sub>1' \<Longrightarrow> P (e\<^sub>1 \<copyright> Val v\<^sub>2) (e\<^sub>1' \<copyright> Val v\<^sub>2)\<close>
+\<open>\<And>v sz\<^sub>1 str sz\<^sub>2. type v = imm\<langle>sz\<^sub>1\<rangle> \<Longrightarrow> P (Val v \<copyright> unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
+\<open>\<And>v sz\<^sub>2 str sz\<^sub>1. type v = imm\<langle>sz\<^sub>2\<rangle> \<Longrightarrow> P (unknown[str]: imm\<langle>sz\<^sub>1\<rangle> \<copyright> Val v) unknown[str]: imm\<langle>sz\<^sub>1 + sz\<^sub>2\<rangle>\<close>
+\<open>\<And>num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2. P ((num\<^sub>1 \<Colon> sz\<^sub>1) \<copyright> (num\<^sub>2 \<Colon> sz\<^sub>2)) ((num\<^sub>1 \<Colon> sz\<^sub>1) \<cdot> (num\<^sub>2 \<Colon> sz\<^sub>2))\<close>
+\<open>\<And>sz\<^sub>1 sz\<^sub>2 num sz. P extract:sz\<^sub>1:sz\<^sub>2[num \<Colon> sz] ext num \<Colon> sz \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2\<close>
+\<open>\<And>e e' sz\<^sub>1 sz\<^sub>2. \<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> P e e' \<Longrightarrow> P extract:sz\<^sub>1:sz\<^sub>2[e] extract:sz\<^sub>1:sz\<^sub>2[e']\<close>
+\<open>\<And>sz\<^sub>1 sz\<^sub>2 str t. P extract:sz\<^sub>1:sz\<^sub>2[unknown[str]: t] unknown[str]: imm\<langle>sz\<^sub>1 - sz\<^sub>2 + 1\<rangle>\<close>
+\<open>\<And>e e' cast sz. \<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> P e e' \<Longrightarrow> P cast:sz[e] cast:sz[e']\<close>
+\<open>\<And>cast sz str t. P cast:sz[unknown[str]: t] unknown[str]: imm\<langle>sz\<rangle>\<close>
+\<open>\<And>sz num sz'. P low:sz[num \<Colon> sz'] ext num \<Colon> sz' \<sim> hi : sz - 1 \<sim> lo : 0\<close>
+\<open>\<And>sz num sz'. P high:sz[num \<Colon> sz'] ext num \<Colon> sz' \<sim> hi : sz' - 1 \<sim> lo : sz' - sz\<close>
+\<open>\<And>sz num sz'. P extend:sz[num \<Colon> sz'] ext num \<Colon> sz' \<sim> hi : sz - 1 \<sim> lo : 0\<close>
+\<open>\<And>sz num sz'. P pad:sz[num \<Colon> sz'] ext num \<Colon> sz' \<sim> hi : sz - 1 \<sim> lo : 0\<close> 
+    shows \<open>P e e'\<close>
+  using steps apply - 
+  apply (drule step_exp.induct[where P = \<open>\<lambda>\<Delta>' e e'. \<Delta>' = \<Delta> \<longrightarrow> P e e'\<close>])
+  apply (rule impI, (simp only:)?, (erule impE, rule refl)?, rule inducts, (assumption+)?)+
+  by auto
+
 
 text \<open>An expression transition always makes progress\<close>
 
@@ -211,7 +311,7 @@ inductive_cases SignedLessEqE: \<open>\<Delta> \<turnstile> ((num\<^sub>1 \<Colo
 inductive_cases UopE: \<open>\<Delta> \<turnstile> (UnOp uop e) \<leadsto> e'\<close>
 inductive_cases UopUnkE: \<open>\<Delta> \<turnstile> (UnOp uop (unknown[str]: t)) \<leadsto> e\<close>
 inductive_cases NotE: \<open>\<Delta> \<turnstile> (\<sim>(num \<Colon> sz)) \<leadsto> e\<close>
-inductive_cases NegE: \<open>\<Delta> \<turnstile> (UnOp Neg (num \<Colon> sz)) \<leadsto> e\<close>
+inductive_cases NegE: \<open>\<Delta> \<turnstile> (-(num \<Colon> sz)) \<leadsto> e\<close>
 
 inductive_cases ConcatRhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> e\<close>
 inductive_cases ConcatLhsE: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> (Val v\<^sub>2)) \<leadsto> e\<close>
@@ -477,5 +577,25 @@ next
     by (metis step_exp.CastReduce step_exp_not_ext)+
 qed (simp_all)
 *)
+
+
+
+interpretation capture_avoiding_var: exp_val_syntax \<open>\<lambda>e v. (\<And>nm t. [v\<sslash>(nm :\<^sub>t t)](nm :\<^sub>t t) = e)\<close>
+  apply standard using capture_avoiding_var by meson
+
+lemmas string_simps = 
+  list.inject char.inject refl simp_thms False_not_True not_False_eq_True 
+  capture_avoiding_var_name_neq
+
+lemmas capture_avoiding_sub_simps = 
+  plus.capture_avoiding_sub minus.capture_avoiding_sub times.capture_avoiding_sub 
+  divide.capture_avoiding_sub mod.capture_avoiding_sub sdivide.capture_avoiding_sub
+  smod.capture_avoiding_sub land.capture_avoiding_sub lor.capture_avoiding_sub 
+  xor.capture_avoiding_sub lsl.capture_avoiding_sub lsr.capture_avoiding_sub 
+  asr.capture_avoiding_sub capture_avoiding_var.word
+  capture_avoid.word capture_avoid.unknown capture_avoid.storage capture_avoid.plus
+  capture_avoid.minus capture_avoid.lsl capture_avoid.lsr capture_avoid.xor
+  capture_avoiding_sub.simps
+  string_simps
 
 end

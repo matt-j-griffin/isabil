@@ -1,20 +1,6 @@
 theory Typing_BIL_Is_Ok
-  imports Typing_Exp_Typed_Ok
+  imports "../Expression_Semantics/Expression_Semantics" "Typing_Var_Typed_Ok"
 begin            
-(*
-fun
-  typing_is_ok_stmt :: \<open>TypingContext \<Rightarrow> stmt \<Rightarrow> bool\<close> and
-  typing_is_ok_bil :: \<open>TypingContext \<Rightarrow> bil \<Rightarrow> bool\<close>
-where
-  \<open>typing_is_ok_stmt \<Gamma> (Move (var.Var id' t) e) = ((\<Gamma> \<turnstile> (exp.Var (var.Var id' t)) :: t) \<and> (\<Gamma> \<turnstile> e :: t))\<close> |
-  \<open>typing_is_ok_stmt \<Gamma> (Jmp e) = (\<exists>sz. (\<Gamma> \<turnstile> e :: imm\<langle>sz\<rangle>))\<close> |
-  \<open>typing_is_ok_stmt \<Gamma> (CpuExn _) = (\<Gamma> is ok)\<close> |
-  \<open>typing_is_ok_stmt \<Gamma> (Special _) = (\<Gamma> is ok)\<close> |
-  \<open>typing_is_ok_stmt \<Gamma> (While e seq) = ((typing_is_ok_bil \<Gamma> seq) \<and> (\<Gamma> \<turnstile> e :: imm\<langle>1\<rangle>))\<close> |
-  \<open>typing_is_ok_stmt \<Gamma> (If e seq\<^sub>1 seq\<^sub>2) = ((typing_is_ok_bil \<Gamma> seq\<^sub>1) \<and> (typing_is_ok_bil \<Gamma> seq\<^sub>2) \<and> (\<Gamma> \<turnstile> e :: imm\<langle>1\<rangle>))\<close> |
-  \<open>typing_is_ok_bil \<Gamma> [] = True\<close> |
-  \<open>typing_is_ok_bil \<Gamma> (stmt # seq) = ((typing_is_ok_stmt \<Gamma> stmt) \<and> (typing_is_ok_bil \<Gamma> seq))\<close>
-*)
 
 function
   typing_is_ok_stmt' :: \<open>TypingContext \<Rightarrow> stmt \<Rightarrow> bool\<close> and
@@ -191,14 +177,14 @@ lemmas T_WHILE = while_stmt_typing_is_okI
 lemmas T_IF = if_stmt_typing_is_okI
 lemmas T_IFTHEN = ifthen_stmt_typing_is_okI
 
-method solve_T_BIL = (
-  (rule T_SEQ_EMPTY, solve_TG) |
-  (rule T_SEQ_ONE, solve_T_BIL) |
-  (rule T_SEQ_REC, solve_T_BIL, solve_T_BIL) |
+method typec_bil = (
+  (rule T_SEQ_EMPTY, typec_context) |
+  (rule T_SEQ_ONE, typec_bil) |
+  (rule T_SEQ_REC, typec_bil, typec_bil) |
   (match conclusion in
-    \<open>_ \<turnstile> jmp (_ \<Colon> sz) is ok\<close> for sz \<Rightarrow> \<open>rule T_JMP[of _ _ sz], solve_T_WORD\<close>
-  \<bar> \<open>_ \<turnstile> (_ := _) is ok\<close> \<Rightarrow> \<open>rule T_MOVE, solve_T_VAR, solve_T_EXP\<close> 
-  \<bar> \<open>_ \<turnstile> IfThen _ _ is ok\<close> \<Rightarrow> \<open>rule T_IFTHEN, solve_T_EXP, solve_T_BIL\<close>
+    \<open>_ \<turnstile> jmp (_ \<Colon> sz) is ok\<close> for sz \<Rightarrow> \<open>rule T_JMP[of _ _ sz], typec_word\<close>
+  \<bar> \<open>_ \<turnstile> (_ := _) is ok\<close> \<Rightarrow> \<open>rule T_MOVE, typec_var, typec_exp\<close> 
+  \<bar> \<open>_ \<turnstile> IfThen _ _ is ok\<close> \<Rightarrow> \<open>rule T_IFTHEN, typec_exp, typec_bil\<close>
   \<bar> _ \<Rightarrow> \<open>succeed\<close>)
 )
 

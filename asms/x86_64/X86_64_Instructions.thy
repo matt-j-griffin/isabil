@@ -84,9 +84,21 @@ abbreviation \<open>shlq' sz w rd imm tmp \<equiv> \<lparr>addr = w, size = sz \
   SF := high:(Suc 0)[rd :\<^sub>t imm\<langle>64\<rangle>], 
   ZF := BinOp (0 \<Colon> 64) (LOp Eq) (rd :\<^sub>t imm\<langle>64\<rangle>),
   PF := \<sim> (low:(Suc 0)[exp.Let (''$0'' :\<^sub>t imm\<langle>64\<rangle>) (rd :\<^sub>t imm\<langle>64\<rangle> >> (4 \<Colon> 64) xor (rd :\<^sub>t imm\<langle>64\<rangle>)) 
-                      (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (Suc 0 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))]),
+                    (exp.Let (''$1'' :\<^sub>t imm\<langle>64\<rangle>) (''$0'' :\<^sub>t imm\<langle>64\<rangle> >> (2 \<Colon> 64) xor ''$0'' :\<^sub>t imm\<langle>64\<rangle>) 
+                      (''$1'' :\<^sub>t imm\<langle>64\<rangle> >> (Suc 0 \<Colon> 64) xor ''$1'' :\<^sub>t imm\<langle>64\<rangle>))]),
   AF := (unknown[''bits'']: imm\<langle>Suc 0\<rangle>), OF := (unknown[''bits'']: imm\<langle>Suc 0\<rangle>)
 ]\<rparr>\<close>
 
+subsubsection \<open>LFENCE\<close>
+
+abbreviation \<open>lfence' sz w \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
+  special[''@attribute:(bap:call intrinsic:lfence)'']
+]\<rparr>\<close>
+
+subsubsection \<open>MFENCE\<close>
+
+abbreviation \<open>mfence' sz w \<equiv> \<lparr>addr = w, size = sz \<Colon> 64, code = [
+  special[''@attribute:(bap:call intrinsic:mfence)'']
+]\<rparr>\<close>
 
 end

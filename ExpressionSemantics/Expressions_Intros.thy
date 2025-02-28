@@ -4,9 +4,6 @@ begin
 
 subsection \<open>Refl\<close>
 
-lemmas step_exps_reduceI = converse_rtranclp_into_rtranclp[where r = \<open>step_exp _\<close>, unfolded step_exps_def[symmetric]]
-lemmas step_exps_reflI = rtranclp.rtrancl_refl[where r = \<open>step_exp _\<close>, unfolded step_exps_def[symmetric]]
-
 lemma step_exps_reduce_singleI:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>2\<close>
     shows \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>2\<close>
@@ -188,11 +185,20 @@ interpretation step_exps_cast_signedI: exp_val_word_sz_syntax \<open>\<lambda>e 
   apply (standard)
   using step_exps_reduce_singleI[OF step_cast_signedI] by blast
 
+lemma step_exps_cast_signed_is_okI:
+  assumes \<open>sz > sz'\<close> and num_is_ok: \<open>num < 2 ^ sz\<close>
+    shows \<open>\<Delta> \<turnstile> extend:sz[num \<Colon> sz'] \<leadsto>* (num \<Colon> sz)\<close>
+  apply (subst extract_to_sz[symmetric, where sz = sz])
+  using assms(1) bot_nat_0.not_eq_extremum apply blast
+  apply (rule num_is_ok)
+  using step_exps_cast_signedI.word by blast
+
 interpretation step_exps_cast_unsignedI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (\<And>\<Delta> sz. \<Delta> \<turnstile> pad:sz[e] \<leadsto>* ext e \<sim> hi : sz - 1 \<sim> lo : 0)\<close>
   apply (standard)
   using step_exps_reduce_singleI[OF step_cast_unsignedI] by blast
 
-interpretation step_exps_load_byteI: exp_val_syntax \<open>\<lambda>e v'. (\<And>\<Delta> v num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz ed. \<Delta> \<turnstile> v[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<leftarrow> v', sz][num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, ed]:usz \<leadsto>* e)\<close>
+interpretation step_exps_load_byteI: exp_val2_word_sz1_syntax \<open>\<lambda>w\<^sub>e _ w\<^sub>w _ e v'. (\<And>\<Delta> sz v ed e'. 
+    \<Delta> \<turnstile> v[w\<^sub>w \<leftarrow> v', sz][w\<^sub>e, ed]:usz \<leadsto>* e)\<close>
   apply (standard)
   using step_exps_reduce_singleI[OF step_load_byteI] by blast
 
@@ -245,24 +251,6 @@ thm
    step_leI.unk_lhsI step_leI.unk_rhsI
    step_sltI.unk_lhsI step_sltI.unk_rhsI
    step_sleI.unk_lhsI step_sleI.unk_rhsI
-
-
-lemmas step_exps_singleI = step_exps_load_un_addrI step_exps_not_trueI step_exps_not_falseI
-  step_exps_uop_unk_notI step_exps_uop_unk_negI step_exps_uop_unkI step_exps_notI step_exps_negI
-  step_exps_lop_unk_lhsI step_exps_lop_unk_rhsI step_exps_aop_unk_lhsI step_exps_aop_unk_rhsI
-  step_exps_concatI 
-  step_exps_extractI step_exps_extract_unI 
-  step_exps_cast_lowI.word step_exps_cast_highI step_exps_cast_signedI step_exps_cast_unsignedI
-    step_exps_cast_unkI
-  step_exps_plusI step_exps_minusI step_exps_timesI step_exps_divI step_exps_sdivI step_exps_modI
-    step_exps_signed_less_eqI step_exps_signed_lessI
-  step_exps_load_byteI.syntaxs
-  step_exps_load_un_memI.syntaxs
-  step_exps_letI.syntaxs
-  step_exps_store_valI.storage.syntaxs step_exps_store_valI.unknown.syntaxs
-  step_exps_ite_trueI.syntaxs2
-  step_exps_ite_falseI.syntaxs2
-  step_exps_concat_lhs_unI.word_syntaxs step_exps_concat_rhs_unI.word_syntaxs
 *)
 text \<open>RHS values, assumptions - easy to discharge\<close>
 
@@ -285,24 +273,22 @@ interpretation step_exps_store_un_addr: exp2_val_syntax \<open>\<lambda>e\<^sub>
 
 text \<open>Recursive on expressions only - medium to discharge\<close>
 
-interpretation step_exps_load_byte_from_nextI: exp_val_syntax \<open>\<lambda>e v. (\<And>\<Delta> num\<^sub>1 sz\<^sub>1 num\<^sub>2 sz\<^sub>2 v' sz ed e'. 
-  \<lbrakk>num\<^sub>1 \<Colon> sz\<^sub>1 \<noteq> num\<^sub>2 \<Colon> sz\<^sub>2; \<Delta> \<turnstile> (e[num\<^sub>2 \<Colon> sz\<^sub>2, ed]:usz) \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> v[num\<^sub>1 \<Colon> sz\<^sub>1 \<leftarrow> v', sz][num\<^sub>2 \<Colon> sz\<^sub>2, ed]:usz \<leadsto>* e')\<close>
-  apply (standard)
-  apply (rule step_exps_reduceI)
-  apply (rule step_load_byte_from_nextI, simp)
-  by blast
+lemmas step_exps_load_byte_from_nextI = step_exps_reduceI[OF step_load_byte_from_nextI]
+interpretation step_exps_load_byte_from_nextI: exp_val2_word_sz1_syntax \<open>\<lambda>w\<^sub>e _ w\<^sub>w _ e v.
+ (\<And>\<Delta> w sz v' ed e'. 
+  \<lbrakk>w \<noteq> w\<^sub>w; \<Delta> \<turnstile> (e[w\<^sub>e, ed]:usz) \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> v[w \<leftarrow> v', sz][w\<^sub>e, ed]:usz \<leadsto>* e')\<close>
+  apply unfold_locales
+  using step_exps_load_byte_from_nextI by blast
 
-
-interpretation step_exps_load_word_beI: exp_val_is_mem_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num sz e'. 
-  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> ((e\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m) \<copyright> (e\<^sub>1[succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) \<leadsto>* e'\<rbrakk> 
-    \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz \<leadsto>* e')\<close>
+lemmas step_exps_load_word_beI = step_exps_reduceI[OF step_load_word_beI]
+interpretation step_exps_load_word_beI: load_multiple_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<^sub>w. (\<And>\<Delta> sz e'.
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> ((e\<^sub>1[e\<^sub>w, be]:usz\<^sub>m\<^sub>e\<^sub>m) \<copyright> (e\<^sub>1[succ e\<^sub>w, be]:u(sz - sz\<^sub>m\<^sub>e\<^sub>m))) \<leadsto>* e'\<rbrakk> 
+    \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e\<^sub>w, be]:usz \<leadsto>* e')\<close>
   apply standard
-  apply (rule step_exps_reduceI)
-  apply (rule step_load_word_beI, simp)
-  by assumption
+  using step_exps_load_word_beI by blast
 
 lemmas step_exps_load_word_elI = step_exps_reduceI[OF step_load_word_elI]
-interpretation step_exps_load_word_elI: load_multiple_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<^sub>w. (\<And>\<Delta> num sz e'. 
+interpretation step_exps_load_word_elI: load_multiple_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<^sub>w. (\<And>\<Delta> sz e'.
   \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; \<Delta> \<turnstile> (e\<^sub>1[succ e\<^sub>w, el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<copyright> (e\<^sub>1[e\<^sub>w, el]:usz\<^sub>m\<^sub>e\<^sub>m)) \<leadsto>* e'\<rbrakk> 
     \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e\<^sub>w, el]:usz \<leadsto>* e')\<close>
   apply (standard)
@@ -310,16 +296,16 @@ interpretation step_exps_load_word_elI: load_multiple_syntax \<open>\<lambda>e\<
 
 lemmas step_exps_store_word_beI = step_exps_reduceI[OF step_store_word_beI]
 interpretation step_exps_store_word_beI: store_multiple_syntax \<open>\<lambda>e\<^sub>1 _ e\<^sub>2 _ _ e\<^sub>3 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> e e' sz.
-  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; e = e\<^sub>1 with [e\<^sub>2, be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3]); 
-   \<Delta> \<turnstile> (e with [succ e\<^sub>2, be]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) \<leadsto>* e'\<rbrakk>
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz;
+   \<Delta> \<turnstile> ((e\<^sub>1 with [e\<^sub>2, be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) with [succ e\<^sub>2, be]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) \<leadsto>* e'\<rbrakk>
     \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, be]:usz \<leftarrow> e\<^sub>3 \<leadsto>* e')\<close>
   apply (standard)
   using step_exps_store_word_beI by blast
                                                                   
 lemmas step_exps_store_word_elI = step_exps_reduceI[OF step_store_word_elI]
 interpretation step_exps_store_word_elI: store_multiple_syntax \<open>\<lambda>e\<^sub>1 _ e\<^sub>2 _ _ e\<^sub>3 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> e e' sz.
-  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz; e = e\<^sub>1 with [e\<^sub>2, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3]);
-   \<Delta> \<turnstile> (e with [succ e\<^sub>2, el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) \<leadsto>* e'\<rbrakk>
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz;
+   \<Delta> \<turnstile> ((e\<^sub>1 with [e\<^sub>2, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) with [succ e\<^sub>2, el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>3])) \<leadsto>* e'\<rbrakk>
     \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, el]:usz \<leftarrow> e\<^sub>3 \<leadsto>* e')\<close>
   apply (standard)
   using step_exps_store_word_elI by blast
@@ -327,24 +313,81 @@ interpretation step_exps_store_word_elI: store_multiple_syntax \<open>\<lambda>e
 text \<open>Recursive - hard to discharge\<close>
 
 lemmas step_exps_load_addrI = step_exps_reduceI[OF step_load_addrI]
+lemma step_exps_load_addr_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1[e\<^sub>2', ed]:usz) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1[e\<^sub>2, ed]:usz) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_load_addrI)
+  by auto
+
 lemmas step_exps_let_stepI = step_exps_reduceI[OF step_let_stepI]
+lemma step_exps_let_step_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (Let var e\<^sub>1' e\<^sub>2) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (Let var e\<^sub>1 e\<^sub>2) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_let_stepI)
+  by auto
+
 lemmas step_exps_ite_elseI = step_exps_reduceI[OF step_ite_elseI]
 lemmas step_exps_store_step_valI = step_exps_reduceI[OF step_store_step_valI]
+lemma step_exps_store_step_val_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>3 \<leadsto>* e\<^sub>3'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3') \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e\<^sub>3) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_store_step_valI)
+  by auto
 
 lemmas step_exps_load_memI = step_exps_reduceI[OF step_load_memI]
 interpretation step_exps_load_memI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e' ed sz. \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'; \<Delta> \<turnstile> e\<^sub>1'[e, ed]:usz \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e, ed]:usz \<leadsto>* e')\<close>
   apply standard
   using step_exps_load_memI by blast
+lemma step_exps_load_mem_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1'[Val v\<^sub>2, en]:usz) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 [Val v\<^sub>2, en]:usz) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_load_memI)
+  by auto
+interpretation step_exps_load_mem_totalI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e' ed sz. 
+  \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'; \<Delta> \<turnstile> e\<^sub>1'[e, ed]:usz \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e, ed]:usz \<leadsto>* e')\<close>
+  apply standard
+  using step_exps_load_mem_totalI by blast
 
 lemmas step_exps_store_addrI = step_exps_reduceI[OF step_store_addrI]
 interpretation step_exps_store_addrI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e\<^sub>2 e\<^sub>2' e' en sz. \<lbrakk>\<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2'; \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> e \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e \<leadsto>* e')\<close>
   apply (standard)
   using step_exps_store_addrI by blast
+lemma step_exps_store_addr_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_store_addrI)
+  by auto
+interpretation step_exps_store_addr_totalI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e\<^sub>2 e\<^sub>2' e' en sz. 
+    \<lbrakk>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2'; \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> e \<leadsto>* e'\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e \<leadsto>* e')\<close>
+  apply (standard)
+  using step_exps_store_addr_totalI by blast
 
 lemmas step_exps_store_memI = step_exps_reduceI[OF step_store_memI]
-interpretation step_exps_store_memI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e e' en sz x. \<lbrakk>\<Delta> \<turnstile> e \<leadsto> e'; \<Delta> \<turnstile> e' with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x)\<close>
+interpretation step_exps_store_memI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e e' en sz x. 
+    \<lbrakk>\<Delta> \<turnstile> e \<leadsto> e'; \<Delta> \<turnstile> e' with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x)\<close>
   apply (standard)
   using step_exps_store_memI by blast
+lemma step_exps_store_mem_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1' with [Val v\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 with [Val v\<^sub>2, en]:usz \<leftarrow> (Val v\<^sub>3)) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_store_memI)
+  by auto
+interpretation step_exps_store_mem_totalI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e e' en sz x. 
+    \<lbrakk>\<Delta> \<turnstile> e \<leadsto>* e'; \<Delta> \<turnstile> e' with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> e with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto>* x)\<close>
+  apply (standard)
+  using step_exps_store_mem_totalI by blast
 
 interpretation step_exps_ite_condI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e e' x. \<lbrakk>\<Delta> \<turnstile> e \<leadsto> e'; \<Delta> \<turnstile> ite e' e\<^sub>1 e\<^sub>2 \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> ite e e\<^sub>1 e\<^sub>2 \<leadsto>* x)\<close>
   apply standard
@@ -355,26 +398,105 @@ interpretation step_exps_ite_thenI: exp_val_syntax \<open>\<lambda>e _. (\<And>\
   using step_exps_reduceI[OF step_ite_thenI] by blast
 
 lemmas step_exps_uopI = step_exps_reduceI[OF step_uopI]
-lemmas step_exps_reduce_notI = step_exps_uopI[where uop = Not, unfolded not_exp_def[symmetric]] 
+lemma step_exps_uop_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e \<leadsto>* e'\<close>
+      and minor: \<open>\<Delta> \<turnstile> UnOp uop e' \<leadsto>* e''\<close>
+    shows \<open>\<Delta> \<turnstile> UnOp uop e \<leadsto>* e''\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_uopI)
+  by auto
+
+lemmas step_exps_reduce_notI = step_exps_uopI[where uop = Not, unfolded not_exp_def[symmetric]]
+lemma step_exps_reduce_not_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e \<leadsto>* e'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (\<sim> e') \<leadsto>* e''\<close>
+    shows \<open>\<Delta> \<turnstile> (\<sim> e) \<leadsto>* e''\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_reduce_notI)
+  by auto
+
 lemmas step_exps_reduce_negI = step_exps_uopI[where uop = Neg, unfolded uminus_exp_def[symmetric]]
+lemma step_exps_reduce_neg_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e \<leadsto>* e'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (- e') \<leadsto>* e''\<close>
+    shows \<open>\<Delta> \<turnstile> (- e) \<leadsto>* e''\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_reduce_negI)
+  by auto
+
 lemmas step_exps_cast_reduceI = step_exps_reduceI[OF step_cast_reduceI]
-lemmas step_exps_concat_rhsI = step_exps_reduceI[OF step_concat_rhsI]
+lemma step_exps_cast_reduce_totalI:
+  assumes major: "\<Delta> \<turnstile> e \<leadsto>* e'"
+      and minor: "\<Delta> \<turnstile> cast:sz[e'] \<leadsto>* e''"
+    shows "\<Delta> \<turnstile> cast:sz[e] \<leadsto>* e''"
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_cast_reduceI)
+  by auto
+
 lemmas step_exps_extract_reduceI = step_exps_reduceI[OF step_extract_reduceI]
+lemma step_exps_extract_reduce_totalI:
+  assumes major: "\<Delta> \<turnstile> e \<leadsto>* e'"
+      and minor: "\<Delta> \<turnstile> extract:sz\<^sub>1:sz\<^sub>2[e'] \<leadsto>* e''"
+    shows "\<Delta> \<turnstile> extract:sz\<^sub>1:sz\<^sub>2[e] \<leadsto>* e''"
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_extract_reduceI)
+  by auto
+
+lemmas step_exps_concat_rhsI = step_exps_reduceI[OF step_concat_rhsI]
+lemma step_exps_concat_rhs_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2') \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_concat_rhsI)
+  by auto
 
 lemmas step_exps_concat_lhsI = step_exps_reduceI[OF step_concat_lhsI]
 interpretation step_exps_concat_lhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' x. \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'; \<Delta> \<turnstile> (e\<^sub>1' \<copyright> e) \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e) \<leadsto>* x)\<close>
   apply (standard)
   using step_exps_concat_lhsI by blast
 
+lemma step_exps_concat_lhs_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (e\<^sub>1' \<copyright> Val v\<^sub>2) \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (e\<^sub>1 \<copyright> Val v\<^sub>2) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_concat_lhsI)
+  by auto
+
+interpretation step_exps_concat_lhs_totalI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' x. \<lbrakk>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'; \<Delta> \<turnstile> (e\<^sub>1' \<copyright> e) \<leadsto>* x\<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e) \<leadsto>* x)\<close>
+  apply (standard)
+  using step_exps_concat_lhs_totalI by blast
+
 (* TODO *)
 subsection \<open>Bop\<close>
 
 lemmas step_exps_bop_lhsI = step_exps_reduceI[OF step_bop_lhsI]
 
+lemma step_exps_bop_lhs_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> BinOp e\<^sub>1' bop e\<^sub>2 \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> BinOp e\<^sub>1 bop e\<^sub>2 \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_bop_lhsI)
+  by auto
+
 lemmas step_exps_bop_rhsI = step_exps_reduceI[OF step_bop_rhsI]
 interpretation step_exps_bop_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> BinOp e bop e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> BinOp e bop e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
   apply (standard)
   using step_exps_bop_rhsI by blast
+
+lemma step_exps_bop_rhs_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2'\<close>
+      and minor: \<open>\<Delta> \<turnstile> (BinOp (Val v) bop e\<^sub>2') \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> (BinOp (Val v) bop e\<^sub>2) \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_bop_rhsI)
+  by auto
+
+interpretation step_exps_bop_rhs_totalI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> BinOp e bop e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> BinOp e bop e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
+  apply (standard)
+  using step_exps_bop_rhs_totalI by blast
 
 context bop_lemmas
 begin
@@ -384,9 +506,21 @@ lemma step_exps_lhsI:
     shows \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1 e\<^sub>2 \<leadsto>* e\<^sub>3\<close>
   using assms unfolding bop_simps by (rule step_exps_bop_lhsI)
 
+lemma step_exps_lhs_totalI:
+  assumes major: \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto>* e\<^sub>1'\<close>
+      and minor: \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1' e\<^sub>2 \<leadsto>* e'\<close>
+    shows \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1 e\<^sub>2 \<leadsto>* e'\<close>
+  using major minor apply (rule step_exps_total_reduceI)
+  apply (rule step_exps_lhsI)
+  by auto
+
 sublocale step_exps_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
   apply standard
   unfolding bop_simps using step_exps_bop_rhsI by blast
+
+sublocale step_exps_rhs_totalI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2' e\<^sub>3. \<Delta> \<turnstile> e\<^sub>2 \<leadsto>* e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2' \<leadsto>* e\<^sub>3 \<Longrightarrow> \<Delta> \<turnstile> bop_fun e e\<^sub>2 \<leadsto>* e\<^sub>3)\<close>
+  apply standard
+  unfolding bop_simps using step_exps_bop_rhs_totalI by blast
 
 end
 
@@ -412,24 +546,26 @@ lemma step_exps_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: 
 
 end
 
-method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
-    \<comment> \<open>Try added assumptions, they must solve the goal though\<close>
+method solve_expsI_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+  \<comment> \<open>Try added assumptions, they must solve the goal though\<close>
   (solves \<open>rule add\<close>) |
 
-  (rule step_exps_var_inI.is_val[rotated], solve_var_inI add: add, solve_is_valI add: add) |
-  (rule step_exps_var_inI.is_val[rotated], solve_in_var add: add, solve_is_valI add: add) | \<comment> \<open>Remove this method\<close>
-
-  \<comment> \<open>Can the below rule be removed?\<close>
-  (rule step_exps_plusI step_exps_minusI step_exps_landI step_exps_lorI step_exps_lslI
-        step_exps_lsrI step_exps_less_eqI step_exps_lessI step_exps_eq_sameI
-        step_exps_not_falseI step_exps_not_trueI) |          
-
+  \<comment> \<open>Optimisations\<close>
+  (rule step_exps_eq_sameI step_exps_not_falseI step_exps_not_trueI) |          
   (rule step_exps_eq_diffI, solve_bv_neqI) |
 
-  (rule step_exps_notI.is_word step_exps_negI.is_word step_exps_cast_highI.is_word 
-        step_exps_cast_lowI.is_word step_exps_cast_signedI.is_word step_exps_cast_unsignedI.is_word, 
-      solve_is_wordI) |
+  \<comment> \<open>-----------\<close>
+  \<comment> \<open>Main solver\<close>
+  \<comment> \<open>-----------\<close>
 
+  \<comment> \<open>Vars\<close>
+  (rule step_exps_var_inI.is_val[rotated], solve_var_inI add: add, solve_is_val) |
+  (rule step_exps_var_inI.is_val[rotated], solve_in_var add: add, solve_is_val) | \<comment> \<open>Remove this method\<close>
+
+  \<comment> \<open>Unary Operations\<close>
+  (rule step_exps_notI.is_word step_exps_negI.is_word, solve_is_wordI) |
+
+  \<comment> \<open>Binary Operations\<close>
   (rule step_exps_plusI.is_word2 step_exps_minusI.is_word2 step_exps_timesI.is_word2
         step_exps_divI.is_word2 step_exps_sdivI.is_word2 step_exps_modI.is_word2 
         step_exps_smodI.is_word2 step_exps_signed_less_eqI.is_word2 step_exps_signed_lessI.is_word2
@@ -439,68 +575,69 @@ method solve_expsI_scaffold methods recurs solve_exp solve_type uses add = (
         step_exps_eqI'.is_word2,
      solve_is_wordI, solve_is_wordI) |
 
-  (rule plus.step_exps_lhsI minus.step_exps_lhsI times.step_exps_lhsI divide.step_exps_lhsI
-        sdivide.step_exps_lhsI mod.step_exps_lhsI smod.step_exps_lhsI le.step_exps_lhsI
-        sle.step_exps_lhsI lt.step_exps_lhsI slt.step_exps_lhsI lsl.step_exps_lhsI 
-        lsr.step_exps_lhsI asr.step_exps_lhsI land.step_exps_lhsI lor.step_exps_lhsI 
-        xor.step_exps_lhsI step_exps_bop_lhsI step_exps_cast_reduceI step_exps_store_step_valI
-        step_exps_reduce_notI step_exps_reduce_negI step_exps_concat_rhsI,
-     solve_exp, (recurs | succeed)) |
+  \<comment> \<open>Cast Operations\<close>
+  (rule step_exps_cast_highI.is_word step_exps_cast_lowI.is_word step_exps_cast_signedI.is_word 
+        step_exps_cast_unsignedI.is_word,
+      solve_is_wordI, (unfold exp_cast_simps)?) |
 
-  (rule plus.step_exps_rhsI.is_word minus.step_exps_rhsI.is_word times.step_exps_rhsI.is_word
-        divide.step_exps_rhsI.is_word sdivide.step_exps_rhsI.is_word mod.step_exps_rhsI.is_word
-        smod.step_exps_rhsI.is_word le.step_exps_rhsI.is_word sle.step_exps_rhsI.is_word 
-        lt.step_exps_rhsI.is_word slt.step_exps_rhsI.is_word lsl.step_exps_rhsI.is_word
-        lsr.step_exps_rhsI.is_word asr.step_exps_rhsI.is_word land.step_exps_rhsI.is_word
-        lor.step_exps_rhsI.is_word xor.step_exps_rhsI.is_word step_exps_bop_rhsI.is_word
-        step_exps_concat_lhsI.is_word step_exps_store_addrI.is_word,
-     solve_is_wordI, solve_exp, (recurs | succeed)) |
-
-  (rule step_exps_valI.is_val, solve_is_valI) |
-
-  \<comment> \<open>Below this is unsorted\<close>
-  (((rule step_exps_load_word_elI.storage.word step_exps_load_word_elI.storage.plus | 
-    (rule step_exps_load_word_elI.storage.is_word, solve_is_wordI)) | 
-    (rule step_exps_load_word_elI.storage_addr.word step_exps_load_word_elI.storage_addr.plus | 
-    (rule step_exps_load_word_elI.storage_addr.is_word, solve_is_wordI)), 
-     solve_type), 
-    (unfold load_byte_minus_simps)?,
-    linarith, (recurs | succeed)
+  \<comment> \<open>Load Operations\<close>
+  (rule step_exps_load_byteI.is_word_val, solve_is_wordI, solve_is_val) |
+  (rule step_exps_load_byte_from_nextI.is_word_val, solve_is_wordI, solve_is_val, solve_word_neq add: add, 
+     recurs?) |
+  (rule step_exps_load_word_elI.is_val_word step_exps_load_word_beI.is_val_word, defer_tac, 
+    solve_is_val, solve_is_wordI, prefer_last, solve_type, (unfold load_byte_minus_simps)?,
+    linarith, recurs?
   ) |
 
-  ((rule step_exps_load_word_beI.storage | rule step_exps_load_word_beI.storage_addr, solve_type), linarith, (recurs | succeed)) |
-  (rule step_exps_load_memI.word step_exps_load_memI.plus step_exps_load_addrI, solve_exp, (recurs | succeed)) |
+  \<comment> \<open>Store Operations\<close>
+  (rule step_exps_store_valI.is_val3, defer_tac, solve_is_val, solve_is_wordI, solve_is_val, 
+      prefer_last, solve_type) |
+  (rule step_exps_store_word_elI.is_val3 step_exps_store_word_beI.is_val3, defer_tac,
+     solve_is_val, solve_is_wordI, solve_is_val, prefer_last, solve_type,
+     (unfold load_byte_minus_simps)?, 
+     linarith, recurs?) |
 
-  \<comment> \<open>Store\<close>
-  (rule step_exps_store_valI.succ.storage_addr.xtract step_exps_store_valI, solve_type) |
-  (rule step_exps_store_word_elI.succ.storage.xtract step_exps_store_word_elI.word.storage.word 
-        step_exps_store_word_beI.succ.storage.xtract step_exps_store_word_beI.word.storage.word,
-   (unfold load_byte_minus_simps)?,
-   linarith, standard, (recurs | succeed)) |
+  \<comment> \<open>Let Operation\<close>
+  (rule step_exps_letI.is_val, solve_is_val, simp_capture_avoid?) |
 
-  (rule step_exps_store_word_elI.succ.storage_addr.xtract 
-        step_exps_store_word_elI.word.storage_addr.xtract
-        step_exps_store_word_elI.plus.val.xtract 
-        step_exps_store_word_elI.plus.val.word
-        step_exps_store_word_elI.word.val.word  
-        step_exps_store_word_beI.succ.storage_addr.xtract
-        step_exps_store_word_beI.word.storage_addr.xtract
-        step_exps_store_word_beI.word.val.word, 
-   solve_type, linarith, standard, (recurs | succeed)) |
+  \<comment> \<open>2-Value Reductions (changed prevents infinite loops)\<close>
+  (changed \<open>rule step_exps_store_mem_totalI.is_val2, 
+     solve_is_val, solve_is_val, recurs\<close>,
+     recurs?) |
 
-  (rule step_exps_store_memI.succ.xtract step_exps_store_memI.plus.xtract
-        step_exps_store_memI.word.xtract step_exps_store_memI.plus.word
-        step_exps_store_memI.word.word step_exps_store_memI
-        
-        , solve_exp, (recurs | succeed))
-  
-(*
-   \<open>Reflexive case\<close>
-   \<open>(rule step_exps_reflI) \<comment> TODO added ?\<close>*)
+  \<comment> \<open>1-Value Reductions (changed prevents infinite loops)\<close>
+  (changed \<open>rule plus.step_exps_rhs_totalI.is_word minus.step_exps_rhs_totalI.is_word 
+        times.step_exps_rhs_totalI.is_word divide.step_exps_rhs_totalI.is_word 
+        sdivide.step_exps_rhs_totalI.is_word mod.step_exps_rhs_totalI.is_word
+        smod.step_exps_rhs_totalI.is_word le.step_exps_rhs_totalI.is_word 
+        sle.step_exps_rhs_totalI.is_word lt.step_exps_rhs_totalI.is_word 
+        slt.step_exps_rhs_totalI.is_word lsl.step_exps_rhs_totalI.is_word
+        lsr.step_exps_rhs_totalI.is_word asr.step_exps_rhs_totalI.is_word 
+        land.step_exps_rhs_totalI.is_word lor.step_exps_rhs_totalI.is_word 
+        xor.step_exps_rhs_totalI.is_word step_exps_bop_rhs_totalI.is_word
+        step_exps_concat_lhs_totalI.is_word step_exps_store_addr_totalI.is_word 
+        step_exps_load_mem_totalI.is_word,
+     solve_is_wordI, recurs\<close>,
+     recurs?) |
+
+  \<comment> \<open>Unrestricted Reductions (changed prevents infinite loops)\<close>
+  (changed \<open>rule plus.step_exps_lhs_totalI minus.step_exps_lhs_totalI times.step_exps_lhs_totalI
+      divide.step_exps_lhs_totalI sdivide.step_exps_lhs_totalI mod.step_exps_lhs_totalI
+      smod.step_exps_lhs_totalI le.step_exps_lhs_totalI sle.step_exps_lhs_totalI
+      lt.step_exps_lhs_totalI slt.step_exps_lhs_totalI lsl.step_exps_lhs_totalI
+      lsr.step_exps_lhs_totalI asr.step_exps_lhs_totalI land.step_exps_lhs_totalI
+      lor.step_exps_lhs_totalI xor.step_exps_lhs_totalI step_exps_bop_lhs_totalI 
+      step_exps_uop_totalI step_exps_reduce_not_totalI step_exps_reduce_neg_totalI
+      step_exps_cast_reduce_totalI step_exps_concat_rhs_totalI step_exps_load_addr_totalI
+      step_exps_store_step_val_totalI step_exps_let_step_totalI,
+    recurs\<close>, recurs?) |
+
+  \<comment> \<open>This will always run\<close>
+  (rule step_exps_valI.is_val, solve_is_val)
 )
 
 method solve_expsI uses add = (
-  solve_expsI_scaffold \<open>solve_expsI add: add\<close> \<open>solve_expI add: add\<close> solve_typeI add: add
+  solve_expsI_scaffold \<open>solve_expsI add: add\<close> \<open>solve_expI add: add\<close> \<open>solve_typeI add: add\<close> \<open>solve_is_valI add: add\<close> add: add
 )
 
 lemmas REFL = step_exps_reflI

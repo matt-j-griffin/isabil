@@ -1,5 +1,5 @@
 theory RiscV_Instructions
-  imports "../../OperationalSemantics/Program_Model"
+  imports IsaBIL.Program_Model
           RiscV_64
 begin
 
@@ -95,10 +95,13 @@ abbreviation \<open>mv w rd rs1 \<equiv> \<lparr> addr = w, size = (2 \<Colon> 6
 
 subsubsection \<open>LW\<close>
 
-abbreviation \<open>lw w rd rs1 imm \<equiv> \<lparr> addr = w, size = (4 \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>) + (imm \<Colon> 64), el]:u32])]\<rparr>\<close>
-abbreviation \<open>lw0 w rd rs1 \<equiv> \<lparr> addr = w, size = (4 \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>), el]:u32])]\<rparr>\<close>
-abbreviation \<open>clw w rd rs1 imm \<equiv> \<lparr> addr = w, size = (2 \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>) + (imm \<Colon> 64), el]:u32])]\<rparr>\<close>
-abbreviation \<open>clw0 w rd rs1 \<equiv> \<lparr> addr = w, size = (2 \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>), el]:u32])]\<rparr>\<close>
+abbreviation \<open>lw' sz w rd rs1 imm \<equiv> \<lparr> addr = w, size = (sz \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>) + (imm \<Colon> 64), el]:u32])]\<rparr>\<close>
+abbreviation \<open>lw0' sz w rd rs1 \<equiv> \<lparr> addr = w, size = (sz \<Colon> 64), code = [rd := (extend:64[mem[(rs1 :\<^sub>t imm\<langle>64\<rangle>), el]:u32])]\<rparr>\<close>
+
+abbreviation \<open>lw \<equiv> lw' 4\<close>
+abbreviation \<open>lw0 \<equiv> lw0' 4\<close>
+abbreviation \<open>clw \<equiv> lw' 2\<close>
+abbreviation \<open>clw0 \<equiv> lw0' 2\<close>
 
 subsubsection \<open>SW\<close>
 
@@ -115,7 +118,9 @@ abbreviation \<open>beq w tmp rs1 rs2 offset \<equiv> \<lparr> addr = w, size = 
 
 subsubsection \<open>BEQZ\<close>
 
-abbreviation \<open>beqz w temp rs1 offset \<equiv> \<lparr> addr = w, size = (2 \<Colon> 64), code = [temp :\<^sub>t imm\<langle>Suc 0\<rangle> := BinOp (rs1 :\<^sub>t imm\<langle>64\<rangle>) (LOp Eq) (0 \<Colon> 64), IfThen (temp :\<^sub>t imm\<langle>Suc 0\<rangle>) [jmp (offset \<Colon> 64)]]\<rparr>\<close>
+abbreviation \<open>beqz' sz w temp rs1 offset \<equiv> \<lparr> addr = w, size = (sz \<Colon> 64), code = [temp :\<^sub>t imm\<langle>Suc 0\<rangle> := BinOp (rs1 :\<^sub>t imm\<langle>64\<rangle>) (LOp Eq) (0 \<Colon> 64), IfThen (temp :\<^sub>t imm\<langle>Suc 0\<rangle>) [jmp (offset \<Colon> 64)]]\<rparr>\<close>
+abbreviation \<open>beqz \<equiv> beqz' 4\<close>
+abbreviation \<open>cbeqz \<equiv> beqz' 2\<close>
 
 subsubsection \<open>LD\<close>
 
@@ -150,7 +155,9 @@ abbreviation \<open>bnez w rs1 temp imm \<equiv> \<lparr> addr = w, size = (2 \<
 
 subsubsection \<open>BLTU\<close>
 
-abbreviation \<open>bltu w rs1 rs2 temp imm \<equiv>  \<lparr>addr = w, size = 4 \<Colon> 64, code = [temp :\<^sub>t imm\<langle>Suc 0\<rangle> := (rs1 :\<^sub>t imm\<langle>64\<rangle>) lt (rs2 :\<^sub>t imm\<langle>64\<rangle>), IfThen (temp :\<^sub>t imm\<langle>Suc 0\<rangle>) [jmp (imm \<Colon> 64)]]\<rparr>\<close>
+abbreviation \<open>bltu' sz w rs1 rs2 temp imm \<equiv>  \<lparr>addr = w, size = sz \<Colon> 64, code = [temp :\<^sub>t imm\<langle>Suc 0\<rangle> := (rs1 :\<^sub>t imm\<langle>64\<rangle>) lt (rs2 :\<^sub>t imm\<langle>64\<rangle>), IfThen (temp :\<^sub>t imm\<langle>Suc 0\<rangle>) [jmp (imm \<Colon> 64)]]\<rparr>\<close>
+abbreviation \<open>bltu \<equiv>  bltu' 4\<close>
+abbreviation \<open>cbltu \<equiv> bltu' 2\<close>
 
 subsubsection \<open>RET\<close>
 

@@ -87,10 +87,9 @@ fun mk_addr_set words =
 fun mk_decode_name (AstParser.Word (num, _)) = 
   "decode_" ^ LargeInt.fmt StringCvt.HEX (AstParser.integer_of_nat num)
 
-
 fun mk_sz_word (AstParser.Word (num, sz)) =
   let
-    val num_term = (if (AstParser.integer_of_nat num) = 0 then @{term "sz::nat"} else IsaBIL.mk_numeral_nat num)
+    val num_term = (*(if (AstParser.integer_of_nat num) = 0 then @{term "sz::nat"} else*) IsaBIL.mk_numeral_nat num(*)*)
   in
     @{term "Word"} $ num_term $ IsaBIL.mk_numeral_nat sz
   end

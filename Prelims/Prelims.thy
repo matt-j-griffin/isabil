@@ -154,6 +154,13 @@ lemma length_1: \<open>length [x] = 1\<close>
 lemma nat_lt2: \<open>((i::nat) < 1 + 1) = (i = 0 \<or> i = 1)\<close>
   by auto
 
+
+lemma power_le_min: fixes x n N :: nat assumes \<open>n \<le> N\<close> and \<open>x < 2 ^ n\<close> shows \<open>x < 2 ^ N\<close>
+  using assms order_less_le_trans by fastforce
+
+lemma power_lt_min: fixes x n N :: nat assumes \<open>n < N\<close> and \<open>x < 2 ^ (Suc n)\<close> shows \<open>x < 2 ^ N\<close>
+  using Suc_leI assms power_le_min by blast
+
 text \<open>simp rules for solving nth numerals\<close>
 
 lemmas nth_numeral_simps = nth_Cons_numeral One_nat_def nth_Cons_Suc diff_numeral_Suc diff_zero pred_numeral_simps 

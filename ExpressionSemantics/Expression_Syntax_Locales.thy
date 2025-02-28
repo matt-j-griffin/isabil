@@ -32,6 +32,7 @@ using assms proof clarify
 qed
 
 lemma is_valI:
+  fixes w\<^sub>1 :: word
   assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz) \<and> v\<^sub>1 = (num \<Colon> sz) \<and> w\<^sub>1 = (num \<Colon> sz)\<close>
     shows \<open>(bv_fun1 e\<^sub>1) = Val (bv_fun2 v\<^sub>1)\<close>
   using assms apply auto
@@ -63,6 +64,7 @@ using assms proof clarify
 qed
 
 lemma is_valI:
+  fixes w\<^sub>1 w\<^sub>2 :: word
   assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num \<Colon> sz\<^sub>1)\<close>
       and \<open>\<exists>num. e\<^sub>2 = (num \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num \<Colon> sz\<^sub>2)\<close>
     shows \<open>(bv_fun1 e\<^sub>1 e\<^sub>2) = Val (bv_fun2 v\<^sub>1 v\<^sub>2)\<close>
@@ -135,6 +137,10 @@ interpretation concat: bop_is_word \<open>(\<cdot>)\<close> \<open>(\<cdot>)\<cl
   apply (unfold_locales)
   unfolding bv_concat.simps(1) by metis
 
+interpretation eq: bop_is_word \<open>(=\<^sub>b\<^sub>v)\<close> \<open>(=\<^sub>b\<^sub>v)\<close> \<open>(=\<^sub>b\<^sub>v)\<close> sz\<^sub>1 sz\<^sub>2 \<open>Suc 0\<close>
+  apply (unfold_locales)
+  unfolding bv_eq_def by auto
+
 lemma eq_is_word:
   fixes e :: exp
   assumes \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz) \<and> v\<^sub>1 = (num \<Colon> sz) \<and> w\<^sub>1 = (num \<Colon> sz)\<close>
@@ -155,22 +161,36 @@ interpretation neg: uop_is_word bv_uminus bv_uminus bv_uminus sz sz
   apply (unfold_locales)
   using bv_uminus.simps(1) by metis
 
+interpretation xtract: uop_is_word \<open>\<lambda>e. ext e \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w\<close> 
+    \<open>\<lambda>v. ext v \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w\<close> \<open>\<lambda>w. ext w \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o\<^sub>w\<close> sz \<open>Suc (sz\<^sub>h\<^sub>i - sz\<^sub>l\<^sub>o\<^sub>w)\<close>
+  apply (unfold_locales)
+  using xtract.simps(1) by metis
+
 lemma xtract_is_word': 
-  assumes \<open>Suc (sz\<^sub>1 - sz\<^sub>2) = sz\<close>
-      and \<open>\<exists>num. e = (num \<Colon> sz') \<and> v = (num \<Colon> sz') \<and> w = (num \<Colon> sz')\<close>
+  fixes e :: exp and v :: val and w :: word
+  assumes sz: \<open>Suc (sz\<^sub>1 - sz\<^sub>2) = sz\<close>
+      and minor: \<open>\<exists>num. e = (num \<Colon> sz') \<and> v = (num \<Colon> sz') \<and> w = (num \<Colon> sz')\<close>
     shows \<open>\<exists>num. (ext e \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz) \<and>
                  (ext v \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz) \<and> 
                  (ext w \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> sz)\<close>
-  using assms apply auto
-  unfolding xtract.simps by auto
+  using minor unfolding sz[symmetric] by (rule xtract.is_word)
 
-lemmas xtract_is_word = xtract_is_word'[OF refl]
-lemma xtract_is_wordv: 
+lemma concat_is_word': 
+  fixes e\<^sub>1 e\<^sub>2 :: exp and v\<^sub>1 v\<^sub>2 :: val and w\<^sub>1 w\<^sub>2 :: word
+  assumes ufold: \<open>sz = sz\<^sub>1 + sz\<^sub>2\<close>
+      and asm: \<open>\<exists>num. e\<^sub>1 = (num \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num \<Colon> sz\<^sub>1)\<close>
+               \<open>\<exists>num. e\<^sub>2 = (num \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num \<Colon> sz\<^sub>2)\<close>
+    shows \<open>\<exists>num. e\<^sub>1 \<cdot> e\<^sub>2 = num \<Colon> sz \<and> v\<^sub>1 \<cdot> v\<^sub>2 = num \<Colon> sz \<and> w\<^sub>1 \<cdot> w\<^sub>2 = num \<Colon> sz\<close>
+  unfolding ufold using asm by (rule concat.is_word)
+
+(*lemmas xtract_is_word = xtract_is_word'[OF refl]
+lemma xtract_is_wordv:
+  fixes e :: exp and v :: val and w :: word
   assumes \<open>\<exists>num. e = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> v = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> w = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2))\<close>
     shows \<open>\<exists>num. (ext e \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and>
                  (ext v \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2)) \<and> 
                  (ext w \<sim> hi : sz\<^sub>1 \<sim> lo : sz\<^sub>2) = (num \<Colon> Suc (sz\<^sub>1 - sz\<^sub>2))\<close>
-  using assms by (rule xtract_is_word)
+  using assms by (rule xtract.is_word)*)
 
 lemma capture_avoid_is_word:
   fixes e :: exp and v :: val and w :: word
@@ -180,17 +200,22 @@ lemma capture_avoid_is_word:
   using assms apply (elim exE conjE, clarify)
   using Val_simp_word by force
 
+named_theorems exp_cast_simps
+
 method solve_is_wordI = 
   (rule word_is_word) |
-  (rule xtract_is_word', linarith, solve_is_wordI) |
+  (rule word_is_word', ((unfold exp_cast_simps)[1])?, linarith) |
   (rule plus.is_word minus.is_word times.is_word divide.is_word
         sdivide.is_word land.is_word lor.is_word xor.is_word mod.is_word smod.is_word lsl.is_word 
         lsr.is_word asr.is_word lt.is_word slt.is_word eq_is_word concat.is_word, 
      solve_is_wordI, solve_is_wordI) |
-  (rule succ.is_word not.is_word neg.is_word xtract_is_word capture_avoid_is_word 
-        eq_is_word, 
-     solve_is_wordI)
-
+  (rule succ.is_word not.is_word neg.is_word xtract.is_word 
+        eq_is_word, solve_is_wordI) |
+  (rule xtract_is_word', ((unfold exp_cast_simps)[1])?, linarith, solve_is_wordI) |
+  (rule concat_is_word'[rotated], solve_is_wordI, solve_is_wordI, ((unfold exp_cast_simps)[1])?, linarith) |
+  (match_schematics conclusion in \<open>\<exists>num. [_\<sslash>(_ :\<^sub>t _)](_ :\<^sub>t _) = num \<Colon> _ \<and> _ = num \<Colon> _ \<and> _ = num \<Colon> _\<close> 
+     \<Rightarrow> \<open>rule capture_avoid_is_word\<close>, solve_is_wordI)
+(*changed \<open>rule capture_avoid_is_word\<close>*)
 locale exp_val_word_fixed_sz_is_ok_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz :: nat
   assumes word_is_ok: \<open>\<And>num. num < 2 ^ sz \<Longrightarrow> PROP P (num \<Colon> sz) (num \<Colon> sz) (num \<Colon> sz) sz\<close>
@@ -225,7 +250,7 @@ lemma land: \<open>PROP P ((num\<^sub>1 \<Colon> sz) &\<^sub>b\<^sub>v (num\<^su
 
 lemma lor: \<open>PROP P ((num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) ((num\<^sub>1 \<Colon> sz) |\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) sz\<close>
   unfolding bv_lor.simps by (intro mod_nat_pow2_lt word_is_ok)
-*)
+
 lemma true_sz:
   assumes sz: \<open>sz = Suc 0\<close> 
     shows \<open>PROP P true true true (Suc 0)\<close>
@@ -237,7 +262,7 @@ lemma false_sz:
     shows \<open>PROP P false false false (Suc 0)\<close>
   unfolding false_word apply (intro word_is_ok[unfolded sz])
   by simp
-
+*)
 lemma leq_sz: 
   assumes sz: \<open>sz = Suc 0\<close> 
     shows \<open>PROP P ((num\<^sub>1 \<Colon> sz') \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz')) ((num\<^sub>1 \<Colon> sz') \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz')) ((num\<^sub>1 \<Colon> sz') \<le>\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz')) (Suc 0)\<close>
@@ -283,6 +308,13 @@ lemma xtract2_plus_sz:
 *)
 
 end
+(*
+locale exp_val_word_fixed_num_sz_syntax =
+  fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> prop\<close> and num sz :: nat
+  assumes is_num_sz_word: \<open>e = (num \<Colon> sz) \<and> v = (num \<Colon> sz) \<and> w = (num \<Colon> sz) \<Longrightarrow> PROP P e v w num sz\<close>
+begin
+
+end*)
 
 locale exp_val_word_fixed_sz_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz :: nat
@@ -351,9 +383,9 @@ begin
 
 sublocale exp_val_word_fixed_sz_syntax
   by standard (rule is_word)
-
+(*
 lemmas true = true_sz[OF refl]
-lemmas false = false_sz[OF refl]
+lemmas false = false_sz[OF refl]*)
 lemmas leq = leq_sz[OF refl]
 lemmas lt = lt_sz[OF refl]
 lemmas xtract = xtract_sz[OF refl]
@@ -385,8 +417,6 @@ lemma unknown_imm: \<open>PROP P (unknown[str]: imm\<langle>sz\<rangle>) (unknow
   unfolding unknown_constructor_exp_def 
   apply (rule val_imm)
   by (rule type_unknownI)
-
-lemmas word_syntaxs = word true false unknown_imm
 
 end
 
@@ -448,7 +478,7 @@ lemma eq_is_valI:
 proof safe
   fix num numa
   show "(if (num \<Colon> sz::exp) = numa \<Colon> sz then true else false) = Val (if (num \<Colon> sz::val) = numa \<Colon> sz then true else false)"
-    by (cases \<open>num \<Colon> sz = numa \<Colon> sz\<close>, auto simp add: true_word false_word word_constructor_exp_def)
+    by (cases \<open>num \<Colon> sz = numa \<Colon> sz\<close>, auto simp add: word_constructor_exp_def)
 qed
 
 lemma xtract_is_valI:
@@ -459,7 +489,7 @@ lemma xtract_is_valI:
 lemmas Val_refl = refl[where t = \<open>Val _\<close>]
 
 method solve_is_valI uses add
-  \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = ((unfold add)?,
+  \<open>Solve and optimise goals of the form ?e = Val ?v\<close> = (
   (rule word_constructor_exp_def storage_constructor_exp_def unknown_constructor_exp_def) |
   (rule plus.is_valI minus.is_valI times.is_valI
         divide.is_valI sdivide.is_valI land.is_valI lor.is_valI xor.is_valI mod.is_valI smod.is_valI 
@@ -467,7 +497,10 @@ method solve_is_valI uses add
      solve_is_wordI, solve_is_wordI) |
   (rule succ.is_valI not.is_valI neg.is_valI xtract_is_valI,
     solve_is_wordI) |
-  (rule Val_refl ) \<comment> \<open>Last case\<close>
+  (match_schematics conclusion in \<open>[_\<sslash>(_ :\<^sub>t _)](_ :\<^sub>t _) = Val _\<close> 
+     \<Rightarrow> \<open>rule capture_avoiding_var\<close>) | 
+  (solves \<open>rule add\<close>) | (* Need this to be only applied if not empty *)
+  (rule Val_refl) \<comment> \<open>Last case\<close>
 )
 
 locale exp_val_syntax =
@@ -585,7 +618,7 @@ sublocale word: exp_val_word_fixed_sz_is_ok_syntax
   where P = \<open>\<lambda>e v w sz'. (num < 2 ^ sz\<^sub>1 \<Longrightarrow> PROP P (num \<Colon> sz\<^sub>1) (num \<Colon> sz\<^sub>1) (num \<Colon> sz\<^sub>1) sz\<^sub>1 e v w sz')\<close> 
     and sz = sz\<^sub>2
   apply (standard)
-  unfolding succ.simps bv_plus.simps apply (rule word2_sz) oops
+  unfolding succ.simps bv_plus.simps apply (rule word2_sz) by auto
 
 sublocale succ: exp_val_word_fixed_sz_is_ok_syntax
   where P = \<open>\<lambda>e v w sz'. P (succ (num \<Colon> sz\<^sub>1)) (succ (num \<Colon> sz\<^sub>1)) (succ (num \<Colon> sz\<^sub>1)) sz\<^sub>1 e v w sz'\<close> 
@@ -647,7 +680,7 @@ end
 
 locale exp_val2_word_sz1_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> prop\<close>
-  assumes is_word2: \<open>\<And>sz\<^sub>1. \<lbrakk>\<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1); 
+  assumes is_word_val: \<open>\<And>sz\<^sub>1. \<lbrakk>\<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1); 
      e\<^sub>2 = (Val v\<^sub>2)
    \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2\<close>
 begin
@@ -655,7 +688,7 @@ begin
 sublocale is_word: exp_val_syntax
   where P = \<open>\<lambda>e v. (\<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e v)\<close> 
   apply (standard)
-  by (rule is_word2, auto)
+  by (rule is_word_val, auto)
 
 sublocale word: exp_val_syntax
   where P = \<open>\<lambda>e v. P (num \<Colon> sz\<^sub>1) (num \<Colon> sz\<^sub>1) (num \<Colon> sz\<^sub>1) sz\<^sub>1 e v\<close> 
@@ -690,10 +723,33 @@ end
 
 
 
+locale exp_val_word_fixed_sz_syntax_val2 =
+    fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> prop\<close> 
+      and sz\<^sub>1 :: nat
+  assumes is_word_val: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     e\<^sub>2 = Val v\<^sub>2
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2\<close>
 
+locale exp_val_word_fixed_sz_syntax2_val3 =
+    fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> prop\<close> 
+      and sz\<^sub>1 sz\<^sub>2 :: nat
+  assumes is_word2_val: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     \<exists>num\<^sub>2. e\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2);
+     e\<^sub>3 = Val v\<^sub>3
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3\<close>
 
-
-
+locale exp_val_word_fixed_sz_syntax3_val4 =
+  fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> 
+              exp \<Rightarrow> val \<Rightarrow> prop\<close> 
+      and sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 :: nat
+  assumes is_word3_val: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     \<exists>num\<^sub>2. e\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2);
+     \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3);
+     e\<^sub>4 = Val v\<^sub>4
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3 e\<^sub>4 v\<^sub>4\<close>
 
 
 
@@ -756,11 +812,11 @@ sublocale word: exp_val_syntax
 
 sublocale true: exp_val_syntax
   where P = \<open>\<lambda>e v. PROP P2 true e true v\<close>
-  unfolding true_word word_constructor_exp_def by (standard, rule val.is_val)
+  unfolding word_constructor_exp_def by (standard, rule val.is_val)
 
 sublocale false: exp_val_syntax
   where P = \<open>\<lambda>e v. PROP P2 false e false v\<close>
-  unfolding false_word word_constructor_exp_def by (standard, rule val.is_val)
+  unfolding word_constructor_exp_def by (standard, rule val.is_val)
 
 sublocale storage: exp_val_syntax
   where P = \<open>\<lambda>e v. (\<And>v' num sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r v'' sz. PROP P2 (v'[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v'', sz]) e (v'[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v'', sz]) v)\<close>
@@ -794,6 +850,7 @@ sublocale leq: exp_val_syntax
   unfolding bv_leq_true_or_false by (rule word.is_val)
 
 end
+
 
 
 (* can be replaced by 
@@ -834,28 +891,29 @@ end
 
 locale load_multiple_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> prop\<close>
-  assumes val_is_word: \<open>\<And>v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e. \<lbrakk>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; \<exists>num. e = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<rbrakk> \<Longrightarrow> PROP P (Val v) v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<close>
+  assumes is_val_word: \<open>\<And>e\<^sub>1 v\<^sub>1 e\<^sub>2 (v\<^sub>2::val) (w\<^sub>2::word) sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. \<lbrakk>type v\<^sub>1 = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>; e\<^sub>1 = Val v\<^sub>1; 
+    \<exists>num. e\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<and> v\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<and> w\<^sub>2 = (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)\<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e\<^sub>2\<close>
 begin
 
 sublocale storage: exp_val_word_sz_syntax
   where P = \<open>\<lambda>e _ _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. (\<And>v v' num sz\<^sub>m\<^sub>e\<^sub>m. PROP P (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]) (v[(num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]) sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e)\<close>
   apply (standard)
   unfolding storage_constructor_exp_def
-  apply (intro val_is_word type_storageI)
+  apply (intro is_val_word type_storageI)
   by auto
  
 sublocale storage_addr: exp_val_word_sz_syntax
   where P = \<open>\<lambda>e _ _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. (\<And>v v' w sz\<^sub>m\<^sub>e\<^sub>m. type w = imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle> \<Longrightarrow> PROP P (v[w \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]) (v[w \<leftarrow> v', sz\<^sub>m\<^sub>e\<^sub>m]) sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e)\<close>
   apply (standard)
   unfolding storage_constructor_exp_def
-  apply (intro val_is_word type_storage_addrI)
+  apply (intro is_val_word type_storage_addrI)
   by auto
 
 sublocale unknown: exp_val_word_sz_syntax
   where P = \<open>\<lambda>e _ _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r. (\<And>str sz\<^sub>m\<^sub>e\<^sub>m. PROP P (unknown[str]: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) (unknown[str]: mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, sz\<^sub>m\<^sub>e\<^sub>m\<rangle>) sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m e)\<close>
   apply (standard)
   unfolding unknown_constructor_exp_def 
-  apply (intro val_is_word type_unknownI)
+  apply (intro is_val_word type_unknownI)
   by auto
 
 end
@@ -892,10 +950,10 @@ end
 
 locale store_gt8_syntax =
   fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> exp \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> prop\<close> and sz\<^sub>v\<^sub>a\<^sub>l :: nat
-  assumes is_word_val2: \<open>\<And>v sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>1 w\<^sub>1 e\<^sub>2 v\<^sub>2. \<lbrakk>type v = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>;
-    \<exists>num\<^sub>1. e\<^sub>1 = num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<and> w\<^sub>1 = num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
-    \<exists>num\<^sub>2. e\<^sub>2 = num\<^sub>2 \<Colon> sz\<^sub>v\<^sub>a\<^sub>l \<and> v\<^sub>2 = num\<^sub>2 \<Colon> sz\<^sub>v\<^sub>a\<^sub>l\<rbrakk> \<Longrightarrow>
-        PROP P (Val v) v e\<^sub>1 w\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>2 v\<^sub>2\<close>
+  assumes is_word_val2: \<open>\<And>e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>1 (v\<^sub>1::val) w\<^sub>1 e\<^sub>2 v\<^sub>2 (w\<^sub>2::word). \<lbrakk>type v\<^sub>3 = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>;
+    \<exists>num\<^sub>1. e\<^sub>1 = num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<and> v\<^sub>1 = num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r \<and> w\<^sub>1 = num\<^sub>1 \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r;
+    \<exists>num\<^sub>2. e\<^sub>2 = num\<^sub>2 \<Colon> sz\<^sub>v\<^sub>a\<^sub>l \<and> v\<^sub>2 = num\<^sub>2 \<Colon> sz\<^sub>v\<^sub>a\<^sub>l \<and> w\<^sub>2 = num\<^sub>2 \<Colon> sz\<^sub>v\<^sub>a\<^sub>l; e\<^sub>3 = Val v\<^sub>3\<rbrakk> \<Longrightarrow>
+        PROP P e\<^sub>3 v\<^sub>3 e\<^sub>1 w\<^sub>1 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>2 v\<^sub>2\<close>
 begin
 
 sublocale val: exp_val_word_fixed_sz_syntax2
@@ -933,5 +991,50 @@ end
 
 interpretation capture_avoid: exp_val_syntax \<open>\<lambda>e _. (\<And>val var. [val\<sslash>var]e = e)\<close>
   by (standard, simp)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+locale exp_val_word_fixed_sz_syntax3 =
+    fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow>
+                prop\<close> and sz\<^sub>3 :: nat
+  assumes is_val2_word: \<open>\<lbrakk>e\<^sub>1 = Val v\<^sub>1; e\<^sub>2 = Val v\<^sub>2;
+     \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3)
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 e\<^sub>2 v\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3\<close>
+begin
+
+end
+
+
+locale exp_val_word_fixed_sz_syntax4 =
+    fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow>
+                exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 :: nat
+  assumes is_word4: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     \<exists>num\<^sub>2. e\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2);
+     \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3);
+     \<exists>num\<^sub>4. e\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4) \<and> v\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4) \<and> w\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4)
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3 e\<^sub>4 v\<^sub>4 w\<^sub>4 sz\<^sub>4\<close>
+begin
+
+end
 
 end

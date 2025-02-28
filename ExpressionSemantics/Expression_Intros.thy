@@ -8,8 +8,8 @@ subsection \<open>Preliminaries\<close>
 
 subsection \<open>Vars\<close>
 
-lemmas step_var_inI = VarIn
-lemmas step_var_unI = VarNotIn
+lemmas step_var_inI[intro] = VarIn
+lemmas step_var_unI[intro] = VarNotIn
 
 interpretation step_var_inI: exp_val_syntax \<open>\<lambda>e v. (\<And>\<Delta> name t ed sz. (name :\<^sub>t t, v) \<in>\<^sub>\<Delta> \<Delta> \<Longrightarrow> \<Delta> \<turnstile> (name :\<^sub>t t) \<leadsto> e)\<close>
   apply (standard, simp)
@@ -17,14 +17,14 @@ interpretation step_var_inI: exp_val_syntax \<open>\<lambda>e v. (\<And>\<Delta>
 
 subsection \<open>Loads\<close>
 
-lemmas step_load_addrI = LoadStepAddr
-lemmas step_load_memI = LoadStepMem
-lemmas step_load_byteI = LoadByte
-lemmas step_load_byte_from_nextI = LoadByteFromNext
-lemmas step_load_un_addrI = LoadUnAddr
-lemmas step_load_un_memI = LoadUnMem
-lemmas step_load_word_beI = LoadWordBe
-lemmas step_load_word_elI = LoadWordEl
+lemmas step_load_addrI[intro] = LoadStepAddr
+lemmas step_load_memI[intro] = LoadStepMem
+lemmas step_load_byteI[intro] = LoadByte
+lemmas step_load_byte_from_nextI[intro] = LoadByteFromNext
+lemmas step_load_un_addrI[intro] = LoadUnAddr
+lemmas step_load_un_memI[intro] = LoadUnMem
+lemmas step_load_word_beI[intro] = LoadWordBe
+lemmas step_load_word_elI[intro] = LoadWordEl
 
 interpretation step_load_memI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' ed sz. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1[e, ed]:usz \<leadsto> (e\<^sub>1'[e, ed]:usz))\<close>
   by (standard, simp, rule step_load_memI)
@@ -35,7 +35,6 @@ interpretation step_load_un_memI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<D
 interpretation step_load_byteI: exp_val2_word_sz1_syntax \<open>\<lambda>w\<^sub>e _ w\<^sub>w _ e v'. (\<And>\<Delta> sz v ed. \<Delta> \<turnstile> v[w\<^sub>w \<leftarrow> v', sz][w\<^sub>e, ed]:usz \<leadsto> e)\<close>
   apply (standard, auto)
   using step_load_byteI by force
-
 
 interpretation step_load_byte_from_nextI: exp_val2_word_sz1_syntax \<open>\<lambda>w\<^sub>e _ w\<^sub>w _ e v. 
     (\<And>\<Delta> w sz v' ed. w \<noteq> w\<^sub>w \<Longrightarrow> \<Delta> \<turnstile> v[w \<leftarrow> v', sz][w\<^sub>e, ed]:usz \<leadsto> (e[w\<^sub>e, ed]:usz))\<close>
@@ -54,52 +53,51 @@ interpretation step_load_word_elI: load_multiple_syntax \<open>\<lambda>e\<^sub>
 
 subsection \<open>Stores\<close>
 
-lemmas step_store_step_valI = StoreStepVal
+lemmas step_store_step_valI[intro] = StoreStepVal
 
-lemmas step_store_addrI = StoreStepAddr
+lemmas step_store_addrI[intro] = StoreStepAddr
 interpretation step_store_addrI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e\<^sub>2 e\<^sub>2' en sz. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz \<leftarrow> e \<leadsto> (e\<^sub>1 with [e\<^sub>2', en]:usz \<leftarrow> e))\<close>
   by (standard, simp, rule step_store_addrI)
 
-lemmas step_store_un_addrI = StoreUnAddr
+lemmas step_store_un_addrI[intro] = StoreUnAddr
 interpretation step_store_un_addrI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _. (\<And>\<Delta> t t' str ed sz. type v\<^sub>1 = t \<Longrightarrow> \<Delta> \<turnstile> e\<^sub>1 with [unknown[str]: t', ed]:usz \<leftarrow> e\<^sub>2 \<leadsto> unknown[str]: t)\<close>
   by (standard, simp, rule step_store_un_addrI)
 
-lemmas step_store_memI = StoreStepMem
+lemmas step_store_memI[intro] = StoreStepMem
 interpretation step_store_memI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 _ _. (\<And>\<Delta> e e' en sz. \<Delta> \<turnstile> e \<leadsto> e' \<Longrightarrow> \<Delta> \<turnstile> e with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2 \<leadsto> (e' with [e\<^sub>1, en]:usz \<leftarrow> e\<^sub>2))\<close>
   by (standard, simp, rule step_store_memI)
 
-lemmas step_store_valI = StoreVal
+lemmas step_store_valI[intro] = StoreVal
 interpretation step_store_valI: store_multiple_syntax \<open>\<lambda>e\<^sub>1 v\<^sub>1 e\<^sub>2 _ w\<^sub>2 e\<^sub>3 v\<^sub>3 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> en. \<Delta> \<turnstile> e\<^sub>1 with [e\<^sub>2, en]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> e\<^sub>3 \<leadsto> (v\<^sub>1[w\<^sub>2 \<leftarrow> v\<^sub>3, sz\<^sub>m\<^sub>e\<^sub>m]))\<close>
   by (standard, use step_store_valI in blast)
 
-lemmas step_store_word_beI = StoreWordBe
-interpretation step_store_word_beI: exp2_storage_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num  sz  e. \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz;
-   e = e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])\<rbrakk> \<Longrightarrow>
-\<Delta> \<turnstile> e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz \<leftarrow> e\<^sub>2 \<leadsto> (e with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])))\<close>
+lemmas step_store_word_beI[intro] = StoreWordBe
+interpretation step_store_word_beI: exp2_storage_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num  sz  e. \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz\<rbrakk> \<Longrightarrow>
+\<Delta> \<turnstile> e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz \<leftarrow> e\<^sub>2 \<leadsto> ((e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, be]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])) with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), be]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])))\<close>
   by (standard, simp, intro step_store_word_beI refl)
   
-lemmas step_store_word_elI = StoreWordEl
-interpretation step_store_word_elI: exp2_storage_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num sz e. \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz;
-   e = e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])\<rbrakk> \<Longrightarrow>
-\<Delta> \<turnstile> e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz \<leftarrow> e\<^sub>2 \<leadsto> (e with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])))\<close>
+lemmas step_store_word_elI[intro] = StoreWordEl
+interpretation step_store_word_elI: exp2_storage_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 _ sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>\<Delta> num sz e. 
+  \<lbrakk>sz\<^sub>m\<^sub>e\<^sub>m < sz\<rbrakk> \<Longrightarrow>
+\<Delta> \<turnstile> e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz \<leftarrow> e\<^sub>2 \<leadsto> ((e\<^sub>1 with [num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, el]:usz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (low:sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])) with [succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r), el]:usz - sz\<^sub>m\<^sub>e\<^sub>m \<leftarrow> (high:sz - sz\<^sub>m\<^sub>e\<^sub>m[e\<^sub>2])))\<close>
   by (standard, simp, intro step_store_word_elI refl)
 
 subsection \<open>Let\<close>
 
-lemmas step_let_stepI = LetStep
-lemmas step_letI = Let
+lemmas step_let_stepI[intro] = LetStep
+lemmas step_letI[intro] = Let
 
 interpretation step_letI: exp_val_syntax \<open>\<lambda>e v. (\<And>\<Delta> e' var. \<Delta> \<turnstile> Let var e e' \<leadsto> [v\<sslash>var]e')\<close>
   by (standard, simp, rule step_letI)
 
 subsection \<open>Ite\<close>
 
-lemmas step_ite_condI = IfStepCond
-lemmas step_ite_thenI = IfStepThen
-lemmas step_ite_elseI = IfStepElse
-lemmas step_ite_trueI = IfTrue
-lemmas step_ite_falseI = IfFalse
-lemmas step_ite_unI = IfUnknown
+lemmas step_ite_condI[intro] = IfStepCond
+lemmas step_ite_thenI[intro] = IfStepThen
+lemmas step_ite_elseI[intro] = IfStepElse
+lemmas step_ite_trueI[intro] = IfTrue
+lemmas step_ite_falseI[intro] = IfFalse
+lemmas step_ite_unI[intro] = IfUnknown
 
 interpretation step_ite_thenI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1' e\<^sub>2 e\<^sub>2'. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> ite e\<^sub>1 e\<^sub>2 e \<leadsto> ite e\<^sub>1 e\<^sub>2' e)\<close>
   by (standard, simp, rule step_ite_thenI)
@@ -119,8 +117,8 @@ interpretation step_ite_unI: exp2_val_syntax \<open>\<lambda>e\<^sub>1 e\<^sub>2
 
 subsection \<open>Bop\<close>
 
-lemmas step_bop_lhsI = BopLhs
-lemmas step_bop_rhsI = BopRhs
+lemmas step_bop_lhsI[intro] = BopLhs
+lemmas step_bop_rhsI[intro] = BopRhs
 
 interpretation step_bop_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>2 bop e\<^sub>2'. \<Delta> \<turnstile> e\<^sub>2 \<leadsto> e\<^sub>2' \<Longrightarrow> \<Delta> \<turnstile> BinOp e bop e\<^sub>2 \<leadsto> BinOp e bop e\<^sub>2')\<close>
   by (standard, simp, rule step_bop_rhsI)
@@ -128,7 +126,7 @@ interpretation step_bop_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta
 context bop_lemmas
 begin
 
-lemma step_exp_lhsI:
+lemma step_exp_lhsI[intro]:
   assumes \<open>\<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1'\<close>
     shows \<open>\<Delta> \<turnstile> bop_fun e\<^sub>1 e\<^sub>2 \<leadsto> bop_fun e\<^sub>1' e\<^sub>2\<close>
   using assms unfolding bop_simps by (rule step_bop_lhsI)
@@ -139,110 +137,110 @@ sublocale step_exp_rhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<
 
 end
 
-lemmas step_aop_unk_rhsI = AopUnkRhs
-lemmas step_aop_unk_lhsI = AopUnkLhs
+lemmas step_aop_unk_rhsI[intro] = AopUnkRhs
+lemmas step_aop_unk_lhsI[intro] = AopUnkLhs
 
 context aop_lemmas
 begin
 
-lemma step_exp_unk_lhsI: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto> (unknown[str]: t)\<close>
+lemma step_exp_unk_lhsI[intro]: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto> (unknown[str]: t)\<close>
   unfolding aop_simps by (rule step_aop_unk_lhsI)
 
-lemma step_exp_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto> (unknown[str]: t)\<close>
+lemma step_exp_unk_rhsI[intro]: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto> (unknown[str]: t)\<close>
   unfolding aop_simps by (rule step_aop_unk_rhsI)
 
 end
 
-lemmas step_lop_unk_rhsI = LopUnkRhs
-lemmas step_lop_unk_lhsI = LopUnkLhs
+lemmas step_lop_unk_rhsI[intro] = LopUnkRhs
+lemmas step_lop_unk_lhsI[intro] = LopUnkLhs
 
 context lop_lemmas
 begin
 
-lemma step_exp_unk_lhsI: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
+lemma step_exp_unk_lhsI[intro]: \<open>\<Delta> \<turnstile> bop_fun (unknown[str]: t) e \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
   unfolding lop_simps by (rule step_lop_unk_lhsI)
 
-lemma step_exp_unk_rhsI: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
+lemma step_exp_unk_rhsI[intro]: \<open>\<Delta> \<turnstile> bop_fun e (unknown[str]: t) \<leadsto> (unknown[str]: imm\<langle>1\<rangle>)\<close>
   unfolding lop_simps by (rule step_lop_unk_rhsI)
 
 end
 
-lemmas step_plusI = Plus
+lemmas step_plusI[intro] = Plus
 interpretation step_plusI: exp_val_word_fixed_sz_syntax2 
     \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 + e\<^sub>2) \<leadsto> (e\<^sub>1 +\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_plusI by blast
 
-lemmas step_minusI = Minus
+lemmas step_minusI[intro] = Minus
 interpretation step_minusI: exp_val_word_fixed_sz_syntax2 
     \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 - e\<^sub>2) \<leadsto> (e\<^sub>1 -\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_minusI by blast
 
-lemmas step_timesI = Times
+lemmas step_timesI[intro] = Times
 interpretation step_timesI: exp_val_word_fixed_sz_syntax2 
     \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 * e\<^sub>2) \<leadsto> (e\<^sub>1 *\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_timesI by blast
 
-lemmas step_divI = Div
+lemmas step_divI[intro] = Div
 interpretation step_divI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 div e\<^sub>2) \<leadsto> (e\<^sub>1 div\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_divI by blast
 
-lemmas step_sdivI = SDiv
+lemmas step_sdivI[intro] = SDiv
 interpretation step_sdivI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 sdiv e\<^sub>2) \<leadsto> (e\<^sub>1 div\<^sub>s\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_sdivI by blast
 
-lemmas step_modI = Mod
+lemmas step_modI[intro] = Mod
 interpretation step_modI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 mod e\<^sub>2) \<leadsto> (e\<^sub>1 %\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_modI by blast
 
-lemmas step_smodI = SMod
+lemmas step_smodI[intro] = SMod
 interpretation step_smodI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 smod e\<^sub>2) \<leadsto> (e\<^sub>1 %\<^sub>s\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_smodI by blast
 
-lemmas step_lslI = Lsl
+lemmas step_lslI[intro] = Lsl
 interpretation step_lslI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 << e\<^sub>2) \<leadsto> (e\<^sub>1 <<\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_lslI by blast
 
-lemmas step_lsrI = Lsr
+lemmas step_lsrI[intro] = Lsr
 interpretation step_lsrI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 >> e\<^sub>2) \<leadsto> (e\<^sub>1 >>\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_lsrI by blast
 
-lemmas step_asrI = Asr
+lemmas step_asrI[intro] = Asr
 interpretation step_asrI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 >>> e\<^sub>2) \<leadsto> (e\<^sub>1 >>>\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_asrI by blast
 
-lemmas step_landI = LAnd
+lemmas step_landI[intro] = LAnd
 interpretation step_landI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 && e\<^sub>2) \<leadsto> (e\<^sub>1 &\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_landI by blast
 
-lemmas step_lorI = LOr
+lemmas step_lorI[intro] = LOr
 interpretation step_lorI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 || e\<^sub>2) \<leadsto> (e\<^sub>1 |\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_lorI by blast
 
-lemmas step_xorI = XOr
+lemmas step_xorI[intro] = XOr
 interpretation step_xorI: exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 xor e\<^sub>2) \<leadsto> (e\<^sub>1 xor\<^sub>b\<^sub>v e\<^sub>2))\<close> sz sz
   apply (standard)
   using step_xorI by blast
 
-lemmas step_eq_sameI = EqSame
+lemmas step_eq_sameI[intro] = EqSame
 lemma step_eqI:
   assumes \<open>(num1 \<Colon> sz1) =\<^sub>b\<^sub>v (num2 \<Colon> sz2) = (true::val)\<close>
     shows \<open>\<Delta> \<turnstile> BinOp (num1 \<Colon> sz1) (LOp Eq) (num2 \<Colon> sz2) \<leadsto> true\<close>
   using assms step_eq_sameI 
   by (metis Val_simp_word bv_negation_true_false bv_neq_true one_neq_zero word_bool_inject(1))
 
-lemmas step_eq_diffI = EqDiff
+lemmas step_eq_diffI[intro] = EqDiff
 interpretation step_eq_diffI: exp2_val_word_sz_syntax \<open>\<lambda>e\<^sub>1 _ w\<^sub>1 _ e\<^sub>2 _ w\<^sub>2 _. (\<And>\<Delta>. w\<^sub>1 \<noteq>\<^sub>b\<^sub>v w\<^sub>2 = true \<Longrightarrow> \<Delta> \<turnstile> BinOp e\<^sub>1 (LOp Eq) e\<^sub>2 \<leadsto> false)\<close>
   apply (standard)
   using step_eq_diffI by force
@@ -265,31 +263,31 @@ interpretation step_eqI': exp_val_word_fixed_sz_syntax2 \<open>\<lambda>e\<^sub>
   apply (standard)
   using step_eqI' by blast
 
-lemmas step_neq_sameI = NeqSame
-lemmas step_neq_diffI = NeqDiff
+lemmas step_neq_sameI[intro] = NeqSame
+lemmas step_neq_diffI[intro] = NeqDiff
 
-lemmas step_lessI = Less
-lemmas step_less_eqI = LessEq
-lemmas step_signed_lessI = SignedLess
-lemmas step_signed_less_eqI = SignedLessEq
+lemmas step_lessI[intro] = Less
+lemmas step_less_eqI[intro] = LessEq
+lemmas step_signed_lessI[intro] = SignedLess
+lemmas step_signed_less_eqI[intro] = SignedLessEq
 
 subsection \<open>Uop\<close>
 
-lemmas step_uopI = Uop
-lemmas step_reduce_notI = step_uopI[where uop = Not, unfolded not_exp_def[symmetric]] 
-lemmas step_reduce_negI = step_uopI[where uop = Neg, unfolded uminus_exp_def[symmetric]] 
+lemmas step_uopI[intro] = Uop
+lemmas step_reduce_notI[intro] = step_uopI[where uop = Not, unfolded not_exp_def[symmetric]] 
+lemmas step_reduce_negI[intro] = step_uopI[where uop = Neg, unfolded uminus_exp_def[symmetric]] 
 
-lemmas step_notI = Not
+lemmas step_notI[intro] = Not
 interpretation step_notI: exp_val_word_fixed_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (\<sim> e\<^sub>1) \<leadsto> (~\<^sub>b\<^sub>v e\<^sub>1))\<close> sz
   apply (standard)
   using step_notI by blast
 
-lemmas step_negI = Neg
+lemmas step_negI[intro] = Neg
 interpretation step_negI: exp_val_word_fixed_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (- e\<^sub>1) \<leadsto> (-\<^sub>b\<^sub>v e\<^sub>1))\<close> sz
   apply (standard)
   using step_negI by blast
 
-lemmas step_uop_unkI = UopUnk
+lemmas step_uop_unkI[intro] = UopUnk
 
 lemma step_uop_unk_notI: \<open>\<Delta> \<turnstile> (\<sim> (unknown[str]: t)) \<leadsto> (unknown[str]: t)\<close>
   unfolding not_exp_def by (rule step_uop_unkI)
@@ -305,110 +303,79 @@ lemma step_not_trueI: \<open>\<Delta> \<turnstile> (\<sim>true) \<leadsto> false
 
 subsection \<open>Concat\<close>
 
-lemmas step_concat_rhsI = ConcatRhs
+lemmas step_concat_rhsI[intro] = ConcatRhs
 
-lemmas step_concatI = Concat
+lemmas step_concatI[intro] = Concat
 interpretation step_concatI: exp2_val_word_sz_syntax \<open>\<lambda>e\<^sub>1 _ _ _ e\<^sub>2 _ _ _. (\<And>\<Delta>. \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e\<^sub>2) \<leadsto> (e\<^sub>1 \<cdot> e\<^sub>2))\<close>
   apply standard
   using step_concatI by force
 
-lemmas step_concat_lhsI = ConcatLhs
+lemmas step_concat_lhsI[intro] = ConcatLhs
 interpretation step_concat_lhsI: exp_val_syntax \<open>\<lambda>e _. (\<And>\<Delta> e\<^sub>1 e\<^sub>1'. \<Delta> \<turnstile> e\<^sub>1 \<leadsto> e\<^sub>1' \<Longrightarrow> \<Delta> \<turnstile> (e\<^sub>1 \<copyright> e) \<leadsto> (e\<^sub>1' \<copyright> e))\<close>
   by (standard, use step_concat_lhsI in blast)
 
-lemmas step_concat_lhs_unI = ConcatLhsUn
+lemmas step_concat_lhs_unI[intro] = ConcatLhsUn
 interpretation step_concat_lhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>1 str. \<Delta> \<turnstile> ((unknown[str]: imm\<langle>sz\<^sub>1\<rangle>) \<copyright> e) \<leadsto> unknown[str]: imm\<langle>sz\<^sub>1 + sz\<rangle>)\<close>
   apply standard
   using step_concat_lhs_unI by force
 
-lemmas step_concat_rhs_unI = ConcatRhsUn
+lemmas step_concat_rhs_unI[intro] = ConcatRhsUn
 interpretation step_concat_rhs_unI: exp_val_is_imm_syntax \<open>\<lambda>e v sz. (\<And>\<Delta> sz\<^sub>2 str. \<Delta> \<turnstile> (e \<copyright> unknown[str]: imm\<langle>sz\<^sub>2\<rangle>) \<leadsto> unknown[str]: imm\<langle>sz + sz\<^sub>2\<rangle>)\<close>
   apply standard
   using step_concat_rhs_unI by force
 
 subsection \<open>Extract\<close>
 
-lemmas step_extract_reduceI = ExtractReduce
-lemmas step_extract_unI = ExtractUn
-lemmas step_extractI = Extract
+lemmas step_extract_reduceI[intro] = ExtractReduce
+lemmas step_extract_unI[intro] = ExtractUn
+lemmas step_extractI[intro] = Extract
 
 subsection \<open>Cast\<close>
 
-lemmas step_cast_reduceI = CastReduce
-lemmas step_cast_unkI = CastUnk
-lemmas step_cast_lowI = CastLow
+lemmas step_cast_reduceI[intro] = CastReduce
+lemmas step_cast_unkI[intro] = CastUnk
+lemmas step_cast_lowI[intro] = CastLow
 interpretation step_cast_lowI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (\<And>\<Delta> sz. \<Delta> \<turnstile> low:sz[e] \<leadsto> ext e \<sim> hi : sz - 1 \<sim> lo : 0)\<close>
   apply standard
   using step_cast_lowI by force
 
-lemmas step_cast_highI = CastHigh
+lemmas step_cast_highI[intro] = CastHigh
 interpretation step_cast_highI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ sz'. (\<And>\<Delta> sz. \<Delta> \<turnstile> high:sz[e] \<leadsto> ext e \<sim> hi : sz' - 1 \<sim> lo : sz' - sz)\<close>
   apply standard
   using step_cast_highI by force
 
-lemmas step_cast_signedI = CastSigned 
+lemmas step_cast_signedI[intro] = CastSigned 
 interpretation step_cast_signedI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (\<And>\<Delta> sz. \<Delta> \<turnstile> extend:sz[e] \<leadsto> ext e \<sim> hi : sz - 1 \<sim> lo : 0)\<close>
   apply standard
   using step_cast_signedI by force
 
-lemmas step_cast_unsignedI = CastUnsigned
+lemmas step_cast_unsignedI[intro] = CastUnsigned
 interpretation step_cast_unsignedI: exp_val_word_sz_syntax \<open>\<lambda>e _ _ _. (\<And>\<Delta> sz. \<Delta> \<turnstile> pad:sz[e] \<leadsto> ext e \<sim> hi : sz - 1 \<sim> lo : 0)\<close>
   apply standard
   using step_cast_unsignedI by force
 
-
-
-lemma var_neq[simp]:\<open>(nm1 :\<^sub>t t1 \<noteq> nm2 :\<^sub>t t2) \<longleftrightarrow> (nm1 \<noteq> nm2 \<or> t1 \<noteq> t2)\<close>
-  by auto 
-
-lemmas var_expanded_in_dropI = var_in_dropI[where var = \<open>_ :\<^sub>t _\<close> and var' = \<open>_ :\<^sub>t _\<close>, unfolded var_neq]
-
 lemma neq_64_Suc0: \<open>64 \<noteq> Suc 0\<close>
   by simp
 
-lemmas string_simps = 
-  list.inject char.inject refl conj.left_neutral conj.right_neutral False_not_True not_False_eq_True 
-  capture_avoiding_var_name_neq
-
-lemmas solve_in_var_simps = string_simps var_syntax_class.var_eq Type.inject neq_64_Suc0 simp_thms
-
-method solve_var_inI uses add = (
-  (rule add var_in_addI) |
-  (rule var_in_add_eqI, (simp (no_asm) only: add solve_in_var_simps; fail)) |
-  (rule var_expanded_in_dropI[rotated] var_in_dropI[rotated], (simp (no_asm) only: add solve_in_var_simps; fail), solve_var_inI add: add)
-)
-
-
-interpretation capture_avoiding_var: exp_val_syntax \<open>\<lambda>e v. (\<And>nm t. [v\<sslash>(nm :\<^sub>t t)](nm :\<^sub>t t) = e)\<close>
-  apply standard using capture_avoiding_var by meson
-
-lemmas capture_avoiding_sub_simps = 
-  plus.capture_avoiding_sub minus.capture_avoiding_sub times.capture_avoiding_sub 
-  divide.capture_avoiding_sub mod.capture_avoiding_sub sdivide.capture_avoiding_sub
-  smod.capture_avoiding_sub land.capture_avoiding_sub lor.capture_avoiding_sub 
-  xor.capture_avoiding_sub lsl.capture_avoiding_sub lsr.capture_avoiding_sub 
-  asr.capture_avoiding_sub capture_avoiding_var.word
-  capture_avoid.word capture_avoid.unknown capture_avoid.storage capture_avoid.plus
-  capture_avoid.minus capture_avoid.lsl capture_avoid.lsr capture_avoid.xor
-  capture_avoiding_sub.simps
-  string_simps
+lemmas solve_in_var_simps[bil_var_simps] = string_simps var_syntax_class.var_eq Type.inject 
+  neq_64_Suc0 not_Cons_self 
 
 method simp_capture_avoid uses add = (simp (no_asm) only: capture_avoiding_sub_simps)
 
 method solve_expI_scaffold methods recurs solve_type uses add = (
     \<comment> \<open>Vars\<close>
   (rule step_var_inI.is_val[rotated], solve_var_inI add: add, solve_is_valI) |
-  (rule step_var_inI.is_val[rotated], solve_in_var add: add, solve_is_valI) | \<comment> \<open>Remove this method\<close>
+\<comment> \<open>  (rule step_var_inI.is_val[rotated], solve_in_var add: add, solve_is_valI) | Remove this method\<close>
   (rule step_var_unI, blast) |
 
   \<comment> \<open>Loads\<close>
-  (rule step_load_un_addrI step_load_byteI.word.word step_load_byteI.word.true 
-        step_load_byteI.word.false step_load_byteI.word.unknown 
+  (rule step_load_un_addrI step_load_byteI.word.word 
+        step_load_byteI.word.unknown 
         step_load_byteI.word.xtract step_load_byteI.word.succ step_load_byteI.word.val 
-        step_load_byteI.succ.word step_load_byteI.succ.true step_load_byteI.succ.false  
+        step_load_byteI.succ.word   
         step_load_byteI.succ.unknown step_load_byteI.succ.xtract 
         step_load_byteI.succ.succ step_load_byteI.succ.val) |
-  (rule step_load_byteI.is_word.word step_load_byteI.is_word.true step_load_byteI.is_word.false 
+  (rule step_load_byteI.is_word.word 
         step_load_byteI.is_word.unknown step_load_byteI.is_word.xtract step_load_byteI.is_word.succ 
         step_load_byteI.is_word.val, solve_is_wordI) |
 

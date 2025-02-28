@@ -3,7 +3,8 @@ theory Mem32
           \<comment> \<open>Why am I doing this? - it looks like you must preload "interpretation"s to add lemmas
               to the context. If interpretations and lemma adding happens in parallel then the lemmas 
               don't seem to make it to the interpretation\<close>
-          "../ExpressionSemantics/Expressions_Intros"
+          "IsaBIL.Expressions_Intros"
+          "IsaBIL.Solve_BitVector"
 begin
 
 \<comment> \<open>Memory Extensions for 32bit words\<close>
@@ -19,85 +20,66 @@ begin
    function succ two and three times respectively, and add these to our syntax locales.
    \<close>
 
+context word_constructor 
+begin
+
 abbreviation \<open>succ2 w \<equiv> succ (succ w)\<close>
-abbreviation \<open>succ3 w \<equiv> succ2 (succ w)\<close>
+abbreviation \<open>succ3 w \<equiv> succ (succ2 w)\<close>
 
-context exp_val_word_sz_syntax
-begin
+lemma word_neq_succI:
+  assumes \<open>x \<noteq> Suc y\<close> \<open>sz > 0\<close> \<open>Suc y < 2 ^ sz\<close>
+    shows \<open>x \<Colon> sz \<noteq> succ (y \<Colon> sz)\<close>
+  using assms unfolding succ.simps bv_plus.simps by auto
 
-lemma succ2: \<open>PROP P (succ2 (num \<Colon> sz)) (succ2 (num \<Colon> sz)) (succ2 (num \<Colon> sz)) sz\<close>
-  unfolding succ.simps bv_plus.simps by (rule word)
+lemma word_neq_succ2I:
+  assumes \<open>x \<noteq> Suc (Suc y)\<close> \<open>sz > 0\<close> \<open>Suc (Suc y) < 2 ^ sz\<close>
+    shows \<open>x \<Colon> sz \<noteq> succ2 (y \<Colon> sz)\<close>
+  using assms unfolding succ.simps bv_plus.simps by auto
 
-lemma succ2_plus: \<open>PROP P (succ2 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) (succ2 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) (succ2 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) sz\<close>
-  unfolding bv_plus.simps succ.simps by (rule word)
+lemma word_neq_succ3I:
+  assumes \<open>x \<noteq> Suc (Suc (Suc y))\<close> \<open>sz > 0\<close> \<open>Suc (Suc (Suc y)) < 2 ^ sz\<close>
+    shows \<open>x \<Colon> sz \<noteq> succ3 (y \<Colon> sz)\<close>
+  using assms unfolding succ.simps bv_plus.simps by auto
 
-lemma succ3: \<open>PROP P (succ3 (num \<Colon> sz)) (succ3 (num \<Colon> sz)) (succ3 (num \<Colon> sz)) sz\<close>
-  unfolding succ.simps bv_plus.simps by (rule word)
+definition
+  no_address_overlap_32_32 :: \<open>'a \<Rightarrow> 'a \<Rightarrow> bool\<close>
+where 
+  \<open>no_address_overlap_32_32 w\<^sub>1 w\<^sub>2 \<equiv> (
+    w\<^sub>1 \<noteq> w\<^sub>2 \<and>
+    w\<^sub>1 \<noteq> succ w\<^sub>2 \<and>
+    w\<^sub>1 \<noteq> succ2 w\<^sub>2 \<and>
+    w\<^sub>1 \<noteq> succ3 w\<^sub>2 \<and>
+    succ w\<^sub>1 \<noteq> w\<^sub>2 \<and> 
+    succ2 w\<^sub>1 \<noteq> w\<^sub>2 \<and>
+    succ3 w\<^sub>1 \<noteq> w\<^sub>2
+)\<close>
 
-lemma succ3_plus: \<open>PROP P (succ3 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) (succ3 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) (succ3 ((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz))) sz\<close>
-  unfolding bv_plus.simps succ.simps by (rule word)
-
-end
-
-context exp2_val_word_sz_syntax
-begin
-
-sublocale succ2: exp_val_word_sz_syntax
-  where P = \<open>\<lambda>e v w sz'. P (succ2 (num \<Colon> sz)) (succ2 (num \<Colon> sz)) (succ2 (num \<Colon> sz)) sz e v w sz'\<close>
-  apply (standard)
-  unfolding succ.simps bv_plus.simps by (rule word.is_word)
-
-sublocale succ3: exp_val_word_sz_syntax
-  where P = \<open>\<lambda>e v w sz'. P (succ3 (num \<Colon> sz)) (succ3 (num \<Colon> sz)) (succ3 (num \<Colon> sz)) sz e v w sz'\<close>
-  apply (standard)
-  unfolding succ.simps bv_plus.simps by (rule word.is_word)
-
-end
-
-context exp2_val_syntax
-begin
-
-sublocale succ2: exp_val_syntax
-  where P = \<open>\<lambda>e v. (\<And>num sz. PROP (P2 (succ (succ (num \<Colon> sz))) e (succ (succ (num \<Colon> sz))) v))\<close>
-  apply standard unfolding succ.simps bv_plus.simps
-  by (rule word.is_val)
-
-sublocale succ3: exp_val_syntax
-  where P = \<open>\<lambda>e v. (\<And>num sz. PROP (P2 (succ (succ (succ (num \<Colon> sz)))) e (succ (succ (succ (num \<Colon> sz)))) v))\<close>
-  apply standard unfolding succ.simps bv_plus.simps
-  by (rule word.is_val)
-
-end
-
-context exp_val2_word_sz1_syntax
-begin
+lemma no_address_overlap_32_32: 
+  assumes \<open>no_address_overlap_32_32 w\<^sub>1 w\<^sub>2\<close> 
+    shows \<open>w\<^sub>1 \<noteq> w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ2 w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ3 w\<^sub>2\<close> 
+          \<open>succ w\<^sub>1 \<noteq> w\<^sub>2\<close>
+          \<open>succ2 w\<^sub>1 \<noteq> w\<^sub>2\<close>
+          \<open>succ3 w\<^sub>1 \<noteq> w\<^sub>2\<close>
+  using assms unfolding no_address_overlap_32_32_def  by auto
 
 
-sublocale succ2: exp_val_syntax
-  where P = \<open>\<lambda>e v. (\<And>num sz. PROP (P(succ (succ (num \<Colon> sz))) (succ (succ (num \<Colon> sz))) (succ (succ (num \<Colon> sz))) sz e v))\<close>
-  apply standard unfolding succ.simps bv_plus.simps
-  by (rule word.is_val)
+lemmas succ_plus_lhs_succ = succ_plus_lhs_is_word[where w\<^sub>1 = \<open>_ \<Colon> 64\<close> and w\<^sub>2 = \<open>succ (_ \<Colon> 64)\<close>,
+    simplified, OF refl succ_is_word, simplified]
+lemmas succ_plus_lhs_succ2 = succ_plus_lhs_is_word[where w\<^sub>1 = \<open>_ \<Colon> 64\<close> and w\<^sub>2 = \<open>succ2 (_ \<Colon> 64)\<close>,
+    simplified, OF refl succ_is_word[OF succ_is_word], simplified]
 
-sublocale succ3: exp_val_syntax
-  where P = \<open>\<lambda>e v. (\<And>num sz. PROP (P (succ (succ (succ (num \<Colon> sz)))) (succ (succ (succ (num \<Colon> sz)))) (succ (succ (succ (num \<Colon> sz)))) sz e v))\<close>
-  apply standard unfolding succ.simps bv_plus.simps
-  by (rule word.is_val)
 
-end
-
-context store_multiple_syntax
-begin
-
-sublocale succ2: exp2_storage_val_syntax
-  where P2 = \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>num. PROP P e\<^sub>1 v\<^sub>1 (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r))) e\<^sub>2 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-  apply (standard)
-  unfolding storage_constructor_exp_def succ.simps bv_plus.simps by (rule store_val)
-
-sublocale succ3: exp2_storage_val_syntax
-  where P2 = \<open>\<lambda>e\<^sub>1 e\<^sub>2 v\<^sub>1 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m. (\<And>num. PROP P e\<^sub>1 v\<^sub>1 (succ (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) (succ (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) (succ (succ (succ (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r)))) e\<^sub>2 v\<^sub>2 sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r sz\<^sub>m\<^sub>e\<^sub>m)\<close>
-  apply (standard)
-  unfolding storage_constructor_exp_def succ.simps bv_plus.simps by (rule store_val)
-
+lemma no_address_overlap_32_32_plusI:
+  assumes y_is_ok: \<open>Suc (Suc (Suc y)) < 2 ^ 64\<close> and z_is_ok: \<open>Suc (Suc (Suc z)) < 2 ^ 64\<close> 
+      and neq: \<open>Suc (Suc (Suc z)) < y \<or> Suc (Suc (Suc y)) < z\<close>
+    shows \<open>no_address_overlap_32_32 ((x \<Colon> 64) +\<^sub>b\<^sub>v (y \<Colon> 64)) ((x \<Colon> 64) +\<^sub>b\<^sub>v (z \<Colon> 64))\<close>
+  unfolding succ_plus_lhs succ_plus_lhs_succ2 succ_plus_lhs_succ no_address_overlap_32_32_def
+  apply (intro conjI bv_plus_neq_lhsI bv_plus_neq_lhs_is_wordI is_word succ_is_word word_is_okI 
+               y_is_ok z_is_ok succ_is_okI[where sz = 64] word_neq_succI word_neq_succI[symmetric]
+               word_neq_succ2I word_neq_succ2I[symmetric] word_neq_succ3I word_neq_succ3I[symmetric]
+               Suc_lessD[where m = y] Suc_lessD[where m = z] 
+               Suc_lessD[where m = \<open>Suc _\<close>])
+  using neq by auto
 end
 
 \<comment> \<open>Now we add an abbreviation for 32bit words in storage.\<close>
@@ -105,7 +87,7 @@ end
 context storage_constructor
 begin
 
-abbreviation
+definition
   storage_el32 :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> 'a\<close>
 where
   \<open>storage_el32 mem w v \<equiv> (storage_el16 mem w v)
@@ -113,7 +95,7 @@ where
     [succ3 w \<leftarrow> ext v \<sim> hi : 31 \<sim> lo : 24, 8]
 \<close>
 
-abbreviation
+definition
   storage_be32 :: \<open>val \<Rightarrow> word \<Rightarrow> val \<Rightarrow> 'a\<close>
 where
   \<open>storage_be32 mem w v \<equiv> (storage_be16 (mem
@@ -124,19 +106,44 @@ where
 
 end
 
+lemma type_storage_addr_el32[simp]: 
+  assumes \<open>type w = imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+    shows \<open>type (storage_el32 mem w val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+  unfolding storage_el32_def by (solve_type16I add: assms)
+
 lemma type_storage_el32[simp]: \<open>type (storage_el32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+  unfolding storage_el32_def by solve_type16I
+
+lemma type_storage_addr_be32[simp]: 
+  assumes \<open>type w = imm\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<rangle>\<close>
+    shows \<open>type (storage_be32 mem w val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
+  unfolding storage_be32_def by (solve_type16I add: assms)
 
 lemma type_storage_be32[simp]: \<open>type (storage_be32 mem (num \<Colon> sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r) val\<^sub>1) = mem\<langle>sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r, 8\<rangle>\<close>
-  unfolding succ.simps bv_plus.simps by (rule type_storageI)
+  unfolding storage_be32_def by solve_type16I
 
-method solve_type_succ32I_scaffold methods recurs = (
-  rule type_storage_el32 type_storage_be32 |
-  solve_typeI_scaffold recurs
-) 
+method solve_type32I_scaffold methods recurs = (
+  (rule type_storage_el32 type_storage_be32) |
+  (rule type_storage_addr_el32 type_storage_addr_be32, recurs) |
+  solve_type16I_scaffold recurs
+)                 
 
-method solve_type_succ32I = (
-  solve_type_succ32I_scaffold solve_type_succ32I
+method solve_type32I uses add = (
+  (solves \<open>rule add\<close>) | 
+  solve_type32I_scaffold \<open>solve_type32I add: add\<close>
+)
+
+lemma storage_el32_is_val: \<open>storage_el32 mem w v = Val (storage_el32 mem w v)\<close>
+  unfolding storage_el32_def by solve_is_val16I
+thm storage_el32_is_val[symmetric, simp]
+
+lemma storage_be32_is_val: \<open>storage_be32 mem w v = Val (storage_be32 mem w v)\<close>
+  unfolding storage_be32_def by solve_is_val16I
+thm storage_be32_is_val[symmetric, simp]
+
+method solve_is_val32I uses add = (
+  (rule storage_el32_is_val storage_be32_is_val) | 
+  solve_is_val16I add: add
 )
 
 lemmas xtract32_24_16[simp] = xtract_concat_consecutive[of 24 31 16, simplified]

@@ -82,9 +82,9 @@ subsection \<open>Symbolic Execution\<close>
 method solve_bilE_scaffold methods recurs solve_exps uses add = (
   (erule step_stmt_cpuexnE step_stmt_specialE step_stmt_if_emptyE) |
 
-  (erule step_stmt_moveE, (solve_exps?)) |
+  (erule step_stmt_moveE, solve_exps?) |
 
-  (erule step_stmt_jmpE, (solve_exps?)) |
+  (erule step_stmt_jmpE, solve_exps?) |
 
   (erule step_stmt_if_emptyE, clarify) |
   (erule step_stmt_if_thenE; solve_expsE?, recurs?) |
@@ -98,7 +98,7 @@ method solve_bilE_scaffold methods recurs solve_exps uses add = (
 
   erule step_bil_emptyE | 
 
-  (erule step_bil_singleE, (recurs?)) | 
+  (erule step_bil_singleE, recurs?) | 
   (erule step_bil_seqE, recurs?, (recurs)?)
 )
 

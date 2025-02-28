@@ -11,11 +11,6 @@ lemmas solve_exp_simpset = (*mod_mod_trivial*) mod_Suc_eq not_dvd_plus_mod_neq n
   plus_Suc_right_mod_neq plus_Suc_left_mod_neq 
   plus_Suc_Suc_right_mod_neq plus_Suc_Suc_left_mod_neq
 
-lemma power_le_min: fixes x n N :: nat assumes \<open>n \<le> N\<close> and \<open>x < 2 ^ n\<close> shows \<open>x < 2 ^ N\<close>
-  using assms order_less_le_trans by fastforce
-
-lemma power_lt_min: fixes x n N :: nat assumes \<open>n < N\<close> and \<open>x < 2 ^ (Suc n)\<close> shows \<open>x < 2 ^ N\<close>
-  using Suc_leI assms power_le_min by blast
 
 
 interpretation succ_neqI: exp_val_word_fixed_sz_syntax
@@ -97,7 +92,7 @@ interpretation succ7_succ_neqI: exp_val_word_fixed_sz_syntax
 \<open>\<lambda>_ _ w sz. (sz > 2 \<Longrightarrow> succ (succ (succ (succ (succ (succ (succ w)))))) \<noteq> succ w)\<close>
   by (standard, elim exE, simp, rule succ6_neqI.succ, simp)
 
-lemma succ_lt_neqI:
+lemma succ_lt_neqI: (* TODO remove in favour of below *)
   assumes \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>num\<^sub>2 < 2 ^ sz\<^sub>2\<close> and \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) \<noteq> num\<^sub>2 \<Colon> sz\<^sub>2\<close>
     shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
   unfolding succ.simps bv_plus.simps apply auto
@@ -107,7 +102,19 @@ interpretation succ_lt_neqI: exp_val_word_fixed_sz_syntax_is_ok2
 \<open>\<lambda>_ _ w\<^sub>1 _ _ _ w\<^sub>2 _. (w\<^sub>1 \<noteq> w\<^sub>2 \<Longrightarrow> succ w\<^sub>1 \<noteq> succ w\<^sub>2)\<close>
   by (standard, rule succ_lt_neqI)
 
-lemma succ_left_neqI:
+lemma succ_lt_neqI':
+  assumes \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) is ok\<close> and \<open>((num\<^sub>2 \<Colon> sz\<^sub>2)::word) is ok\<close> 
+      and \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) \<noteq> num\<^sub>2 \<Colon> sz\<^sub>2\<close>
+    shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
+  unfolding succ.simps bv_plus.simps apply auto
+  using assms mod_lt_neqI Suc_mod_neq by force
+
+interpretation succ_lt_neqI': exp_val_word_fixed_sz_syntax2
+\<open>\<lambda>_ _ w\<^sub>1 _ _ _ w\<^sub>2 _. (\<lbrakk>w\<^sub>1 is ok; w\<^sub>2 is ok; w\<^sub>1 \<noteq> w\<^sub>2\<rbrakk> \<Longrightarrow> succ w\<^sub>1 \<noteq> succ w\<^sub>2)\<close>
+  apply (standard)
+  using succ_lt_neqI' by blast
+
+lemma succ_left_neqI:(* TODO remove in favour of the below *) 
     fixes w :: word
   assumes \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
     shows \<open>succ (succ w) \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
@@ -123,7 +130,23 @@ interpretation succ_left_neqI: exp_val_word_fixed_sz_is_ok_syntax
 \<open>\<lambda>_ _ w\<^sub>1 _. (\<And>w::word. succ w \<noteq> w\<^sub>1 \<Longrightarrow> succ (succ w) \<noteq> succ w\<^sub>1)\<close>
   by (standard, rule succ_left_neqI)
 
-lemma succ_right_neqI: 
+lemma succ_left_neqI':
+    fixes w :: word
+  assumes \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) is ok\<close> and \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
+    shows \<open>succ (succ w) \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
+proof (cases w rule: word_exhaust)
+  case w: (Word num\<^sub>1 sz\<^sub>1)
+  show ?thesis 
+    using w assms apply safe
+    unfolding succ.simps bv_plus.simps apply auto
+    using Suc_mod_neq by auto
+qed
+
+interpretation succ_left_neqI': exp_val_word_fixed_sz_syntax
+\<open>\<lambda>_ _ w\<^sub>1 _. (\<And>w::word. \<lbrakk>w\<^sub>1 is ok; succ w \<noteq> w\<^sub>1\<rbrakk> \<Longrightarrow> succ (succ w) \<noteq> succ w\<^sub>1)\<close>
+  by (standard, use succ_left_neqI' in blast)
+
+lemma succ_right_neqI: (* TODO remove in favour of the below *) 
     fixes w :: word
   assumes \<open>num\<^sub>1 < 2 ^ sz\<^sub>1\<close> and \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ w\<close> 
     shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (succ w)\<close>
@@ -138,6 +161,23 @@ qed
 interpretation succ_right_neqI: exp_val_word_fixed_sz_is_ok_syntax
   \<open>\<lambda>_ _ w\<^sub>1 _. (\<And>w::word. w\<^sub>1 \<noteq> succ w \<Longrightarrow> succ w\<^sub>1 \<noteq> succ (succ w))\<close>
   by (standard, rule succ_right_neqI)
+
+lemma succ_right_neqI':
+    fixes w :: word
+  assumes \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) is ok\<close> and \<open>(num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ w\<close> 
+    shows \<open>succ (num\<^sub>1 \<Colon> sz\<^sub>1) \<noteq> succ (succ w)\<close>
+proof (cases w rule: word_exhaust)
+  case w: (Word num\<^sub>1 sz\<^sub>1)
+  show ?thesis 
+    using w assms apply safe
+    unfolding succ.simps bv_plus.simps apply auto
+    using Suc_mod_neq by auto
+qed
+
+interpretation succ_right_neqI': exp_val_word_fixed_sz_syntax
+  \<open>\<lambda>_ _ w\<^sub>1 _. (\<And>w::word. \<lbrakk>w\<^sub>1 is ok; w\<^sub>1 \<noteq> succ w\<rbrakk> \<Longrightarrow> succ w\<^sub>1 \<noteq> succ (succ w))\<close>
+  apply standard
+  using succ_right_neqI' by blast
 
 lemma succ_succ_neqI: 
     fixes w :: word
@@ -176,11 +216,15 @@ method solve_word_neq uses add = (
   ( rule succ_succ_neqI, solve_word_neq add: add) |
   ( rule succ_left_neqI, solve_lt_power add: add, solve_word_neq add: add) |
   ( rule succ_left_neqI.plus, solve_word_neq add: add) |
+  (rule succ_left_neqI', typec_word_is_ok add: add, solve_word_neq add: add) |
   (rule succ_right_neqI, solve_lt_power add: add, solve_word_neq add: add) |
   (rule succ_right_neqI.plus, solve_word_neq add: add) |
+  (rule succ_right_neqI', typec_word_is_ok add: add, solve_word_neq add: add) |
   (rule succ_lt_neqI.plus.plus, solve_word_neq add: add) |
   (rule succ_lt_neqI.plus.word_is_ok, solve_lt_power add: add, solve_word_neq add: add) |
+  (rule succ_lt_neqI.word.plus, solve_lt_power add: add, solve_word_neq add: add) |
   (rule succ_lt_neqI, solve_lt_power add: add, solve_lt_power add: add, solve_word_neq add: add) |
+  (rule succ_lt_neqI', typec_word_is_ok add: add, typec_word_is_ok add: add, solve_word_neq add: add) |
   (solves \<open>rule add\<close> | (
     solves \<open>simp (no_asm) add: add solve_exp_simpset succ.simps bv_plus.simps\<close>))
 ) (* match conclusion in P for P  \<Rightarrow> \<open>print_term P\<close>, *)

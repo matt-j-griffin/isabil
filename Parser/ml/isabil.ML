@@ -1,5 +1,4 @@
 (*  Title:      ML/isabil.ML
-    Author:     Matt Griffin, University of Surrey
 
 Locale expressions and user interface layer of locales.
 *)

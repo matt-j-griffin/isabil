@@ -11,9 +11,9 @@ lemma set_not_\<Gamma>_is_ok:
     shows \<open>\<not>(\<Gamma> is ok)\<close>
   using assms apply (induct \<Gamma>, auto)
   unfolding dom\<^sub>\<Gamma>_def 
-  apply (drule_tac f=name and A=\<open>set \<Gamma>'\<close> in imageI)
+  apply (drule_tac f=var_name and A=\<open>set \<Gamma>'\<close> in imageI)
   using var_constructor_var_def apply force
-  apply (drule_tac f=name and A=\<open>set \<Gamma>'\<close> in imageI)
+  apply (drule_tac f=var_name and A=\<open>set \<Gamma>'\<close> in imageI)
   using var_constructor_var_def apply force
   using is_ok_list.elims(2) by auto
 
