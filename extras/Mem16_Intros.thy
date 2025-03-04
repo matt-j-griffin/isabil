@@ -350,7 +350,7 @@ interpretation step_exps_store_word16_beI: store_gt8_syntax \<open>\<lambda>e\<^
   using step_exps_store_word16_beI by blast
 
 \<comment> \<open>Automation\<close>
-method solve_exps_mem16I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+method fastsolve_exps_mem16I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
   \<comment> \<open>Skip 16bit load on 16bit memory\<close>
   (rule step_exps_load_next_word16_elI.is_word2_val, solve_is_wordI, solve_is_wordI, solve_is_val, 
     solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, solve_type,
@@ -364,11 +364,15 @@ method solve_exps_mem16I_scaffold methods recurs solve_exp solve_type solve_is_v
     solve_is_wordI, solve_is_val, solve_word_neq add: add, solve_word_neq add: add, recurs?) |
   (rule step_exps_store_word16_elI.is_word_val2 step_exps_store_word16_beI.is_word_val2, 
     defer_tac, solve_is_wordI, solve_is_wordI, solve_is_val, prefer_last,
-    solve_type) |
+    solve_type)
+)
+
+method solve_exps_mem16I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+  fastsolve_exps_mem16I_scaffold recurs solve_exp solve_type solve_is_val add: add |
 
   print_fact conjI,
   solve_expsI_scaffold recurs solve_exp solve_type solve_is_val add: add
-)               
+)
 
 method solve_exps_mem16I uses add = (
   solves \<open>rule add\<close> |

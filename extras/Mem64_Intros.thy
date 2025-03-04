@@ -83,12 +83,6 @@ interpretation step_exps_load_word64_elI: exp_val_word_fixed_sz_syntax2
 \<Delta> \<turnstile> (storage_el64 v w\<^sub>a v\<^sub>v)[e\<^sub>a, el]:u64 \<leadsto>* (ext e\<^sub>v \<sim> hi : 63 \<sim> lo : 0))\<close>
   apply standard
   using step_exps_load_word64_elI by blast
-
-interpretation step_exps_load_word64_el64I: exp_val_word_fixed_sz_syntax2 
-\<open>\<lambda>e\<^sub>a _ w\<^sub>a sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r e\<^sub>v v\<^sub>v w\<^sub>v _. (\<And>\<Delta> v.
-\<Delta> \<turnstile> (storage_el64 v w\<^sub>a v\<^sub>v)[e\<^sub>a, el]:u64 \<leadsto>* (ext e\<^sub>v \<sim> hi : 63 \<sim> lo : 0))\<close> 64 64
-  apply standard
-  using step_exps_load_word64_elI[where sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r = 64, simplified] by blast
   
 lemma step_exps_load_word64_el_num_ltI: (* TODO might not be needed when the extract simplifier comes *)
   assumes \<open>2 < sz\<^sub>a\<^sub>d\<^sub>d\<^sub>r\<close> and num_lt: \<open>num\<^sub>v < 2 ^ 64\<close>
@@ -395,15 +389,14 @@ interpretation step_exps_load_word16_next_word64_elI: exp_val_word_fixed_sz_synt
   using step_exps_load_word16_next_word64_elI by blast
 
 lemma step_exps_load_word64_next_word32_elI:
-  assumes neq: \<open>w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ2 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> 
-               \<open>succ3 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ2 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ3 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ4 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ5 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ6 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ7 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
+  assumes neq': \<open>no_address_overlap_64_32 (num\<^sub>1 \<Colon> sz\<^sub>1) w\<close>
       and type: \<open>type w = imm\<langle>sz\<^sub>1\<rangle>\<close> \<open>type v = mem\<langle>sz\<^sub>1, 8\<rangle>\<close>
       and is_ok: \<open>w is ok\<close> \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) is ok\<close>
       and nxt: \<open>\<Delta> \<turnstile> (Val v)[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u64 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
     shows \<open>\<Delta> \<turnstile> (storage_el32 v w v')[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u64 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
 using nxt type(2) proof (elim step_exp_load_word_el64_strictE)
+  note neq = no_address_overlap_64_32[OF neq', symmetric]
+
   obtain num where w: \<open>w = num \<Colon> sz\<^sub>1\<close>
     using type
     by (cases w rule: word_exhaust, simp)
@@ -426,24 +419,21 @@ qed
 
 interpretation step_exps_load_word64_next_word32_elI: exp_val_word_fixed_sz_syntax2_val3 
   \<open>\<lambda>e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3. (\<And>\<Delta> w v'. 
-    \<lbrakk>w \<noteq> w\<^sub>1; succ w \<noteq> w\<^sub>1; succ2 w \<noteq> w\<^sub>1; succ3 w \<noteq> w\<^sub>1; w \<noteq> succ w\<^sub>1; w \<noteq> succ2 w\<^sub>1; w \<noteq> succ3 w\<^sub>1; 
-      w \<noteq> succ4 w\<^sub>1; w \<noteq> succ5 w\<^sub>1; w \<noteq> succ6 w\<^sub>1; w \<noteq> succ7 w\<^sub>1; type w = imm\<langle>sz\<^sub>1\<rangle>; 
+    \<lbrakk>no_address_overlap_64_32 w\<^sub>1 w; type w = imm\<langle>sz\<^sub>1\<rangle>; 
       type v\<^sub>3 = mem\<langle>sz\<^sub>1, 8\<rangle>; w is ok; w\<^sub>1 is ok; \<Delta> \<turnstile> e\<^sub>3[e\<^sub>1, el]:u64 \<leadsto>* e\<^sub>2
     \<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (storage_el32 v\<^sub>3 w v')[e\<^sub>1, el]:u64 \<leadsto>* e\<^sub>2)\<close>
   apply unfold_locales
   using step_exps_load_word64_next_word32_elI by blast
 
 lemma step_exps_load_word32_next_word64_elI:
-  assumes neq: \<open>w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ2 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> 
-               \<open>succ3 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ4 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ5 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> 
-               \<open>succ6 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ7 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ2 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ3 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
+  assumes neq': \<open>no_address_overlap_64_32 w (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
       and type: \<open>type w = imm\<langle>sz\<^sub>1\<rangle>\<close> \<open>type v = mem\<langle>sz\<^sub>1, 8\<rangle>\<close>
       and is_ok: \<open>w is ok\<close> \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) is ok\<close>
       and nxt: \<open>\<Delta> \<turnstile> (Val v)[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u32 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
     shows \<open>\<Delta> \<turnstile> (storage_el64 v w v')[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u32 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
 using nxt type(2) proof (elim step_exp_load_word_el32_strictE)
+  note neq = no_address_overlap_64_32[OF neq']
+
   obtain num where w: \<open>w = num \<Colon> sz\<^sub>1\<close>
     using type
     by (cases w rule: word_exhaust, simp)
@@ -484,24 +474,30 @@ qed
 
 interpretation step_exps_load_word32_next_word64_elI: exp_val_word_fixed_sz_syntax2_val3 
   \<open>\<lambda>e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3. (\<And>\<Delta> w v'. 
-    \<lbrakk>w \<noteq> w\<^sub>1; succ w \<noteq> w\<^sub>1; succ2 w \<noteq> w\<^sub>1; succ3 w \<noteq> w\<^sub>1; succ4 w \<noteq> w\<^sub>1; succ5 w \<noteq> w\<^sub>1; succ6 w \<noteq> w\<^sub>1; 
-      succ7 w \<noteq> w\<^sub>1; w \<noteq> succ w\<^sub>1; w \<noteq> succ2 w\<^sub>1; w \<noteq> succ3 w\<^sub>1; type w = imm\<langle>sz\<^sub>1\<rangle>; 
-      type v\<^sub>3 = mem\<langle>sz\<^sub>1, 8\<rangle>; w is ok; w\<^sub>1 is ok; \<Delta> \<turnstile> e\<^sub>3[e\<^sub>1, el]:u32 \<leadsto>* e\<^sub>2
+    \<lbrakk>no_address_overlap_64_32 w w\<^sub>1; type w = imm\<langle>sz\<^sub>1\<rangle>; type v\<^sub>3 = mem\<langle>sz\<^sub>1, 8\<rangle>; w is ok; w\<^sub>1 is ok; 
+      \<Delta> \<turnstile> e\<^sub>3[e\<^sub>1, el]:u32 \<leadsto>* e\<^sub>2
     \<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (storage_el64 v\<^sub>3 w v')[e\<^sub>1, el]:u32 \<leadsto>* e\<^sub>2)\<close>
   apply unfold_locales
   using step_exps_load_word32_next_word64_elI by blast
 
+method solve_no_address_overlap_64_32 uses add = (
+  solves \<open>rule add\<close> |
+  (rule no_address_overlap_64_32_plusI, solve_lt_power, solve_lt_power, linarith) |
+  \<comment> \<open>Bad case - slow\<close>
+  (print_fact no_address_overlap_64_32_def, (unfold no_address_overlap_64_32_def)[1], intro conjI,
+     solve_no_address_overlap_32_32 add: add, solve_word_neq add: add, solve_word_neq add: add,
+     solve_word_neq add: add, solve_word_neq add: add)
+)
+
 lemma step_exps_load_word64_next_word64_elI:
-  assumes neq: \<open>w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ2 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> 
-               \<open>succ3 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ4 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ5 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> 
-               \<open>succ6 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>succ7 w \<noteq> (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ2 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ3 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ4 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
-               \<open>w \<noteq> succ5 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ6 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close> \<open>w \<noteq> succ7 (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
+  assumes neq': \<open>no_address_overlap_64_64 w (num\<^sub>1 \<Colon> sz\<^sub>1)\<close>
       and type: \<open>type w = imm\<langle>sz\<^sub>1\<rangle>\<close> \<open>type v = mem\<langle>sz\<^sub>1, 8\<rangle>\<close>
       and is_ok: \<open>w is ok\<close> \<open>((num\<^sub>1 \<Colon> sz\<^sub>1)::word) is ok\<close>
       and nxt: \<open>\<Delta> \<turnstile> (Val v)[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u64 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
     shows \<open>\<Delta> \<turnstile> (storage_el64 v w v')[num\<^sub>1 \<Colon> sz\<^sub>1, el]:u64 \<leadsto>* (num\<^sub>2 \<Colon> sz\<^sub>2)\<close>
 using nxt type(2) proof (elim step_exp_load_word_el64_strictE)
+  note neq = no_address_overlap_64_64[OF neq']
+
   obtain num where w: \<open>w = num \<Colon> sz\<^sub>1\<close>
     using type
     by (cases w rule: word_exhaust, simp)
@@ -520,7 +516,8 @@ using nxt type(2) proof (elim step_exp_load_word_el64_strictE)
   have load5': \<open>\<Delta> \<turnstile> (storage_el64 v (num \<Colon> sz\<^sub>1) v')[succ4 (num\<^sub>1 \<Colon> sz\<^sub>1), el]:u32 \<leadsto>* (num\<^sub>5 \<Colon> sz\<^sub>5)\<close>
     apply (rule step_exps_load_word32_next_word64_elI.is_word2_val)
     apply (solve_is_wordI, solve_is_wordI, solve_is_valI)
-    apply (solve_word_neq add: neq[unfolded w] is_ok[unfolded w])+
+    apply (solve_no_address_overlap_64_32 add: neq[unfolded w] is_ok[unfolded w])
+    apply (solve_typeI)
     apply (rule type)
     apply (typec_word_is_ok add: is_ok[unfolded w])
     apply (typec_word_is_ok add: is_ok[unfolded w])
@@ -567,11 +564,8 @@ qed
 
 
 interpretation step_exps_load_word64_next_word64_elI: exp_val_word_fixed_sz_syntax2_val3 
-  \<open>\<lambda>e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3. (\<And>\<Delta> w v'. 
-    \<lbrakk>w \<noteq> w\<^sub>1; succ w \<noteq> w\<^sub>1; succ2 w \<noteq> w\<^sub>1; succ3 w \<noteq> w\<^sub>1; succ4 w \<noteq> w\<^sub>1; succ5 w \<noteq> w\<^sub>1; succ6 w \<noteq> w\<^sub>1; 
-      succ7 w \<noteq> w\<^sub>1; w \<noteq> succ w\<^sub>1; w \<noteq> succ2 w\<^sub>1; w \<noteq> succ3 w\<^sub>1; w \<noteq> succ4 w\<^sub>1; w \<noteq> succ5 w\<^sub>1; 
-      w \<noteq> succ6 w\<^sub>1;  w \<noteq> succ7 w\<^sub>1; type w = imm\<langle>sz\<^sub>1\<rangle>; type v\<^sub>3 = mem\<langle>sz\<^sub>1, 8\<rangle>; w is ok; w\<^sub>1 is ok; 
-      \<Delta> \<turnstile> e\<^sub>3[e\<^sub>1, el]:u64 \<leadsto>* e\<^sub>2
+  \<open>\<lambda>e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3. (\<And>\<Delta> w v'. \<lbrakk>no_address_overlap_64_64 w w\<^sub>1; type w = imm\<langle>sz\<^sub>1\<rangle>; 
+      type v\<^sub>3 = mem\<langle>sz\<^sub>1, 8\<rangle>; w is ok; w\<^sub>1 is ok; \<Delta> \<turnstile> e\<^sub>3[e\<^sub>1, el]:u64 \<leadsto>* e\<^sub>2
     \<rbrakk> \<Longrightarrow> \<Delta> \<turnstile> (storage_el64 v\<^sub>3 w v')[e\<^sub>1, el]:u64 \<leadsto>* e\<^sub>2)\<close>
   apply unfold_locales
   using step_exps_load_word64_next_word64_elI by blast
@@ -644,7 +638,26 @@ interpretation step_exps_store_word64_beI: store_gt8_syntax \<open>\<lambda>e\<^
 
 subsubsection \<open>The 64 bit solver scaffold\<close>
 
-method solve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+method solve_no_address_overlap_64_64 uses add = (
+  solves \<open>rule add\<close> |
+  (rule no_address_overlap_64_64_plusI, solve_lt_power, solve_lt_power, linarith) |
+  \<comment> \<open>Bad case - slow\<close>
+  (print_fact no_address_overlap_64_64_def, ((unfold no_address_overlap_64_64_def)[1], intro conjI),
+    solve_no_address_overlap_64_32 add: add, solve_word_neq add: add, solve_word_neq add: add, 
+    solve_word_neq add: add, solve_word_neq add: add)
+)
+
+method fastsolve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+  \<comment> \<open>Load 64bit word\<close>
+  (rule step_exps_load_word64_el_num_ltI.is_sz_word, solve_is_wordI, (solves \<open>rule add\<close> | linarith), 
+    solve_lt_power add: add) |
+  (rule step_exps_load_word64_elI.is_word2 step_exps_load_word64_beI.is_word2
+    step_exps_load_byte1_64_elI.is_word2 step_exps_load_byte2_64_elI.is_word2 
+    step_exps_load_byte3_64_elI.is_word2 step_exps_load_byte4_64_elI.is_word2 
+    step_exps_load_byte5_64_elI.is_word2 step_exps_load_byte6_64_elI.is_word2 
+    step_exps_load_byte7_64_elI.is_word2 step_exps_load_byte8_64_elI.is_word2, solve_is_wordI, 
+    solve_is_wordI, (solves \<open>rule add\<close> | linarith)) |
+
   \<comment> \<open>Skip 16bit load on 64bit memory\<close>
   (rule step_exps_load_word16_next_word64_elI.is_word2_val, solve_is_wordI, solve_is_wordI, 
     solve_is_val,
@@ -655,10 +668,7 @@ method solve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_v
 
   \<comment> \<open>Skip 32bit load on 64bit memory\<close>
   (rule step_exps_load_word32_next_word64_elI.is_word2_val, solve_is_wordI, solve_is_wordI, 
-    solve_is_val, solve_word_neq add: add, solve_word_neq add: add,
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
+    solve_is_val, solve_no_address_overlap_64_32 add: add, 
     solve_type, solve_type, typec_word_is_ok add: add, typec_word_is_ok add: add, recurs?) |
 
   \<comment> \<open>Skip 64bit load on 16bit memory\<close>
@@ -671,34 +681,19 @@ method solve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_v
 
   \<comment> \<open>Skip 64bit load on 32bit memory\<close>
   (rule step_exps_load_word64_next_word32_elI.is_word2_val, solve_is_wordI, solve_is_wordI, 
-    solve_is_val, solve_word_neq add: add, solve_word_neq add: add,
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
+    solve_is_val, solve_no_address_overlap_64_32 add: add,
     solve_type, solve_type, typec_word_is_ok add: add, typec_word_is_ok add: add, recurs?) |
 
   \<comment> \<open>Skip 64bit load on 64bit memory\<close>
   (rule step_exps_load_word64_next_word64_elI.is_word2_val, solve_is_wordI, solve_is_wordI, 
-    solve_is_val,
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
-    solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
+    solve_is_val, solve_no_address_overlap_64_64 add: add, 
     solve_type, solve_type,
     typec_word_is_ok add: add, typec_word_is_ok add: add, recurs?) |
 
   (rule step_exps_concat_last_word64_el_lt_numI, (solves \<open>rule add\<close> | ((unfold power_numeral Num.pow.simps Num.sqr.simps)?, linarith))) |
   (rule step_exps_concat_last_word64_elI.is_word step_exps_concat_word64_elI.is_word, 
     solve_is_wordI) |
-  (rule step_exps_load_word64_el_num_ltI.is_sz_word, solve_is_wordI, (solves \<open>rule add\<close> | linarith), 
-    (solves \<open>rule add\<close> | ((unfold power_numeral Num.pow.simps Num.sqr.simps)?, linarith))) |
-  (rule step_exps_load_word64_elI.is_word2 step_exps_load_word64_beI.is_word2
-    step_exps_load_byte1_64_elI.is_word2 step_exps_load_byte2_64_elI.is_word2 
-    step_exps_load_byte3_64_elI.is_word2 step_exps_load_byte4_64_elI.is_word2 
-    step_exps_load_byte5_64_elI.is_word2 step_exps_load_byte6_64_elI.is_word2 
-    step_exps_load_byte7_64_elI.is_word2 step_exps_load_byte8_64_elI.is_word2, solve_is_wordI, 
-    solve_is_wordI, (solves \<open>rule add\<close> | linarith)) |
+
   (rule step_exps_load_next_byte64_elI.is_word_val step_exps_load_next_byte64_beI.is_word_val, 
     solve_is_wordI, solve_is_val, solve_word_neq add: add, solve_word_neq add: add, 
     solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, solve_word_neq add: add, 
@@ -708,7 +703,13 @@ method solve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_v
     defer_tac, solve_is_wordI, solve_is_wordI, solve_is_val, prefer_last,
     solve_type) |
                   
-  (solve_exps_mem32I_scaffold recurs solve_exp solve_type solve_is_val add: add)
+  (fastsolve_exps_mem32I_scaffold recurs solve_exp solve_type solve_is_val add: add)
+)
+
+method solve_exps_mem64I_scaffold methods recurs solve_exp solve_type solve_is_val uses add = (
+  fastsolve_exps_mem64I_scaffold recurs solve_exp solve_type solve_is_val add: add |
+                  
+  (solve_expsI_scaffold recurs solve_exp solve_type solve_is_val add: add)
 )
 
 (* These will be deleted *)
@@ -723,6 +724,12 @@ lemmas solve_exps_mem64_simps =
   xtract_nested_63_32_7_0  xtract_nested_63_40_7_0  xtract_nested_63_48_7_0
   xtract_nested_55_0_55_48 xtract_nested_47_0_47_40 xtract_nested_39_0_39_32
 
+
+method fastsolve_exps_mem64I uses add = (
+  solves \<open>rule add\<close> |
+  fastsolve_exps_mem64I_scaffold \<open>fastsolve_exps_mem64I add: add\<close> \<open>solve_expI add: add\<close>
+      \<open>solve_type64I add: add\<close> \<open>solve_is_val64I add: add\<close> add: add
+)
 
 method solve_exps_mem64I uses add = (
   solves \<open>rule add\<close> |

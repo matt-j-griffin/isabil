@@ -62,7 +62,7 @@ lemma no_address_overlap_64_32:
   apply (intro no_address_overlap_32_32[OF conjunct1[OF assms[unfolded no_address_overlap_64_32_def]]])+
   using assms unfolding no_address_overlap_64_32_def by auto
 
-lemma no_address_overlap_64_32': 
+lemma no_address_overlap_64_32': (* TODO *)
   assumes \<open>no_address_overlap_64_32 w\<^sub>1 w\<^sub>2\<close> 
     shows \<open>w\<^sub>2 \<noteq> w\<^sub>1\<close> \<open>succ w\<^sub>2 \<noteq> w\<^sub>1\<close> \<open>succ2 w\<^sub>2 \<noteq> w\<^sub>1\<close> \<open>succ3 w\<^sub>2 \<noteq> w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ2 w\<^sub>1\<close>
           \<open>w\<^sub>2 \<noteq> succ3 w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ4 w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ5 w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ6 w\<^sub>1\<close> \<open>w\<^sub>2 \<noteq> succ7 w\<^sub>1\<close>
