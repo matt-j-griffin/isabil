@@ -353,6 +353,7 @@ interpretation step_exps_store_word32_beI: store_gt8_syntax \<open>\<lambda>e\<^
 method solve_no_address_overlap_32_32 uses add = (
   solves \<open>rule add\<close> |
   (rule no_address_overlap_32_32_plusI, solve_lt_power, solve_lt_power, linarith) |
+  (rule no_address_overlap_32_32_swapI, solves \<open>rule add\<close>) |
   \<comment> \<open>Bad case - slow\<close>
   (print_fact no_address_overlap_32_32_def, ((unfold no_address_overlap_32_32_def)[1], intro conjI); 
     solve_word_neq add: add)

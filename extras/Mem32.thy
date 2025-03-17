@@ -54,6 +54,11 @@ where
     succ3 w\<^sub>1 \<noteq> w\<^sub>2
 )\<close>
 
+lemma no_address_overlap_32_32_swapI:
+  assumes \<open>no_address_overlap_32_32 w1 w2\<close>
+    shows \<open>no_address_overlap_32_32 w2 w1\<close>
+  using assms unfolding no_address_overlap_32_32_def by auto
+
 lemma no_address_overlap_32_32: 
   assumes \<open>no_address_overlap_32_32 w\<^sub>1 w\<^sub>2\<close> 
     shows \<open>w\<^sub>1 \<noteq> w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ2 w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ3 w\<^sub>2\<close> 

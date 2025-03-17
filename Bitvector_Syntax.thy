@@ -593,6 +593,12 @@ lemma plus_is_word[intro]:
   using assms apply auto
   unfolding bv_plus.simps by auto
 
+lemma minus_is_word[intro]: 
+  assumes \<open>\<exists>num. w\<^sub>1 = num \<Colon> sz\<close> \<open>\<exists>num. w\<^sub>2 = num \<Colon> sz\<close>
+    shows \<open>\<exists>num. w\<^sub>1 -\<^sub>b\<^sub>v w\<^sub>2 = num \<Colon> sz\<close>
+  using assms apply auto
+  unfolding bv_minus.simps by auto
+
 lemma succ_is_word[intro]:
   assumes \<open>\<exists>num. w = num \<Colon> sz\<close>
     shows \<open>\<exists>num. succ w = num \<Colon> sz\<close>
@@ -615,14 +621,21 @@ lemma bv_plus_neq_lhs_is_wordI:
   apply (rule bv_plus_neq_lhsI)
   by auto
 
-
-lemma plus_is_okI:
+(*
+lemma plus_is_okI': (* TODO *)
   assumes ex: \<open>\<exists>num. w\<^sub>1 = num \<Colon> sz\<close> \<open>\<exists>num. w\<^sub>2 = num \<Colon> sz\<close>
       and w_is_ok: \<open>w\<^sub>1 is ok\<close> \<open>w\<^sub>2 is ok\<close>
     shows \<open>(w\<^sub>1 +\<^sub>b\<^sub>v w\<^sub>2) is ok\<close>
   using ex w_is_ok apply auto
   unfolding word_is_ok bv_plus.simps by auto
 
+lemma succ_is_okI: (* TODO *)
+  assumes ex: \<open>\<exists>num. w = num \<Colon> sz\<close> and sz: \<open>0 < sz\<close>
+    shows \<open>succ w is ok\<close>
+  using ex sz apply auto
+  unfolding succ.simps word_is_ok apply (intro plus_is_okI word_is_okI)
+  by auto
+*)
 
 lemmas bv_simps = bv_plus.simps bv_minus.simps bv_times.simps bv_divide.simps bv_sdivide.simps
                   bv_inc.simps bv_land.simps bv_lor.simps bv_xor.simps bv_mod\<^sub>b\<^sub>v.simps bv_smod.simps
@@ -650,35 +663,48 @@ lemma word_is_okE[elim]:
   obtains \<open>sz > 0\<close> \<open>num < 2 ^ sz\<close>
   using assms unfolding word_is_ok by blast
 
-lemma bv_plus_ok: 
-  assumes \<open>0 < sz\<close>
-    shows \<open>((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) is ok\<close>
-  unfolding bv_plus.simps using assms apply (rule word_is_okI)
-  by simp
+lemma plus_is_okI[intro]: 
+  assumes sz: \<open>0 < sz\<close>
+  shows \<open>((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) is ok\<close>
+using assms proof -
+  show "((num\<^sub>1 \<Colon> sz) +\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) is ok"
+    unfolding bv_plus.simps using sz apply (rule word_is_okI)
+    by auto
+qed
 
-lemma bv_minus_ok: 
-  assumes \<open>0 < sz\<close> and \<open>num\<^sub>1 < 2 ^ sz\<close>
+lemma plus_word_is_okI:
+  assumes ex: \<open>\<exists>num. w\<^sub>1 = num \<Colon> sz\<close> \<open>\<exists>num. w\<^sub>2 = num \<Colon> sz\<close> 
+      and sz: \<open>0 < sz\<close>
+  shows \<open>(w\<^sub>1 +\<^sub>b\<^sub>v w\<^sub>2) is ok\<close>
+  using assms by auto
+
+lemma minus_is_okI[intro]:
+  assumes word1_is_ok: \<open>(num\<^sub>1 \<Colon> sz) is ok\<close>
     shows \<open>((num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) is ok\<close>
-  using assms apply (cases \<open>num\<^sub>2 \<le> num\<^sub>1\<close>)
-  subgoal
-    unfolding bv_minus.simps using assms(1) apply (rule word_is_okI)
-    using assms(2) by simp
-  subgoal
-    apply (drule not_le_imp_less)
-    unfolding bv_minus.simps using assms(1) apply (rule word_is_okI)
-    by simp
-  .
-(*
-lemma bool_is_ok_exhaust: 
-  assumes \<open>(num \<Colon> 1) is ok\<close>
-  obtains 
-    (True) \<open>(num \<Colon> 1) = true\<close> 
-  | (False) \<open>(num \<Colon> 1) = false\<close>
-  using assms apply (rule_tac word_syntax_exhaust[of \<open>(num \<Colon> 1)\<close>])
-  apply (drule word_is_okE[of num 1])
-  unfolding false_word true_word apply auto    
-  by fastforce
-*)
+using assms proof (elim word_is_okE)
+  fix num\<^sub>1 num\<^sub>2 :: nat
+  assume sz: "0 < sz" and num\<^sub>1_lt: "num\<^sub>1 < 2 ^ sz"
+  show "((num\<^sub>1 \<Colon> sz) -\<^sub>b\<^sub>v (num\<^sub>2 \<Colon> sz)) is ok"
+    unfolding bv_minus.simps using sz apply (rule word_is_okI)
+    using num\<^sub>1_lt by fastforce
+qed
+
+lemma minus_word_is_okI:
+  assumes ex: \<open>\<exists>num. w\<^sub>1 = num \<Colon> sz\<close> \<open>\<exists>num. w\<^sub>2 = num \<Colon> sz\<close> 
+      and word1_is_ok: \<open>w\<^sub>1 is ok\<close>
+    shows \<open>(w\<^sub>1 -\<^sub>b\<^sub>v w\<^sub>2) is ok\<close>
+  using assms by auto
+
+lemma extract_is_okI[intro]:
+    shows \<open>(ext num \<Colon> sz \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o) is ok\<close>
+  unfolding xtract.simps apply (rule word_is_okI)
+  by (auto simp add: take_bit_eq_mod)
+
+lemma extract_word_is_okI:
+  assumes \<open>\<exists>num. w = num \<Colon> sz\<close>
+    shows \<open>(ext w \<sim> hi : sz\<^sub>h\<^sub>i \<sim> lo : sz\<^sub>l\<^sub>o) is ok\<close>
+  using assms by auto
+
 
 lemma bv_times_ok:
   assumes \<open>0 < sz\<close>                       
@@ -713,22 +739,34 @@ lemma concat_word_is_okI:
   .
 
 lemma succ_is_okI:
+  assumes ex: \<open>\<exists>num. w = num \<Colon> sz\<close> and sz: \<open>sz > 0\<close>
+    shows \<open>succ w is ok\<close>
+  using ex apply auto
+  unfolding succ.simps word_is_ok apply (intro plus_is_okI word_is_okI)
+  using sz by auto
+
+lemma succ_is_okI':
   assumes ex: \<open>\<exists>num. w = num \<Colon> sz\<close> and w_is_ok: \<open>w is ok\<close>
     shows \<open>succ w is ok\<close>
   using ex w_is_ok apply auto
   unfolding succ.simps word_is_ok apply (intro plus_is_okI word_is_okI)
-  apply auto
-  using less_exp power_lt_min by blast
+  using less_exp power_lt_min by blast+
 
 \<comment> \<open>BIL formalisation lemma\<close>
 
 lemmas TWF_WORD = word_is_okI
 
-method is_word uses add = (rule add is_word succ_is_word plus_is_word; is_word add: add)
+method is_word uses add = (
+  rule add is_word succ_is_word plus_is_word minus_is_word; is_word add: add
+)
 
 method typec_word_is_ok uses add = ((
-  rule add word_is_okI bv_plus_ok; (rule add | solves \<open>simp\<close>)) |
-  (rule succ_is_okI, is_word add: add, typec_word_is_ok add: add)
+  rule add word_is_okI plus_is_okI; (rule add | solves \<open>simp\<close>)) |
+  (rule plus_word_is_okI, is_word add: add, is_word add: add, linarith) |
+  (rule minus_word_is_okI, is_word add: add, is_word add: add, typec_word_is_ok add: add) |
+  (rule succ_is_okI, is_word add: add, linarith) |
+  (rule succ_is_okI', is_word add: add, typec_word_is_ok add: add) |
+  (rule extract_word_is_okI, is_word add: add)
 )
 
 

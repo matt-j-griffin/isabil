@@ -640,6 +640,7 @@ subsubsection \<open>The 64 bit solver scaffold\<close>
 
 method solve_no_address_overlap_64_64 uses add = (
   solves \<open>rule add\<close> |
+  (rule no_address_overlap_64_64_swapI, solves \<open>rule add\<close>) |
   (rule no_address_overlap_64_64_plusI, solve_lt_power, solve_lt_power, linarith) |
   \<comment> \<open>Bad case - slow\<close>
   (print_fact no_address_overlap_64_64_def, ((unfold no_address_overlap_64_64_def)[1], intro conjI),

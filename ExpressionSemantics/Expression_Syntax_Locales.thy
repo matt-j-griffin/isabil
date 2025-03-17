@@ -751,6 +751,17 @@ locale exp_val_word_fixed_sz_syntax3_val4 =
      e\<^sub>4 = Val v\<^sub>4
    \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3 e\<^sub>4 v\<^sub>4\<close>
 
+locale exp_val_word_fixed_sz_syntax4_val5 =
+  fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> 
+              exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> prop\<close> 
+      and sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 :: nat
+  assumes is_word4_val: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     \<exists>num\<^sub>2. e\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2);
+     \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3);
+     \<exists>num\<^sub>3. e\<^sub>4 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>4 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>4 = (num\<^sub>3 \<Colon> sz\<^sub>4);
+     e\<^sub>5 = Val v\<^sub>5
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3 e\<^sub>4 v\<^sub>4 w\<^sub>4 sz\<^sub>4 e\<^sub>5 v\<^sub>5\<close>
 
 
 
@@ -1024,6 +1035,15 @@ begin
 end
 
 
+locale exp_val_word_fixed_sz_syntax3w =
+    fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow>
+                prop\<close> and sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 :: nat
+  assumes is_word3: \<open>\<lbrakk>
+     \<exists>num\<^sub>1. e\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> v\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1) \<and> w\<^sub>1 = (num\<^sub>1 \<Colon> sz\<^sub>1);
+     \<exists>num\<^sub>2. e\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> v\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2) \<and> w\<^sub>2 = (num\<^sub>2 \<Colon> sz\<^sub>2);
+     \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3)
+   \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3\<close>
+
 locale exp_val_word_fixed_sz_syntax4 =
     fixes P :: \<open>exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow>
                 exp \<Rightarrow> val \<Rightarrow> word \<Rightarrow> nat \<Rightarrow> prop\<close> and sz\<^sub>1 sz\<^sub>2 sz\<^sub>3 sz\<^sub>4 :: nat
@@ -1033,8 +1053,6 @@ locale exp_val_word_fixed_sz_syntax4 =
      \<exists>num\<^sub>3. e\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> v\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3) \<and> w\<^sub>3 = (num\<^sub>3 \<Colon> sz\<^sub>3);
      \<exists>num\<^sub>4. e\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4) \<and> v\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4) \<and> w\<^sub>4 = (num\<^sub>4 \<Colon> sz\<^sub>4)
    \<rbrakk> \<Longrightarrow> PROP P e\<^sub>1 v\<^sub>1 w\<^sub>1 sz\<^sub>1 e\<^sub>2 v\<^sub>2 w\<^sub>2 sz\<^sub>2 e\<^sub>3 v\<^sub>3 w\<^sub>3 sz\<^sub>3 e\<^sub>4 v\<^sub>4 w\<^sub>4 sz\<^sub>4\<close>
-begin
 
-end
 
 end

@@ -79,6 +79,13 @@ where
     w\<^sub>1 \<noteq> succ7 w\<^sub>2
 )\<close>
 
+lemma no_address_overlap_64_64_swapI:
+  assumes \<open>no_address_overlap_64_64 w1 w2\<close>
+    shows \<open>no_address_overlap_64_64 w2 w1\<close>
+  using assms unfolding no_address_overlap_64_64_def no_address_overlap_64_32_def apply auto
+  by (rule no_address_overlap_32_32_swapI)
+
+
 lemma no_address_overlap_64_64: 
   assumes \<open>no_address_overlap_64_64 w\<^sub>1 w\<^sub>2\<close> 
     shows \<open>w\<^sub>1 \<noteq> w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ2 w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ3 w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ4 w\<^sub>2\<close> \<open>w\<^sub>1 \<noteq> succ5 w\<^sub>2\<close>
