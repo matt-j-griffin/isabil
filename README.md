@@ -1,6 +1,6 @@
 # IsaBIL
 
-A formalisation of the [Binary Analysis Platform (BAP) Intermediary Langugage (BIL)](https://github.com/BinaryAnalysisPlatform/bap).
+A formalisation of the [Binary Analysis Platform (BAP) Intermediary Langugage (BIL)](https://github.com/BinaryAnalysisPlatform/bap) in Isabelle/HOL.
 
 ## Requirements 
 
