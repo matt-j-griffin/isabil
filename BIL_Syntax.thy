@@ -2,7 +2,7 @@ theory BIL_Syntax
   imports Bitvector_Syntax 
           Bitvector_Instance (* TODO tidy theories *)
           HOL.String
-          "../Typing/Typing_Var_Typed_Ok"
+          "Typing/Typing_Var_Typed_Ok"
 begin            
 
 section \<open>Value syntax\<close>

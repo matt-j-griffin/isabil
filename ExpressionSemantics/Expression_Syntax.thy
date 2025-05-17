@@ -541,7 +541,7 @@ lemmas Val_simp_word = word_constructor_exp_def[symmetric]
 lemmas Val_simp_storage = storage_constructor_exp_def[symmetric]
 lemmas Val_simp_unknown = unknown_constructor_exp_def[symmetric]
 
-no_notation Set.member (\<open>(_/ : _)\<close> [51, 51] 50)
+no_notation (ASCII) Set.member  (\<open>(\<open>notation=\<open>infix :\<close>\<close>_/ : _)\<close> [51, 51] 50)
 
 lemma exp_exhaust:
   obtains 

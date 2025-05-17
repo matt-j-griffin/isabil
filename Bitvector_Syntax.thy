@@ -1,6 +1,6 @@
 theory Bitvector_Syntax
   imports Syntax
-          "../Typing/Typing_Typed_Ok"
+          "Typing/Typing_Typed_Ok"
 begin        
 
 class word_constructor = type_syntax + typed_ok + is_ok +
