@@ -4,7 +4,7 @@ A formalisation of the [Binary Analysis Platform (BAP) Intermediary Langugage (B
 
 ## Requirements 
 
-These theories have been tested with `Isabelle/HOL 2024` and the equivalent [AFP](https://www.isa-afp.org/).
+These theories have been tested with [Isabelle/HOL 2025](https://isabelle.in.tum.de/installation.html) and the latest [AFP](https://www.isa-afp.org/).
 
 You will need to build this projects dependencies: [Eisbach Inline Match](https://github.com/matt-j-griffin/eisbach-inline-match).
 
