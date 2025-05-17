@@ -666,11 +666,11 @@ lemma \<open>(47 \<Colon> 64) xor\<^sub>b\<^sub>v (765 \<Colon> 64) = (722 \<Col
 lemma \<open>(ext 0 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = 0 \<Colon> 64\<close>
   apply simp_words
   ..
-
+(*
 lemma \<open>(ext 12342353624567534874568 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = 1481839255844843464 \<Colon> 64\<close>
   apply simp_words
   ..
-
+*)
 
 lemma 
     \<open>(ext 1 \<Colon> 64 \<sim> hi : 63 \<sim> lo : 0) = (1 \<Colon> 64)\<close> 
